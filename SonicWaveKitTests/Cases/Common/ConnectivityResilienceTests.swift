@@ -77,6 +77,42 @@ final class ConnectivityResilienceTests: XCTestCase {
     )
   }
 
+  private func makeRecoveryMonitor(
+    accountInfo: AccountInfo? = nil,
+    isConnected: Bool = true,
+    urls: [String] = ["https://primary.example"],
+    probe: @escaping @Sendable (String) async -> Bool,
+    onRecovered: (@Sendable (String) async -> ())? = nil
+  ) -> ServerUnreachableMonitor {
+    let stub = StubNetworkMonitor()
+    stub.isConnectedToNetwork = isConnected
+    return ServerUnreachableMonitor(
+      networkMonitor: stub,
+      eventLogger: eventLogger,
+      settings: settings,
+      accountInfo: accountInfo,
+      notificationHandler: EventNotificationHandler(),
+      serverURLCandidatesProvider: { urls },
+      serverReachabilityProbe: probe,
+      autoRecoveryHandler: onRecovered,
+      recoveryBackoffPolicy: ConnectivityBackoffPolicy(
+        baseDelayInSeconds: 0.01,
+        multiplier: 1.0,
+        maxDelayInSeconds: 0.02,
+        jitterFactor: 0
+      ),
+      disconnectedPollIntervalInSeconds: 0.01
+    )
+  }
+
+  /// Marks the settings as auto-offline the same way the monitor does when the
+  /// latch fires (flag must be assigned *after* isOfflineMode — its setter
+  /// clears it).
+  private func enterAutoOffline() {
+    settings.user.isOfflineMode = true
+    settings.user.isOfflineModeAutomaticallyActivated = true
+  }
+
   // MARK: RequestFailureKind
 
   func testClassifyConnectivityUrlErrors() {
@@ -211,5 +247,94 @@ final class ConnectivityResilienceTests: XCTestCase {
       await monitor.reportConnectivityFailure()
     }
     XCTAssertTrue(settings.user.isOfflineMode)
+  }
+
+  // MARK: Auto recovery (G16)
+
+  func testRecoveryLoopRestoresOnlineMode() async {
+    let recoveredURL = Atomic<String?>(wrappedValue: nil)
+    let monitor = makeRecoveryMonitor(
+      urls: ["https://primary.example"],
+      probe: { _ in true },
+      onRecovered: { url in recoveredURL.wrappedValue = url }
+    )
+    enterAutoOffline()
+    await monitor.startAutoRecoveryIfNeeded()
+    try? await Task.sleep(for: .milliseconds(300))
+    XCTAssertFalse(settings.user.isOfflineMode)
+    XCTAssertFalse(settings.user.isOfflineModeAutomaticallyActivated)
+    XCTAssertEqual(recoveredURL.wrappedValue, "https://primary.example")
+  }
+
+  func testRecoveryFailoverToAlternativeURL() async {
+    let recoveredURL = Atomic<String?>(wrappedValue: nil)
+    let monitor = makeRecoveryMonitor(
+      urls: ["https://primary.example", "https://alt.example"],
+      probe: { url in url == "https://alt.example" },
+      onRecovered: { url in recoveredURL.wrappedValue = url }
+    )
+    enterAutoOffline()
+    await monitor.startAutoRecoveryIfNeeded()
+    try? await Task.sleep(for: .milliseconds(300))
+    XCTAssertEqual(recoveredURL.wrappedValue, "https://alt.example")
+    XCTAssertFalse(settings.user.isOfflineMode)
+  }
+
+  func testRecoveryKeepsWaitingOnDeadServer() async {
+    let monitor = makeRecoveryMonitor(
+      urls: ["https://dead.example"],
+      probe: { _ in false }
+    )
+    enterAutoOffline()
+    await monitor.startAutoRecoveryIfNeeded()
+    try? await Task.sleep(for: .milliseconds(200))
+    XCTAssertTrue(settings.user.isOfflineMode)
+    XCTAssertTrue(settings.user.isOfflineModeAutomaticallyActivated)
+  }
+
+  func testManualOfflineIsNotAutoRecovered() async {
+    let monitor = makeRecoveryMonitor(
+      urls: ["https://primary.example"],
+      probe: { _ in true }
+    )
+    // manual offline -> the auto flag is cleared by the setter
+    settings.user.isOfflineMode = true
+    XCTAssertFalse(settings.user.isOfflineModeAutomaticallyActivated)
+    await monitor.startAutoRecoveryIfNeeded()
+    try? await Task.sleep(for: .milliseconds(200))
+    XCTAssertTrue(settings.user.isOfflineMode)
+  }
+
+  func testRecoveryOnlyRunsForActiveAccount() async {
+    let accountInfo = TestAccountInfo.create1()
+    let otherAccount = TestAccountInfo.create2()
+    settings.accounts.updateSetting(accountInfo) { _ in }
+    settings.accounts.updateSetting(otherAccount) { _ in }
+    // monitor belongs to account 1 but account 2 is active -> no recovery
+    settings.accounts.switchActiveAccount(otherAccount)
+    let monitor = makeRecoveryMonitor(
+      accountInfo: accountInfo,
+      urls: ["https://primary.example"],
+      probe: { _ in true }
+    )
+    enterAutoOffline()
+    await monitor.startAutoRecoveryIfNeeded()
+    try? await Task.sleep(for: .milliseconds(200))
+    XCTAssertTrue(settings.user.isOfflineMode)
+  }
+
+  func testRecoveryForActiveAccount() async {
+    let accountInfo = TestAccountInfo.create1()
+    settings.accounts.updateSetting(accountInfo) { _ in }
+    settings.accounts.switchActiveAccount(accountInfo)
+    let monitor = makeRecoveryMonitor(
+      accountInfo: accountInfo,
+      urls: ["https://primary.example"],
+      probe: { _ in true }
+    )
+    enterAutoOffline()
+    await monitor.startAutoRecoveryIfNeeded()
+    try? await Task.sleep(for: .milliseconds(300))
+    XCTAssertFalse(settings.user.isOfflineMode)
   }
 }

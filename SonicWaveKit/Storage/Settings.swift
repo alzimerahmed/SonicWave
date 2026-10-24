@@ -152,7 +152,24 @@ public struct UserSettings: Sendable, Codable {
   private var _isOfflineMode: Bool = false
   public var isOfflineMode: Bool {
     get { _isOfflineMode }
-    set { _isOfflineMode = newValue }
+    set {
+      _isOfflineMode = newValue
+      // every direct assignment is a deliberate (manual or recovery) decision —
+      // the auto flag is set explicitly afterwards by the unreachable monitor
+      _isOfflineModeAutomaticallyActivated = false
+    }
+  }
+
+  // optional backing to stay decodable for settings stored before this key existed
+  private var _isOfflineModeAutomaticallyActivated: Bool? = nil
+  /// True when offline mode was switched on by `ServerUnreachableMonitor` and
+  /// not by the user — the basis for automatic reconnection. Persisted so a
+  /// relaunch into auto-offline can resume reconnecting without user input.
+  /// Callers that mean "auto" must assign this flag *after* `isOfflineMode`
+  /// (its setter resets the flag).
+  public var isOfflineModeAutomaticallyActivated: Bool {
+    get { _isOfflineModeAutomaticallyActivated ?? false }
+    set { _isOfflineModeAutomaticallyActivated = newValue }
   }
 
   public var isOnlineMode: Bool {

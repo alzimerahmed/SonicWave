@@ -214,10 +214,32 @@ struct ConnectivityBackoffPolicy: Sendable {
 ///   writes `settings.user.isOfflineMode = true` through the UserDefaults-backed
 ///   setter, posts `.offlineModeChanged`, and emits exactly one user notice
 /// - the latch rearms as soon as the user is back in online mode (manual toggle
-///   or a later phase's auto-return), so one unreachable episode produces at
+///   or the auto-return path below), so one unreachable episode produces at
 ///   most one notice — hysteresis against flapping
+///
+/// Auto-return (G16): when the monitor switched to offline mode it marks
+/// `settings.user.isOfflineModeAutomaticallyActivated` and starts a recovery
+/// loop that — with capped exponential backoff — probes all known server URLs
+/// (`serverURLCandidatesProvider`, active URL first so alternatives act as
+/// failover). The first reachable URL is handed to `autoRecoveryHandler`
+/// (which persists it as the active URL and re-provides credentials), then
+/// offline mode is exited automatically. The loop never runs while the user
+/// went offline manually, and it stops when the account is removed or no
+/// longer active. Auth/HTTP answers count as "reachable" — the loop only waits
+/// on transport-level failures, so it can never retry-loop on e.g. a 401.
 actor ServerUnreachableMonitor {
   static let consecutiveFailuresThreshold = 3
+
+  /// recovery probes run on a much slower cadence than request retries —
+  /// a dead server must not be hammered (battery) nor DoSed
+  static let defaultRecoveryBackoffPolicy = ConnectivityBackoffPolicy(
+    baseDelayInSeconds: 4.0,
+    multiplier: 2.0,
+    maxDelayInSeconds: 120.0,
+    jitterFactor: 0.25
+  )
+  /// poll cadence while the device has no network path at all
+  static let defaultDisconnectedPollIntervalInSeconds: TimeInterval = 5.0
 
   private let log = OSLog(subsystem: "com.alzimerahmed.SonicWave", category: "ServerUnreachableMonitor")
   private let networkMonitor: NetworkMonitorFacade
@@ -226,21 +248,44 @@ actor ServerUnreachableMonitor {
   private let accountInfo: AccountInfo?
   private let notificationHandler: EventNotificationHandler
 
+  /// ordered server URL candidates to probe during recovery — active URL first
+  private let serverURLCandidatesProvider: (@Sendable () -> [String])?
+  /// one transport-level probe; must only return true when the host answered
+  private let serverReachabilityProbe: (@Sendable (_ serverURL: String) async -> Bool)?
+  /// invoked with the first reachable URL before online mode is restored —
+  /// BackendProxy persists it as the active URL and re-provides credentials
+  private let autoRecoveryHandler: (@Sendable (_ reachableServerURL: String) async -> ())?
+  private let recoveryBackoffPolicy: ConnectivityBackoffPolicy
+  private let disconnectedPollIntervalInSeconds: TimeInterval
+
   private var consecutiveConnectivityFailures = 0
   private var isAutoOfflineActive = false
+  private var recoveryTask: Task<Void, Never>?
 
   init(
     networkMonitor: NetworkMonitorFacade,
     eventLogger: EventLogger,
     settings: AmperfySettings,
     accountInfo: AccountInfo? = nil,
-    notificationHandler: EventNotificationHandler = EventNotificationHandler()
+    notificationHandler: EventNotificationHandler = EventNotificationHandler(),
+    serverURLCandidatesProvider: (@Sendable () -> [String])? = nil,
+    serverReachabilityProbe: (@Sendable (_ serverURL: String) async -> Bool)? = nil,
+    autoRecoveryHandler: (@Sendable (_ reachableServerURL: String) async -> ())? = nil,
+    recoveryBackoffPolicy: ConnectivityBackoffPolicy = ServerUnreachableMonitor
+      .defaultRecoveryBackoffPolicy,
+    disconnectedPollIntervalInSeconds: TimeInterval = ServerUnreachableMonitor
+      .defaultDisconnectedPollIntervalInSeconds
   ) {
     self.networkMonitor = networkMonitor
     self.eventLogger = eventLogger
     self.settings = settings
     self.accountInfo = accountInfo
     self.notificationHandler = notificationHandler
+    self.serverURLCandidatesProvider = serverURLCandidatesProvider
+    self.serverReachabilityProbe = serverReachabilityProbe
+    self.autoRecoveryHandler = autoRecoveryHandler
+    self.recoveryBackoffPolicy = recoveryBackoffPolicy
+    self.disconnectedPollIntervalInSeconds = disconnectedPollIntervalInSeconds
   }
 
   /// The request reached the server (response data or an answered HTTP/API error).
@@ -288,6 +333,8 @@ actor ServerUnreachableMonitor {
     isAutoOfflineActive = true
     var mutableSettings = settings
     mutableSettings.user.isOfflineMode = true
+    // mark AFTER assigning isOfflineMode — its setter clears the flag
+    mutableSettings.user.isOfflineModeAutomaticallyActivated = true
     os_log(
       "Server unreachable %i times in a row -> activating offline mode",
       log: self.log,
@@ -304,5 +351,109 @@ actor ServerUnreachableMonitor {
       message: "Server unreachable - offline mode activated",
       displayPopup: true
     )
+    startAutoRecoveryIfNeeded()
+  }
+
+  // MARK: Auto recovery (G16)
+
+  /// True while offline mode is active *and* was auto-activated by this
+  /// monitor — this launch (`isAutoOfflineActive`) or a previous one
+  /// (the persisted flag survives app restarts).
+  private var isInAutoOfflineState: Bool {
+    settings.user.isOfflineMode && settings.user.isOfflineModeAutomaticallyActivated
+  }
+
+  /// Starts the recovery loop when offline mode was auto-activated. Called at
+  /// `BackendProxy.initialize` (covers relaunch-while-auto-offline) and each
+  /// time the latch fires. No-op for manual offline mode, while a loop is
+  /// already running, or when no probe was injected (e.g. unit tests).
+  func startAutoRecoveryIfNeeded() {
+    guard isInAutoOfflineState, recoveryTask == nil, serverReachabilityProbe != nil
+    else { return }
+    os_log("Starting server recovery loop", log: self.log, type: .info)
+    recoveryTask = Task { [weak self] in
+      await self?.runRecoveryLoop()
+    }
+  }
+
+  /// Cancels a running recovery loop (account teardown).
+  func stopAutoRecovery() {
+    recoveryTask?.cancel()
+    recoveryTask = nil
+  }
+
+  private func runRecoveryLoop() async {
+    defer { recoveryTask = nil }
+    var attempt = 0
+    while !Task.isCancelled {
+      // user toggled back online manually or cleared the auto state -> done
+      guard isInAutoOfflineState else { return }
+      // only the account that tripped the latch may restore online mode — and
+      // only while it still exists and remains the active account
+      if let accountInfo {
+        guard settings.accounts.allAccounts.contains(accountInfo),
+              settings.accounts.active == accountInfo
+        else {
+          os_log(
+            "Recovery aborted - account is gone or no longer active",
+            log: self.log,
+            type: .info
+          )
+          return
+        }
+      }
+      // no network interface -> a probe would fail instantly; poll cheaply
+      guard networkMonitor.isConnectedToNetwork else {
+        await Self.sleep(seconds: disconnectedPollIntervalInSeconds)
+        continue
+      }
+      if let reachableURL = await firstReachableServerURL() {
+        await recoverOnlineMode(reachableURL: reachableURL)
+        return
+      }
+      attempt += 1
+      await Self.sleep(seconds: recoveryBackoffPolicy.delay(forRetryAttempt: attempt))
+    }
+  }
+
+  private func firstReachableServerURL() async -> String? {
+    guard let probe = serverReachabilityProbe else { return nil }
+    for url in serverURLCandidatesProvider?() ?? [] {
+      if Task.isCancelled { return nil }
+      if await probe(url) {
+        return url
+      }
+    }
+    return nil
+  }
+
+  private func recoverOnlineMode(reachableURL: String) async {
+    consecutiveConnectivityFailures = 0
+    isAutoOfflineActive = false
+    var mutableSettings = settings
+    // the setter also clears isOfflineModeAutomaticallyActivated
+    mutableSettings.user.isOfflineMode = false
+    os_log(
+      "Server reachable again -> restoring online mode",
+      log: self.log,
+      type: .info
+    )
+    // failover happens before the notification so observers (download
+    // managers, syncers) already see the updated credentials
+    await autoRecoveryHandler?(reachableURL)
+    await notificationHandler.post(
+      name: .offlineModeChanged,
+      object: nil,
+      userInfo: ["autoOnline": true]
+    )
+    await eventLogger.info(
+      topic: "Connection",
+      message: "Server reachable again - online mode activated",
+      displayPopup: true
+    )
+  }
+
+  private static func sleep(seconds: TimeInterval) async {
+    try? await Task.sleep(for: .seconds(seconds))
   }
 }
