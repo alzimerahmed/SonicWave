@@ -1679,6 +1679,30 @@ public class LibraryStorage: PlayableFileCachable {
     return songs ?? [Song]()
   }
 
+  /// local-only dislike flag (#587, v51): both shipped backends resolve
+  /// `setDislike`/`clearDislike` to `.localOnly`, so this is the
+  /// authoritative list for the UI's disliked-songs surface
+  public func getDislikedSongs(for account: Account) -> [Song] {
+    let fetchRequest = SongMO.identifierSortedFetchRequest
+    fetchRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
+      getFetchPredicate(forAccount: account),
+      SongMO.excludeServerDeleteUncachedSongsFetchPredicate,
+      NSPredicate(format: "%K == TRUE", #keyPath(SongMO.isDisliked)),
+    ])
+    let foundSongs = try? context.fetch(fetchRequest)
+    let songs = foundSongs?.compactMap { Song(managedObject: $0) }
+    return songs ?? [Song]()
+  }
+
+  /// local-only dislike mutation (#587): writes + saves in one step —
+  /// the remote resolution (`.localOnly` on both backends) is decided by
+  /// the API layer, this only persists the local flag
+  public func setDisliked(_ isDisliked: Bool, for playable: AbstractPlayable) {
+    guard playable.isDisliked != isDisliked else { return }
+    playable.isDisliked = isDisliked
+    saveContext()
+  }
+
   public func getSongsForCompleteLibraryDownload(for account: Account) -> [Song] {
     let fetchRequest = SongMO.identifierSortedFetchRequest
     fetchRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
@@ -1918,6 +1942,31 @@ public class LibraryStorage: PlayableFileCachable {
         format: "%K == TRUE",
         #keyPath(PlaylistMO.isWatchedForAutoDownload)
       ),
+    ])
+    let foundPlaylists = try? context.fetch(fetchRequest)
+    let playlists = foundPlaylists?.compactMap { Playlist(library: self, managedObject: $0) }
+    return playlists ?? [Playlist]()
+  }
+
+  /// smart playlists (G8, CoreDataMigrationVersion v51): persisted
+  /// `isSmartPlaylist` flag OR a local `smart_` id prefix — covers both
+  /// server-imported (.nsp readonly) and user-authored criteria playlists
+  public func getSmartPlaylists(for account: Account) -> [Playlist] {
+    let fetchRequest = PlaylistMO.identifierSortedFetchRequest
+    fetchRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
+      getFetchPredicate(forAccount: account),
+      PlaylistMO.excludeSystemPlaylistsFetchPredicate,
+      NSCompoundPredicate(orPredicateWithSubpredicates: [
+        NSPredicate(
+          format: "%K == TRUE",
+          #keyPath(PlaylistMO.isSmartPlaylist)
+        ),
+        NSPredicate(
+          format: "%K BEGINSWITH %@",
+          #keyPath(PlaylistMO.id),
+          Playlist.smartPlaylistIdPrefix
+        ),
+      ]),
     ])
     let foundPlaylists = try? context.fetch(fetchRequest)
     let playlists = foundPlaylists?.compactMap { Playlist(library: self, managedObject: $0) }

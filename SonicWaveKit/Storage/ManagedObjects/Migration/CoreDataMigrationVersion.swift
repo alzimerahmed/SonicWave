@@ -62,6 +62,8 @@ enum CoreDataMigrationVersion: String, CaseIterable {
     "SonicWave v49" // Remove PlayableFile and Artwork data (they were already deprecated); Account: add apiType
   case v50 =
     "SonicWave v50" // Offline-first: AbstractPlayable.downloadTier (cache vs pinned), Playlist.isWatchedForAutoDownload, Player play-queue sync markers, Account.lastLibrarySyncDate
+  case v51 =
+    "SonicWave v51" // Smart playlists + local dislike: AbstractPlayable.isDisliked, Playlist.isSmartPlaylist/isServerReadOnly/smartCriteriaJson
 
   // MARK: - Current
 
@@ -176,6 +178,8 @@ enum CoreDataMigrationVersion: String, CaseIterable {
     case .v49:
       return .v50
     case .v50:
+      return .v51
+    case .v51:
       return nil
     }
   }

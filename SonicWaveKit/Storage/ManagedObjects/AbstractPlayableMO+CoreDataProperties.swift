@@ -39,6 +39,8 @@ extension AbstractPlayableMO {
   @NSManaged
   public var downloadTier: Int16
   @NSManaged
+  public var isDisliked: Bool
+  @NSManaged
   public var relFilePath: String?
   @NSManaged
   public var combinedDuration: Int16

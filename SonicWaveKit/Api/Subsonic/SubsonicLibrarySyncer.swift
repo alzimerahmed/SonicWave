@@ -225,6 +225,11 @@ class SubsonicLibrarySyncer: CommonLibrarySyncer, LibrarySyncer {
         delegate: parserDelegate,
         isThrowingErrorsAllowed: false
       )
+      self.applyReadonlyPlaylistFlags(
+        parserDelegate.readonlyPlaylistIds,
+        account: accountAsync,
+        library: asyncCompanion.library
+      )
     }
 
     let isSupported = try await subsonicServerApi.requestServerPodcastSupport()
@@ -1072,6 +1077,11 @@ class SubsonicLibrarySyncer: CommonLibrarySyncer, LibrarySyncer {
         library: asyncCompanion.library
       )
       try self.parse(response: response, delegate: parserDelegate)
+      self.applyReadonlyPlaylistFlags(
+        parserDelegate.readonlyPlaylistIds,
+        account: accountAsync,
+        library: asyncCompanion.library
+      )
     }
   }
 
@@ -1565,6 +1575,27 @@ class SubsonicLibrarySyncer: CommonLibrarySyncer, LibrarySyncer {
         error: error,
         data: response.data
       )
+    }
+  }
+
+  /// G8 (CoreDataMigrationVersion v51): persists the server `readonly`
+  /// flag captured by `SsPlaylistParserDelegate` — Navidrome's marker for
+  /// `.nsp`-backed smart playlists. Clears the flag on playlists the
+  /// server no longer reports readonly and marks readonly playlists smart;
+  /// the criteria themselves are fetched on demand via
+  /// `getSmartPlaylistCriteria` and persisted as `smartCriteriaJson`.
+  /// (Ampache exposes no equivalent marker — nothing wired there.)
+  nonisolated private func applyReadonlyPlaylistFlags(
+    _ readonlyPlaylistIds: Set<String>,
+    account: Account,
+    library: LibraryStorage
+  ) {
+    for playlist in library.getPlaylists(for: account) {
+      let isServerReadOnly = readonlyPlaylistIds.contains(playlist.id)
+      playlist.isServerReadOnly = isServerReadOnly
+      if isServerReadOnly {
+        playlist.isSmartPlaylist = true
+      }
     }
   }
 

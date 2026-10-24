@@ -184,9 +184,60 @@ public class Playlist: Identifyable {
     set { if managedObject.changeDate != newValue { managedObject.changeDate = newValue } }
   }
 
+  /// `true` when this playlist is criteria-driven: either the server marked
+  /// it smart (Navidrome `.nsp`-backed playlists sync `readonly="true"` →
+  /// persisted `isSmartPlaylist`, schema v51) or it was authored locally
+  /// (id carries `smartPlaylistIdPrefix`). The getter keeps the prefix check
+  /// so locally-authored playlists stay smart even without the flag set.
   public var isSmartPlaylist: Bool {
-    id.hasPrefix(Self.smartPlaylistIdPrefix)
+    get {
+      managedObject.isSmartPlaylist || id.hasPrefix(Self.smartPlaylistIdPrefix)
+    }
+    set {
+      if managedObject.isSmartPlaylist != newValue {
+        managedObject.isSmartPlaylist = newValue
+      }
+    }
   }
+
+  /// server-side write protection (v51): Navidrome flags `.nsp`-backed
+  /// smart playlists `readonly="true"` — the UI must not offer
+  /// edit/reorder/delete actions the server would reject. Populated by
+  /// `SsPlaylistParserDelegate.readonlyPlaylistIds` during playlist sync.
+  public var isServerReadOnly: Bool {
+    get { managedObject.isServerReadOnly }
+    set {
+      if managedObject.isServerReadOnly != newValue {
+        managedObject.isServerReadOnly = newValue
+      }
+    }
+  }
+
+  /// G8: typed view over `smartCriteriaJson` — persisted smart-playlist
+  /// rules (imported Navidrome `.nsp` or user-authored), evaluated by
+  /// `SmartPlaylistEvaluator`. Assigning criteria marks the playlist smart;
+  /// assigning `nil` clears the persisted rules (the `smart_` id prefix —
+  /// if present — still reports `isSmartPlaylist == true`).
+  public var smartCriteria: SmartPlaylistCriteria? {
+    get {
+      guard let json = managedObject.smartCriteriaJson,
+            let data = json.data(using: .utf8) else { return nil }
+      return try? Self.smartCriteriaDecoder.decode(SmartPlaylistCriteria.self, from: data)
+    }
+    set {
+      guard let newValue else {
+        managedObject.smartCriteriaJson = nil
+        return
+      }
+      guard let data = try? Self.smartCriteriaEncoder.encode(newValue),
+            let json = String(data: data, encoding: .utf8) else { return }
+      managedObject.smartCriteriaJson = json
+      managedObject.isSmartPlaylist = true
+    }
+  }
+
+  private static let smartCriteriaEncoder = JSONEncoder()
+  private static let smartCriteriaDecoder = JSONDecoder()
 
   public var lastPlayableIndex: Int {
     guard !playables.isEmpty else { return 0 }

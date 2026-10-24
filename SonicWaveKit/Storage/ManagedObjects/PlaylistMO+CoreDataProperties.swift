@@ -41,6 +41,10 @@ extension PlaylistMO {
   @NSManaged
   public var isCached: Bool
   @NSManaged
+  public var isServerReadOnly: Bool
+  @NSManaged
+  public var isSmartPlaylist: Bool
+  @NSManaged
   public var isWatchedForAutoDownload: Bool
   @NSManaged
   public var lastPlayedDate: Date?
@@ -52,6 +56,8 @@ extension PlaylistMO {
   public var remoteDuration: Int64
   @NSManaged
   public var remoteSongCount: Int16
+  @NSManaged
+  public var smartCriteriaJson: String?
   @NSManaged
   public var songCount: Int16
   @NSManaged

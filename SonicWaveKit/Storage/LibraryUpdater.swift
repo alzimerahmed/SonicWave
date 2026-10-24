@@ -249,6 +249,25 @@ public class LibraryUpdater {
         type: .info
       )
     }
+    if storage.settings.app.librarySyncVersion < .v23 {
+      storage
+        .settings.app.librarySyncVersion =
+        .v23 // if App crashes don't do this step again -> This step is only for convenience
+      os_log(
+        "Perform blocking library update (START): Smart playlist + dislike attributes",
+        log: self.log,
+        type: .info
+      )
+      // no backfill needed: isDisliked/isSmartPlaylist/isServerReadOnly
+      // default to false and smartCriteriaJson to nil — the correct
+      // semantic for pre-v51 rows; flags are populated by the next
+      // playlist sync (readonly flag) / criteria import
+      os_log(
+        "Perform blocking library update (DONE): Smart playlist + dislike attributes",
+        log: self.log,
+        type: .info
+      )
+    }
   }
 
   /// Two-tier storage (G6, CoreDataMigrationVersion v50):

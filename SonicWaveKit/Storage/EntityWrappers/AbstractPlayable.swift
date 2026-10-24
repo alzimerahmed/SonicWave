@@ -342,6 +342,20 @@ public class AbstractPlayable: AbstractLibraryEntity, Downloadable {
     downloadTier == .pinned
   }
 
+  /// local-only dislike flag (#587, CoreDataMigrationVersion v51): both
+  /// shipped backends resolve `setDislike`/`clearDislike` to `.localOnly`
+  /// (Subsonic rating=0 would destroy the user's stars; the Ampache flag
+  /// is favorites-only), so the flag lives purely in the local mirror —
+  /// consumed by `SmartPlaylistField.disliked` predicates and UI badges.
+  public var isDisliked: Bool {
+    get { playableManagedObject.isDisliked }
+    set {
+      if playableManagedObject.isDisliked != newValue {
+        playableManagedObject.isDisliked = newValue
+      }
+    }
+  }
+
   public var relFilePath: URL? {
     get {
       if let relFilePathString = playableManagedObject.relFilePath {
