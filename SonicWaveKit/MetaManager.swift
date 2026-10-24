@@ -127,6 +127,23 @@ public class MetaManager {
     self.localNotificationManager = localNotificationManager
   }
 
+  private var playQueueSyncer: PlayQueueSyncer?
+  internal func createPlayQueueSyncer(
+    player: PlayerFacade
+  )
+    -> PlayQueueSyncer {
+    if let playQueueSyncer { return playQueueSyncer }
+    playQueueSyncer = PlayQueueSyncer(
+      player: player,
+      networkMonitor: networkMonitor,
+      account: account,
+      storage: storage,
+      librarySyncer: librarySyncer,
+      eventLogger: eventLogger
+    )
+    return playQueueSyncer!
+  }
+
   private var scrobbleSyncer: ScrobbleSyncer?
   internal func createScrobbleSyncer(
     player: PlayerFacade
@@ -306,6 +323,9 @@ public class MetaManager {
     backgroundLibrarySyncer.start()
     let scrobbler = createScrobbleSyncer(player: player)
     player.addNotifier(notifier: scrobbler)
+    let queueSyncer = createPlayQueueSyncer(player: player)
+    player.addNotifier(notifier: queueSyncer)
+    queueSyncer.start()
   }
 
   public func startManagerForNormalOperation(player: PlayerFacade) {
@@ -317,12 +337,17 @@ public class MetaManager {
     let scrobbler = createScrobbleSyncer(player: player)
     player.addNotifier(notifier: scrobbler)
     scrobbler.start()
+    let queueSyncer = createPlayQueueSyncer(player: player)
+    player.addNotifier(notifier: queueSyncer)
+    queueSyncer.start()
   }
 
   public func stopManager() {
     os_log("Start meta managers", log: self.log, type: .info)
     scrobbleSyncer?.stop()
     scrobbleSyncer = nil
+    playQueueSyncer?.stop()
+    playQueueSyncer = nil
     backgroundLibrarySyncer.stop()
     artworkDownloadManager.stop()
     playableDownloadManager.stop()

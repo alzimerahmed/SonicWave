@@ -49,6 +49,21 @@ class SsXmlParser: GenericXmlParser {
   }
 }
 
+// MARK: - SubsonicDateParser
+
+/// Subsonic emits ISO-8601 timestamps both with and without fractional
+/// seconds depending on server/version — accept either form.
+enum SubsonicDateParser {
+  static func parse(_ rawValue: String?) -> Date? {
+    guard let rawValue else { return nil }
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    if let date = formatter.date(from: rawValue) { return date }
+    formatter.formatOptions = [.withInternetDateTime]
+    return formatter.date(from: rawValue)
+  }
+}
+
 // MARK: - SsNotifiableXmlParser
 
 class SsNotifiableXmlParser: SsXmlParser {

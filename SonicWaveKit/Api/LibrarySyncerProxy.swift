@@ -140,6 +140,16 @@ extension LibrarySyncerProxy: LibrarySyncer {
   }
 
   @MainActor
+  func syncUpload(playQueue: PlayQueueSnapshot) async throws {
+    try await activeSyncer.syncUpload(playQueue: playQueue)
+  }
+
+  @MainActor
+  func syncDownRemotePlayQueue() async throws -> RemotePlayQueue? {
+    try await activeSyncer.syncDownRemotePlayQueue()
+  }
+
+  @MainActor
   func searchArtists(searchText: String) async throws {
     try await activeSyncer.searchArtists(searchText: searchText)
   }

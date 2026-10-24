@@ -843,6 +843,53 @@ final class SubsonicServerApi: URLCleanser, Sendable {
     }
   }
 
+  /// G9: fetch the server-side play queue (Subsonic API >= 1.12.0)
+  public func requestPlayQueue() async throws -> APIDataResponse {
+    try await request { version in
+      let urlComp = try self.createAuthApiUrlComponent(version: version, forAction: "getPlayQueue")
+      return try self.createUrl(from: urlComp)
+    }
+  }
+
+  /// G9: persist the local play queue on the server (`savePlayQueue`):
+  /// `id` repeated per song, `current` = playing song id, `position` = ms
+  public func requestSavePlayQueue(
+    songIds: [String],
+    currentSongId: String?,
+    positionInMilliseconds: Int
+  ) async throws
+    -> APIDataResponse {
+    try await request { version in
+      var urlComp = try self.createAuthApiUrlComponent(
+        version: version,
+        forAction: "savePlayQueue"
+      )
+      Self.appendPlayQueueQueryItems(
+        to: &urlComp,
+        songIds: songIds,
+        currentSongId: currentSongId,
+        positionInMilliseconds: positionInMilliseconds
+      )
+      return try self.createUrl(from: urlComp)
+    }
+  }
+
+  /// extracted for testability — one `id` item per song keeps order
+  static func appendPlayQueueQueryItems(
+    to urlComp: inout URLComponents,
+    songIds: [String],
+    currentSongId: String?,
+    positionInMilliseconds: Int
+  ) {
+    for songId in songIds {
+      urlComp.addQueryItem(name: "id", value: songId)
+    }
+    if let currentSongId {
+      urlComp.addQueryItem(name: "current", value: currentSongId)
+    }
+    urlComp.addQueryItem(name: "position", value: positionInMilliseconds)
+  }
+
   public func requestRadios() async throws -> APIDataResponse {
     try await request { version in
       let urlComp = try self.createAuthApiUrlComponent(

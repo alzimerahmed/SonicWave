@@ -132,6 +132,50 @@ public struct LyricsLine {
   }
 }
 
+// MARK: - PlayQueueSnapshot
+
+/// local play queue state serialised for upload to the server (G9;
+/// Subsonic `savePlayQueue`). Only songs are mirrored — podcast episodes
+/// and radios have no server play-queue representation.
+public struct PlayQueueSnapshot: Sendable {
+  public let songIds: [String]
+  public let currentSongId: String?
+  public let positionInMilliseconds: Int
+
+  public init(songIds: [String], currentSongId: String?, positionInMilliseconds: Int) {
+    self.songIds = songIds
+    self.currentSongId = currentSongId
+    self.positionInMilliseconds = positionInMilliseconds
+  }
+}
+
+// MARK: - RemotePlayQueue
+
+/// server-side play queue state (G9; Subsonic `getPlayQueue` response):
+/// ordered song ids + the current item + the playback position +
+/// `changed`/`changedBy` conflict-resolution metadata
+public struct RemotePlayQueue: Sendable {
+  public let songIds: [String]
+  public let currentSongId: String?
+  public let positionInMilliseconds: Int
+  public let changedDate: Date?
+  public let changedBy: String?
+
+  public init(
+    songIds: [String],
+    currentSongId: String?,
+    positionInMilliseconds: Int,
+    changedDate: Date?,
+    changedBy: String?
+  ) {
+    self.songIds = songIds
+    self.currentSongId = currentSongId
+    self.positionInMilliseconds = positionInMilliseconds
+    self.changedDate = changedDate
+    self.changedBy = changedBy
+  }
+}
+
 // MARK: - LibrarySyncer
 
 public protocol LibrarySyncer: Sendable {
@@ -173,6 +217,15 @@ public protocol LibrarySyncer: Sendable {
   func syncUpload(playlistIdToDelete id: String) async throws
   @MainActor
   func syncDownPodcastsWithoutEpisodes() async throws
+  /// G9: upload the local play queue to the server (`savePlayQueue`).
+  /// Backends without a server play queue (Ampache) degrade to a no-op.
+  @MainActor
+  func syncUpload(playQueue: PlayQueueSnapshot) async throws
+  /// G9: fetch the server-side play queue (`getPlayQueue`).
+  /// Returns `nil` when the backend has no play-queue support (Ampache)
+  /// or the server stores no queue.
+  @MainActor
+  func syncDownRemotePlayQueue() async throws -> RemotePlayQueue?
   @MainActor
   func searchArtists(searchText: String) async throws
   @MainActor
