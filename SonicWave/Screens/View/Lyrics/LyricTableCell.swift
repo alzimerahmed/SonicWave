@@ -119,7 +119,9 @@ class LyricTableCellModel {
     )
     if let words = syncedLine?.words,
        !words.isEmpty,
-       words.map(\.value).joined() == lyric.value {
+       words.map(\.value).joined(separator: " ")
+       .trimmingCharacters(in: .whitespaces) ==
+       lyric.value.trimmingCharacters(in: .whitespaces) {
       let karaoke = NSMutableAttributedString()
       for (index, word) in words.enumerated() {
         var attributes: [NSAttributedString.Key: Any] = [
@@ -133,7 +135,13 @@ class LyricTableCellModel {
             attributes[.foregroundColor] = accentColor
           }
         }
-        karaoke.append(NSAttributedString(string: word.value, attributes: attributes))
+        // word stamps store trimmed values — re-insert the separator
+        // the plain line shows between words
+        let separator = index + 1 < words.count ? " " : ""
+        karaoke.append(NSAttributedString(
+          string: word.value + separator,
+          attributes: attributes
+        ))
       }
       highlightedAttributedString = karaoke
     } else {
@@ -225,6 +233,6 @@ class LyricTableCell: UITableViewCell {
       "Double-tap to play from this line",
       comment: "VoiceOver hint on a seekable synced-lyric line"
     ) : nil
-    accessibilityTraits = model.isSeekable ? [.staticText, .button] : .staticText
+    accessibilityTraits = model.isSeekable ? .button : .staticText
   }
 }

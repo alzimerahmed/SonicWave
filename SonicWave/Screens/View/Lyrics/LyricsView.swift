@@ -199,7 +199,8 @@ class LyricsView: UITableView, UITableViewDataSource, UITableViewDelegate {
     }()
 
     let newIndex = activeLine?.index
-    if newIndex != lastIndex {
+    let isIndexChange = newIndex != lastIndex
+    if isIndexChange {
       var toReconfigure = [IndexPath]()
       if let lastIndex, let oldModel = lyricModels.object(at: lastIndex) {
         oldModel.isActiveLine = false
@@ -220,7 +221,9 @@ class LyricsView: UITableView, UITableViewDataSource, UITableViewDelegate {
        newModel.activeWordIndex != wordIndex {
       newModel.activeWordIndex = wordIndex
     }
-    if isAutoScrollAllowed, let newIndex {
+    // scroll only on a real line change — the tracker ticks at ~10 Hz
+    // and re-scrolling to the same row every tick is wasted work
+    if isAutoScrollAllowed, isIndexChange, let newIndex {
       scrollToRow(
         at: IndexPath(row: newIndex, section: 0),
         at: .middle,
