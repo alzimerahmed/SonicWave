@@ -1,0 +1,162 @@
+name: CI
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# New push on a ref cancels the still-running stale job for that ref.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  XCODE_PROJECT: Amperfy.xcodeproj
+  XCODE_SCHEME: Amperfy
+  DERIVED_DATA: DerivedData
+  # Checkout dir for the pinned SPM deps (10 top-level + transitive) — cached.
+  SPM_PACKAGES_DIR: .spm-source-packages
+  # "iPhone 17" exists on every iOS 26.x sim runtime on the macos-26 image.
+  # OS=latest deliberately avoids pinning a patch version — the image's
+  # "iOS 26.0" runtime is actually 26.0.1 and a literal OS=26.0 match broke
+  # CI for many repos in Oct 2025 (runner-images issue #13220).
+  IOS_DESTINATION: platform=iOS Simulator,name=iPhone 17,OS=latest
+
+jobs:
+  build-and-test:
+    name: Build & Test (iOS Simulator)
+    # arm64 image, macOS 26 Tahoe. Default Xcode = 26.6 (also 26.0.1…26.5
+    # installed side-by-side). Sim runtimes: iOS 26.0–26.5.
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Select Xcode
+        run: |
+          # /Applications/Xcode.app always symlinks to the image default
+          # (currently Xcode_26.6.app) — survives image version bumps.
+          sudo xcode-select -s /Applications/Xcode.app
+          xcodebuild -version
+          # Diagnostic: logged sim runtimes/devices help debug destination issues.
+          xcrun simctl list devices available
+
+      - name: Cache SPM checkouts + SwiftFormat binary
+        uses: actions/cache@v4
+        with:
+          # .spm-source-packages: cloned dep checkouts (all Package.resolved pins).
+          # org.swift.swiftpm: SPM's shared bare-repo cache (feeds the clones).
+          # BuildTools/.build: the AmperfyKitTests "SwiftFormat" build phase runs
+          # applyFormat.sh, which compiles SwiftFormat from source on first run
+          # (~2–4 min on the 3-core runner). Restoring .build skips that compile.
+          path: |
+            ${{ env.SPM_PACKAGES_DIR }}
+            ~/Library/Caches/org.swift.swiftpm
+            BuildTools/.build
+          key: ${{ runner.os }}-xcode-spm-${{ hashFiles('**/Package.resolved') }}
+          restore-keys: ${{ runner.os }}-xcode-spm-
+
+      - name: Resolve Swift package dependencies
+        run: >
+          xcodebuild -resolvePackageDependencies
+          -project "$XCODE_PROJECT" -scheme "$XCODE_SCHEME"
+          -clonedSourcePackagesDirPath "$SPM_PACKAGES_DIR"
+
+      - name: Build app + hosted test bundle (unsigned simulator)
+        # AmperfyKitTests is a hosted bundle (TEST_HOST = Amperfy.app), so this
+        # must build the whole app, not just the test target.
+        # GHA's default shell already runs bash with -eo pipefail, so xcodebuild's
+        # exit code propagates through tee.
+        run: >
+          xcodebuild build-for-testing
+          -project "$XCODE_PROJECT" -scheme "$XCODE_SCHEME"
+          -configuration Debug
+          -destination "$IOS_DESTINATION"
+          -derivedDataPath "$DERIVED_DATA"
+          -clonedSourcePackagesDirPath "$SPM_PACKAGES_DIR"
+          CODE_SIGNING_ALLOWED=NO
+          2>&1 | tee xcodebuild-build.log
+
+      - name: Run AmperfyKitTests
+        # -only-testing is belt-and-suspenders: the scheme's TestAction was
+        # already patched to list only AmperfyKitTests (dead AmperfyTests /
+        # AmperfyUITests refs removed) — build-for-testing resolves every
+        # TestableReference, so the fix had to land in the scheme itself.
+        run: >
+          xcodebuild test-without-building
+          -project "$XCODE_PROJECT" -scheme "$XCODE_SCHEME"
+          -destination "$IOS_DESTINATION"
+          -derivedDataPath "$DERIVED_DATA"
+          -only-testing:AmperfyKitTests
+          -clonedSourcePackagesDirPath "$SPM_PACKAGES_DIR"
+          -resultBundlePath TestResults.xcresult
+          2>&1 | tee xcodebuild-test.log
+
+      - name: Upload logs + test results on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-failure-logs-ios
+          path: |
+            xcodebuild-*.log
+            TestResults.xcresult
+          if-no-files-found: ignore
+          retention-days: 7
+
+  mac-catalyst-build:
+    # EXPERIMENTAL: unsigned Catalyst build. Entitlements (CarPlay/Siri/background
+    # modes) only matter at signing/runtime, and all SPM deps should compile for
+    # the platform, but this hasn't been verified — continue-on-error until proven.
+    name: Mac Catalyst Build (experimental)
+    runs-on: macos-26
+    timeout-minutes: 30
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Cache SPM checkouts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.SPM_PACKAGES_DIR }}
+            ~/Library/Caches/org.swift.swiftpm
+          key: ${{ runner.os }}-xcode-spm-${{ hashFiles('**/Package.resolved') }}
+          restore-keys: ${{ runner.os }}-xcode-spm-
+
+      - name: Resolve Swift package dependencies
+        run: >
+          xcodebuild -resolvePackageDependencies
+          -project "$XCODE_PROJECT" -scheme "$XCODE_SCHEME"
+          -clonedSourcePackagesDirPath "$SPM_PACKAGES_DIR"
+
+      # Plain `build` only builds the scheme's BuildAction (the app) — the
+      # SwiftFormat phase lives on AmperfyKitTests and never runs here.
+      - name: Build for Mac Catalyst (unsigned)
+        run: >
+          xcodebuild build
+          -project "$XCODE_PROJECT" -scheme "$XCODE_SCHEME"
+          -configuration Debug
+          -destination 'platform=macOS,variant=Mac Catalyst'
+          -derivedDataPath "$DERIVED_DATA"
+          -clonedSourcePackagesDirPath "$SPM_PACKAGES_DIR"
+          CODE_SIGNING_ALLOWED=NO
+          2>&1 | tee xcodebuild-catalyst.log
+
+      - name: Upload log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-failure-logs-catalyst
+          path: xcodebuild-catalyst.log
+          if-no-files-found: ignore
+          retention-days: 7

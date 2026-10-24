@@ -41,7 +41,7 @@ struct SupportSettingsView: View {
             title: "Report an issue on GitHub",
             splitPercentage: splitPercentage
           ) {
-            if let url = URL(string: "https://github.com/BLeeEZ/amperfy/issues") {
+            if let url = URL(string: "https://github.com/alzimerahmed/SonicWave/issues") {
               UIApplication.shared.open(url)
             }
           }
@@ -79,7 +79,7 @@ struct SupportSettingsView: View {
           \n
           --- Please don't remove the attachment ---
           """,
-          recipients: ["amperfy@familie-zimba.de"],
+          recipients: ["alzimerahmed84@gmail.com"],
           attachments: [MailAttachment(
             data: LogData.collectInformation(amperfyData: AmperKit.shared).asJSONData(),
             mimeType: "application/json",

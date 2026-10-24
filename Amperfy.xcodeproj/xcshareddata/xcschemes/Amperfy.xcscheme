@@ -41,26 +41,6 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "508385F721C5965E00C4BB32"
-               BuildableName = "AmperfyTests.xctest"
-               BlueprintName = "AmperfyTests"
-               ReferencedContainer = "container:Amperfy.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
-         <TestableReference
-            skipped = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "5083860221C5965E00C4BB32"
-               BuildableName = "AmperfyUITests.xctest"
-               BlueprintName = "AmperfyUITests"
-               ReferencedContainer = "container:Amperfy.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
-         <TestableReference
-            skipped = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
                BlueprintIdentifier = "50C9D60D284FA847007F18D0"
                BuildableName = "AmperfyKitTests.xctest"
                BlueprintName = "AmperfyKitTests"

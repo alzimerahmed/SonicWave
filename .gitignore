@@ -72,3 +72,13 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
+
+# Devin agent system & private knowledge layer — never commit
+.devin/
+.switchboard/
+docs/
+
+# CI workspace dirs
+.spm-source-packages/
+*.xcresult/
+xcodebuild-*.log

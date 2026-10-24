@@ -2,8 +2,8 @@
 //  THEFILENAME
 //  THEMODULENAME
 //
-//  Created by Maximilian Bauer on THEDATE.
-//  Copyright (c) THEYEAR Maximilian Bauer. All rights reserved.
+//  Created by Alzimer Ahmed on THEDATE.
+//  Copyright (c) THEYEAR Alzimer Ahmed. All rights reserved.
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by

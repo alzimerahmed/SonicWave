@@ -36,7 +36,7 @@ final public class MOCK_PerformanceMonitor: ThreadPerformanceMonitor {
 // MARK: - Helper
 
 class Helper {
-  static let testURL = URL(string: "https://github.com/BLeeEZ/amperfy")!
+  static let testURL = URL(string: "https://github.com/alzimerahmed/SonicWave")!
 }
 
 extension XCTestCase {
