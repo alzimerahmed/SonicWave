@@ -104,6 +104,22 @@ class DownloadsVC: SingleFetchedResultsTableViewController<DownloadMO> {
     tableView.reloadData()
   }
 
+  override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+    #if targetEnvironment(macCatalyst)
+      // on iOS PlayableTableCell already starts playback on single tap;
+      // on Mac a single click selects only, so play here when enabled
+      guard appDelegate.storage.settings.user.isRowTapPlaybackEnabled,
+            let playable = fetchedResultsController.getWrappedEntity(at: indexPath)
+            .element as? AbstractPlayable,
+            playable.isCached || appDelegate.storage.settings.user.isOnlineMode
+      else { return }
+      tableView.cellForRow(at: indexPath)?.animateActivation()
+      Haptics.success
+        .vibrate(isHapticsEnabled: appDelegate.storage.settings.user.isHapticsEnabled)
+      appDelegate.player.play(context: PlayContext(containable: playable))
+    #endif
+  }
+
   func convertCellViewToPlayContext(cell: UITableViewCell) -> PlayContext? {
     guard let indexPath = tableView.indexPath(for: cell) else { return nil }
     let downdload = fetchedResultsController.getWrappedEntity(at: indexPath)

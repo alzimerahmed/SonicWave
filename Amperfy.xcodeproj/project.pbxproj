@@ -208,6 +208,7 @@
 		50BE5D542850F4E700156FC6 /* SubsonicVersionTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50E964AE25E8E25E00E3210F /* SubsonicVersionTest.swift */; };
 		50BE5D552850F4E700156FC6 /* UtilitiesTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5090963726496A9500DD9826 /* UtilitiesTest.swift */; };
 		B5A5CE010000000000000001 /* ShareSongActionTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5A5CE010000000000000002 /* ShareSongActionTest.swift */; };
+		B5A5CE010000000000000003 /* ConnectivityResilienceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5A5CE010000000000000004 /* ConnectivityResilienceTests.swift */; };
 		50BE5D562850F4E700156FC6 /* PlayQueueHandlerTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5011712D27453D1300B7C08D /* PlayQueueHandlerTest.swift */; };
 		50BE5D572850F4F600156FC6 /* album_missing_artistId.xml in Resources */ = {isa = PBXBuildFile; fileRef = 50ED2B9227BB932700331BF7 /* album_missing_artistId.xml */; };
 		50BE5D582850F4F600156FC6 /* artist_example_1.xml in Resources */ = {isa = PBXBuildFile; fileRef = 50AB92C526661F5800DCE45C /* artist_example_1.xml */; };
@@ -301,7 +302,6 @@
 		50C3B9AE2EED882D00F5CAB7 /* SettingEnumerations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50C3B9AD2EED882D00F5CAB7 /* SettingEnumerations.swift */; };
 		50C9D609284FA847007F18D0 /* AmperfyKit.docc in Sources */ = {isa = PBXBuildFile; fileRef = 50C9D608284FA847007F18D0 /* AmperfyKit.docc */; };
 		50C9D60F284FA847007F18D0 /* AmperfyKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 50C9D605284FA847007F18D0 /* AmperfyKit.framework */; };
-		50C9D616284FA847007F18D0 /* AmpertyKitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50C9D615284FA847007F18D0 /* AmpertyKitTests.swift */; };
 		50C9D617284FA847007F18D0 /* AmperfyKit.h in Headers */ = {isa = PBXBuildFile; fileRef = 50C9D607284FA847007F18D0 /* AmperfyKit.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		50C9D61A284FA847007F18D0 /* AmperfyKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 50C9D605284FA847007F18D0 /* AmperfyKit.framework */; };
 		50C9D61B284FA847007F18D0 /* AmperfyKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 50C9D605284FA847007F18D0 /* AmperfyKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -845,6 +845,7 @@
 		509001C227182A4700A8056D /* CatalogParserDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatalogParserDelegate.swift; sourceTree = "<group>"; };
 		5090963726496A9500DD9826 /* UtilitiesTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UtilitiesTest.swift; sourceTree = "<group>"; };
 		B5A5CE010000000000000002 /* ShareSongActionTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSongActionTest.swift; sourceTree = "<group>"; };
+		B5A5CE010000000000000004 /* ConnectivityResilienceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectivityResilienceTests.swift; sourceTree = "<group>"; };
 		509357512E3BF47800CD4075 /* MiniPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniPlayerView.swift; sourceTree = "<group>"; };
 		509362EC28E041FF005C2AAC /* Amperfy v28.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "Amperfy v28.xcdatamodel"; sourceTree = "<group>"; };
 		50947E0227DA011F00C368D7 /* ScrobbleEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrobbleEntry.swift; sourceTree = "<group>"; };
@@ -1006,7 +1007,6 @@
 		50C9D607284FA847007F18D0 /* AmperfyKit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AmperfyKit.h; sourceTree = "<group>"; };
 		50C9D608284FA847007F18D0 /* AmperfyKit.docc */ = {isa = PBXFileReference; lastKnownFileType = folder.documentationcatalog; path = AmperfyKit.docc; sourceTree = "<group>"; };
 		50C9D60E284FA847007F18D0 /* AmperfyKitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AmperfyKitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		50C9D615284FA847007F18D0 /* AmpertyKitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmpertyKitTests.swift; sourceTree = "<group>"; };
 		50C9D6E5284FABCB007F18D0 /* AudioPlayer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
 		50C9D6E8284FACAF007F18D0 /* ArtworkCollection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtworkCollection.swift; sourceTree = "<group>"; };
 		50C9D6EA284FAD51007F18D0 /* PodcastsShowType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastsShowType.swift; sourceTree = "<group>"; };
@@ -1573,6 +1573,7 @@
 			children = (
 				5090963726496A9500DD9826 /* UtilitiesTest.swift */,
 				B5A5CE010000000000000002 /* ShareSongActionTest.swift */,
+				B5A5CE010000000000000004 /* ConnectivityResilienceTests.swift */,
 			);
 			path = Common;
 			sourceTree = "<group>";
@@ -1913,7 +1914,6 @@
 		50C9D614284FA847007F18D0 /* AmperfyKitTests */ = {
 			isa = PBXGroup;
 			children = (
-				50C9D615284FA847007F18D0 /* AmpertyKitTests.swift */,
 				50E6BCA223B8F22E005C1DDA /* Cases */,
 				50B798B023B7F4E900551E62 /* Helper */,
 			);
@@ -2875,6 +2875,7 @@
 				50AE79BC2C1F6ADF0085CBB3 /* SsOpenSubsonicExtensionsParserTest.swift in Sources */,
 				50BE5D552850F4E700156FC6 /* UtilitiesTest.swift in Sources */,
 				B5A5CE010000000000000001 /* ShareSongActionTest.swift in Sources */,
+				B5A5CE010000000000000003 /* ConnectivityResilienceTests.swift in Sources */,
 				50BE5D6A2850F4FB00156FC6 /* SsAlbumParserTest.swift in Sources */,
 				50BE5D702850F4FB00156FC6 /* SsIndexesParserTest.swift in Sources */,
 				50BE5D712850F4FB00156FC6 /* SsMusicFolderParserTest.swift in Sources */,
@@ -2887,7 +2888,6 @@
 				50BE5D792850F4FB00156FC6 /* SsDirectoriesExample2ParserTest.swift in Sources */,
 				50BE5D4E2850F4C900156FC6 /* PlayerDataTest.swift in Sources */,
 				502B8A532EE0D354004CA3AD /* AccountTest.swift in Sources */,
-				50C9D616284FA847007F18D0 /* AmpertyKitTests.swift in Sources */,
 				50BE5D4D2850F4C900156FC6 /* ArtworkTest.swift in Sources */,
 				50BE5D932850F51E00156FC6 /* CoreDataSeeder.swift in Sources */,
 				50BE5D922850F50F00156FC6 /* PlaylistsParserTest.swift in Sources */,

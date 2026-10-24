@@ -338,7 +338,11 @@ class DirectoriesVC: MultiSourceTableViewController {
   }
 
   override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-    guard indexPath.section == 0, let navController = navigationController else { return }
+    guard indexPath.section == 0, let navController = navigationController else {
+      // section 1 lists songs: forward to one-tap row playback when enabled
+      super.tableView(tableView, didSelectRowAt: indexPath)
+      return
+    }
 
     let selectedDirectory = subdirectoriesFetchedResultsController.getWrappedEntity(at: IndexPath(
       row: indexPath.row,

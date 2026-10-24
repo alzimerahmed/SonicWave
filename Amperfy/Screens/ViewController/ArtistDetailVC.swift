@@ -347,7 +347,9 @@ class ArtistDetailVC: MultiSourceTableViewController {
         AppStoryboard.Main.segueToAlbumDetail(account: account, album: album),
         animated: true
       )
-    case LibraryElement.Song.rawValue: break
+    case LibraryElement.Song.rawValue:
+      // forwards to one-tap row playback when enabled in settings
+      super.tableView(tableView, didSelectRowAt: indexPath)
     default: break
     }
   }

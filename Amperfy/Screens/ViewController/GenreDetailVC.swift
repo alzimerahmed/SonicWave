@@ -147,11 +147,12 @@ class GenreDetailVC: MultiSourceTableViewController {
         ))
         return PlayContext(containable: entity)
       case LibraryElement.Song.rawValue:
-        let entity = self.songsFetchedResultsController.getWrappedEntity(at: IndexPath(
+        // full genre queue like the cell/context-menu play path, not a
+        // single-song context
+        return self.convertIndexPathToPlayContext(songIndexPath: IndexPath(
           row: indexPath.row,
           section: 0
         ))
-        return PlayContext(containable: entity)
       default:
         return nil
       }
@@ -401,7 +402,9 @@ class GenreDetailVC: MultiSourceTableViewController {
         AppStoryboard.Main.segueToAlbumDetail(account: account, album: album),
         animated: true
       )
-    case LibraryElement.Song.rawValue: break
+    case LibraryElement.Song.rawValue:
+      // forwards to one-tap row playback when enabled in settings
+      super.tableView(tableView, didSelectRowAt: indexPath)
     default: break
     }
   }

@@ -460,7 +460,10 @@ class SearchVC: BasicTableViewController {
       let history = searchHistory[indexPath.row]
       guard let container = history.searchedPlayableContainable else { break }
       let _ = appDelegate.storage.main.library.createOrUpdateSearchHistory(container: container)
-      if !(container is Song) {
+      if container is Song {
+        // forwards to one-tap row playback when enabled in settings
+        super.tableView(tableView, didSelectRowAt: indexPath)
+      } else {
         EntityPreviewActionBuilder(container: container, on: self).performPreviewTransition()
       }
     case .Playlist:
@@ -487,6 +490,8 @@ class SearchVC: BasicTableViewController {
     case .Song:
       let song = songs[indexPath.row]
       let _ = appDelegate.storage.main.library.createOrUpdateSearchHistory(container: song)
+      // forwards to one-tap row playback when enabled in settings
+      super.tableView(tableView, didSelectRowAt: indexPath)
     case .none: break
     }
     appDelegate.storage.main.library.saveContext()

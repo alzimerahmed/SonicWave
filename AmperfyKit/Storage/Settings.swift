@@ -177,6 +177,13 @@ public struct UserSettings: Sendable, Codable {
     set { _isAutoplayEnabled = newValue }
   }
 
+  // optional backing to stay decodable for settings stored before this key existed
+  private var _isRowTapPlaybackEnabled: Bool? = nil
+  public var isRowTapPlaybackEnabled: Bool {
+    get { _isRowTapPlaybackEnabled ?? false }
+    set { _isRowTapPlaybackEnabled = newValue }
+  }
+
   private var _isHapticsEnabled: Bool = true
   public var isHapticsEnabled: Bool {
     get { _isHapticsEnabled }

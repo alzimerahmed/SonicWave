@@ -186,6 +186,11 @@ class SettingsHostVC: UIViewController {
     changesAgent.append(settings.$isPlaybackStartOnlyOnPlay.sink(receiveValue: { newValue in
       self.appDelegate.storage.settings.user.isPlaybackStartOnlyOnPlay = newValue
     }))
+
+    settings.isRowTapPlaybackEnabled = appDelegate.storage.settings.user.isRowTapPlaybackEnabled
+    changesAgent.append(settings.$isRowTapPlaybackEnabled.sink(receiveValue: { newValue in
+      self.appDelegate.storage.settings.user.isRowTapPlaybackEnabled = newValue
+    }))
     settings.isPlayerSongPlaybackResumeEnabled = appDelegate.storage.settings.user
       .isPlayerSongPlaybackResumeEnabled
     changesAgent.append(settings.$isPlayerSongPlaybackResumeEnabled.sink(receiveValue: { newValue in

@@ -149,9 +149,23 @@ class TabBarVC: UITabBarController {
       }
     )
 
-    if appDelegate.storage.settings.user.isOfflineMode {
-      appDelegate.eventLogger.info(topic: "Reminder", message: "Offline Mode is active.")
-    }
+    appDelegate.notificationHandler.register(
+      self,
+      selector: #selector(handleOfflineModeChanged),
+      name: .offlineModeChanged,
+      object: nil
+    )
+  }
+
+  /// Shows a single banner when offline mode gets activated manually. Automatic
+  /// transitions show their own notice via ServerUnreachableMonitor; the
+  /// persistent offline state itself is indicated via the navigation bar.
+  @objc
+  func handleOfflineModeChanged(_ notification: Notification) {
+    guard !(notification.userInfo?["autoOffline"] as? Bool ?? false),
+          appDelegate.storage.settings.user.isOfflineMode
+    else { return }
+    appDelegate.eventLogger.info(topic: "Reminder", message: "Offline Mode is active.")
   }
 
   private func mainContent() -> UIView {

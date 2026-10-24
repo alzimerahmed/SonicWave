@@ -121,10 +121,13 @@ class BasicTableViewController: KeyCommandTableViewController {
   override func viewDidLoad() {
     super.viewDidLoad()
     tableView.keyboardDismissMode = .onDrag
+    registerOfflineModeIndicator()
   }
 
   override func viewIsAppearing(_ animated: Bool) {
     super.viewIsAppearing(animated)
+
+    updateOfflineModeBarButtonItem()
 
     if searchController.searchBar.scopeButtonTitles?.count ?? 0 > 1,
        appDelegate.storage.settings.user.isOfflineMode {
@@ -245,6 +248,24 @@ class BasicTableViewController: KeyCommandTableViewController {
   )
     -> CGFloat {
     0.0
+  }
+
+  override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+    guard appDelegate.storage.settings.user.isRowTapPlaybackEnabled,
+          !tableView.isEditing,
+          let playable = containableAtIndexPathCallback?(indexPath) as? AbstractPlayable,
+          playable.isCached || appDelegate.storage.settings.user.isOnlineMode,
+          let playContext = playContextAtIndexPathCallback?(indexPath)
+    else { return }
+    #if !targetEnvironment(macCatalyst)
+      // PlayableTableCell starts playback on single tap itself via a cell
+      // gesture recognizer; skip it here to not play the context twice.
+      guard !(tableView.cellForRow(at: indexPath) is PlayableTableCell) else { return }
+    #endif
+    tableView.cellForRow(at: indexPath)?.animateActivation()
+    searchController.searchBar.endEditing(true)
+    Haptics.success.vibrate(isHapticsEnabled: appDelegate.storage.settings.user.isHapticsEnabled)
+    appDelegate.player.play(context: playContext)
   }
 
   override func tableView(
@@ -462,3 +483,62 @@ extension BasicTableViewController: UISearchBarDelegate {
 // MARK: UISearchControllerDelegate
 
 extension BasicTableViewController: UISearchControllerDelegate {}
+
+// MARK: - OfflineModeBarButtonItem
+
+/// Tag type used to identify the offline mode indicator in `leftBarButtonItems`.
+private final class OfflineModeBarButtonItem: UIBarButtonItem {}
+
+// MARK: - Offline mode indicator
+
+extension UIViewController {
+  /// Registers for offline mode changes and shows the indicator right away.
+  /// Call once from `viewDidLoad`; the selector-based observer is removed
+  /// automatically on deallocation.
+  func registerOfflineModeIndicator() {
+    appDelegate.notificationHandler.register(
+      self,
+      selector: #selector(updateOfflineModeBarButtonItem),
+      name: .offlineModeChanged,
+      object: nil
+    )
+    updateOfflineModeBarButtonItem()
+  }
+
+  /// Shows a `network.slash` bar button item left of the navigation bar while
+  /// offline mode is active. Tapping it opens a menu with a "Go Online" action.
+  /// The indicator is hidden inside modally presented navigation stacks
+  /// (pickers, settings and player sheets).
+  @objc
+  func updateOfflineModeBarButtonItem() {
+    var leftItems = navigationItem.leftBarButtonItems ?? []
+    let isIndicatorVisible = appDelegate.storage.settings.user.isOfflineMode &&
+      navigationController?.presentingViewController == nil
+
+    guard isIndicatorVisible else {
+      guard leftItems.contains(where: { $0 is OfflineModeBarButtonItem }) else { return }
+      leftItems.removeAll { $0 is OfflineModeBarButtonItem }
+      navigationItem.leftBarButtonItems = leftItems
+      navigationItem.leftItemsSupplementBackButton = !leftItems.isEmpty
+      return
+    }
+    guard !leftItems.contains(where: { $0 is OfflineModeBarButtonItem }) else { return }
+
+    let offlineItem = OfflineModeBarButtonItem(
+      image: .offlineMode,
+      menu: UIMenu(
+        title: "Offline Mode is active",
+        children: [
+          UIAction(title: "Go Online", image: .onlineMode) { _ in
+            appDelegate.switchOnlineOfflineMode(isOfflineMode: false)
+          },
+        ]
+      )
+    )
+    offlineItem.accessibilityLabel = "Offline Mode is active"
+    offlineItem.accessibilityHint = "Opens a menu to go back online"
+    leftItems.append(offlineItem)
+    navigationItem.leftBarButtonItems = leftItems
+    navigationItem.leftItemsSupplementBackButton = true
+  }
+}

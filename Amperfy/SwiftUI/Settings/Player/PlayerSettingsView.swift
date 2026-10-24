@@ -112,6 +112,13 @@ struct PlayerSettingsView: View {
           SettingsCheckBoxRow(title: "Manual Playback", isOn: $settings.isPlaybackStartOnlyOnPlay)
         }, footer: "Enable to start playback only when the Play button is pressed.")
 
+        SettingsSection(content: {
+          SettingsCheckBoxRow(
+            title: "One-Tap Row Play",
+            isOn: $settings.isRowTapPlaybackEnabled
+          )
+        }, footer: "On Mac, play songs and episodes with a single click instead of a double-click. On iOS, adds tap-to-play to podcast episodes and other rows that do not already play on tap.")
+
         SettingsSection(
           content: {
             SettingsCheckBoxRow(

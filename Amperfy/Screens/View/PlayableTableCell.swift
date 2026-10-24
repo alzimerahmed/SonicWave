@@ -611,7 +611,10 @@ class PlayableTableCell: BasicTableCell {
     func doubleTap(sender: UITapGestureRecognizer) {
       switch sender.state {
       case .ended:
-        if displayMode == .normal {
+        // single click already plays when row-tap playback is enabled —
+        // a second click must not restart the context
+        if displayMode == .normal,
+           !appDelegate.storage.settings.user.isRowTapPlaybackEnabled {
           playThisSong()
         }
       default:

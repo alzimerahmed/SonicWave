@@ -256,7 +256,8 @@ class PodcastsVC: MultiSourceTableViewController {
         animated: true
       )
     case .episodesSortedByReleaseDate:
-      break
+      // forwards to one-tap row playback when enabled in settings
+      super.tableView(tableView, didSelectRowAt: indexPath)
     }
   }
 

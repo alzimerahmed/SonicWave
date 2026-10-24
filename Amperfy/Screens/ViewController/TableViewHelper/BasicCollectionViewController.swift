@@ -37,6 +37,7 @@ class BasicCollectionViewController: UICollectionViewController {
   override func viewDidLoad() {
     super.viewDidLoad()
     collectionView.keyboardDismissMode = .onDrag
+    registerOfflineModeIndicator()
 
     guard let sceneTitle else { return }
     setNavBarTitle(title: sceneTitle)
@@ -44,6 +45,7 @@ class BasicCollectionViewController: UICollectionViewController {
 
   override func viewIsAppearing(_ animated: Bool) {
     super.viewIsAppearing(animated)
+    updateOfflineModeBarButtonItem()
     if searchController.searchBar.scopeButtonTitles?.count ?? 0 > 1,
        appDelegate.storage.settings.user.isOfflineMode {
       searchController.searchBar.selectedScopeButtonIndex = 1
@@ -79,6 +81,22 @@ class BasicCollectionViewController: UICollectionViewController {
     searchController.obscuresBackgroundDuringPresentation = false
     searchController.searchBar.delegate = self // Monitor when the search button is tapped.
     definesPresentationContext = true
+  }
+
+  override func collectionView(
+    _ collectionView: UICollectionView,
+    didSelectItemAt indexPath: IndexPath
+  ) {
+    guard appDelegate.storage.settings.user.isRowTapPlaybackEnabled,
+          !collectionView.isEditing,
+          let playable = containableAtIndexPathCallback?(indexPath) as? AbstractPlayable,
+          playable.isCached || appDelegate.storage.settings.user.isOnlineMode,
+          let playContext = playContextAtIndexPathCallback?(indexPath)
+    else { return }
+    collectionView.cellForItem(at: indexPath)?.animateActivation()
+    searchController.searchBar.endEditing(true)
+    Haptics.success.vibrate(isHapticsEnabled: appDelegate.storage.settings.user.isHapticsEnabled)
+    appDelegate.player.play(context: playContext)
   }
 
   override func collectionView(

@@ -149,5 +149,8 @@ extension UIViewController {
 
     userBarButtonItem = UIBarButtonItem(customView: button)
     navigationItem.leftBarButtonItem = userBarButtonItem!
+    // assigning leftBarButtonItem replaces the whole left side — re-add the
+    // offline mode indicator if it was visible
+    updateOfflineModeBarButtonItem()
   }
 }

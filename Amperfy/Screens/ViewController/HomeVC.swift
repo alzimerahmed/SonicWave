@@ -111,6 +111,7 @@ final class HomeVC: UICollectionViewController {
 
   override func viewIsAppearing(_ animated: Bool) {
     super.viewIsAppearing(animated)
+    updateOfflineModeBarButtonItem()
     extendSafeAreaToAccountForMiniPlayer()
     sharedHome.updateFromRemote()
   }
@@ -245,6 +246,7 @@ final class HomeVC: UICollectionViewController {
   @objc
   private func refreshOfflineMode() {
     os_log("HomeVC: OfflineModeChanged", log: self.log, type: .info)
+    updateOfflineModeBarButtonItem()
     sharedHome.createFetchController()
   }
 

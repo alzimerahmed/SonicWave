@@ -77,10 +77,12 @@ class LibraryVC: KeyCommandCollectionViewController {
         userBarButtonItem: &userBarButtonItem
       )
     }
+    registerOfflineModeIndicator()
   }
 
   override func viewIsAppearing(_ animated: Bool) {
     super.viewIsAppearing(animated)
+    updateOfflineModeBarButtonItem()
     navigationController?.navigationBar.prefersLargeTitles = true
   }
 
