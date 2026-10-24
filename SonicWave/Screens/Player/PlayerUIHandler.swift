@@ -382,9 +382,10 @@ class PlayerUIHandler: NSObject {
     #endif
   }
 
+  /// G4 — the multi-source `SyncedLyricsManager` resolves lyrics for
+  /// every backend; the gate is now just "music is the active mode"
   var isLyricsButtonAllowedToDisplay: Bool {
-    appDelegate.player.playerMode == .music && appDelegate.storage.settings.accounts
-      .availableApiTypes.contains(.subsonic)
+    appDelegate.player.playerMode == .music
   }
 
   private var remainingTime: Int? {
@@ -397,6 +398,12 @@ class PlayerUIHandler: NSObject {
 
   func timeSliderChanged(timeSlider: UISlider) {
     player.seek(toSecond: Double(timeSlider.value))
+    // G4 — the lyrics tick only runs during playback; nudge the tracker
+    // so a scrub while paused snaps the active line immediately
+    if appDelegate.storage.settings.user.isPlayerLyricsDisplayed {
+      AmperKit.shared.syncedLyricsTracker
+        .updatePlaybackPosition(seconds: Double(timeSlider.value))
+    }
   }
 
   func timeSliderIsChanging(

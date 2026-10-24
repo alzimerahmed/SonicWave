@@ -29,6 +29,7 @@ import UIKit
 class LyricTableCellModel {
   var lyric: LyricsLine? {
     didSet {
+      rebuildStrings()
       cell?.refresh()
     }
   }
@@ -39,10 +40,48 @@ class LyricTableCellModel {
     }
   }
 
+  /// word-level karaoke index into `syncedLine.words` — nil when the
+  /// line carries no word timings or isn't the active line
+  var activeWordIndex: Int? {
+    didSet {
+      rebuildStrings()
+      cell?.refresh()
+    }
+  }
+
+  /// accent for the currently sung word (§2.4 `sonicArtworkAccent` in
+  /// vivid tint mode, `.label` otherwise)
+  var accentColor: UIColor = .label {
+    didSet {
+      rebuildStrings()
+      cell?.refresh()
+    }
+  }
+
+  /// word-timed counterpart from `SyncedLyrics` (enhanced LRC) — nil for
+  /// line-level sync and plain lyrics
+  var syncedLine: LyricLine?
+
   private var attributedString: NSAttributedString?
   private var highlightedAttributedString: NSAttributedString?
 
   internal weak var cell: LyricTableCell?
+
+  /// the tap-to-seek affordance only exists for synced (timed) lines
+  var isSeekable: Bool {
+    lyric?.start != nil
+  }
+
+  /// §3.1 — lyric lines scale with Dynamic Type (title3 ≈ 20pt)
+  static var lineFont: UIFont {
+    UIFontMetrics(forTextStyle: .title3)
+      .scaledFont(for: .systemFont(ofSize: 20))
+  }
+
+  static var activeLineFont: UIFont {
+    UIFontMetrics(forTextStyle: .title3)
+      .scaledFont(for: .boldSystemFont(ofSize: 20))
+  }
 
   var displayString: NSAttributedString? {
     if isActiveLine {
@@ -52,25 +91,61 @@ class LyricTableCellModel {
     }
   }
 
-  init(lyric: LyricsLine) {
+  init(lyric: LyricsLine, syncedLine: LyricLine? = nil, accentColor: UIColor = .label) {
     self.lyric = lyric
+    self.syncedLine = syncedLine
+    self.accentColor = accentColor
     self.isActiveLine = false
-    self.attributedString = NSAttributedString(
+    rebuildStrings()
+  }
+
+  /// Rebuilds inactive/active renderings — active lines with word
+  /// timings get per-word karaoke coloring (sung = label, current =
+  /// accent, upcoming = gray); otherwise the active line renders as one
+  /// bold run as before.
+  private func rebuildStrings() {
+    guard let lyric = lyric else {
+      attributedString = nil
+      highlightedAttributedString = nil
+      return
+    }
+    attributedString = NSAttributedString(
       string: lyric.value,
       attributes:
       [
-        .font: UIFont.systemFont(ofSize: 20),
+        .font: Self.lineFont,
         .foregroundColor: UIColor.gray,
       ]
     )
-    self.highlightedAttributedString = NSAttributedString(
-      string: lyric.value,
-      attributes:
-      [
-        .font: UIFont.boldSystemFont(ofSize: 20),
-        .foregroundColor: UIColor.label,
-      ]
-    )
+    if let words = syncedLine?.words,
+       !words.isEmpty,
+       words.map(\.value).joined() == lyric.value {
+      let karaoke = NSMutableAttributedString()
+      for (index, word) in words.enumerated() {
+        var attributes: [NSAttributedString.Key: Any] = [
+          .font: Self.activeLineFont,
+          .foregroundColor: UIColor.label,
+        ]
+        if let activeWordIndex {
+          if index > activeWordIndex {
+            attributes[.foregroundColor] = UIColor.gray
+          } else if index == activeWordIndex {
+            attributes[.foregroundColor] = accentColor
+          }
+        }
+        karaoke.append(NSAttributedString(string: word.value, attributes: attributes))
+      }
+      highlightedAttributedString = karaoke
+    } else {
+      highlightedAttributedString = NSAttributedString(
+        string: lyric.value,
+        attributes:
+        [
+          .font: Self.activeLineFont,
+          .foregroundColor: UIColor.label,
+        ]
+      )
+    }
   }
 
   public func calcHeight(containerWidth: CGFloat) -> CGFloat {
@@ -78,19 +153,11 @@ class LyricTableCellModel {
       width: LyricTableCell.adjustContainerWidthForMargins(containerWidth: containerWidth),
       height: 9_999
     )
-    if isActiveLine {
-      return highlightedAttributedString?.boundingRect(
-        with: boundingSize,
-        options: .usesLineFragmentOrigin,
-        context: nil
-      ).height ?? 0
-    } else {
-      return attributedString?.boundingRect(
-        with: boundingSize,
-        options: .usesLineFragmentOrigin,
-        context: nil
-      ).height ?? 0
-    }
+    return displayString?.boundingRect(
+      with: boundingSize,
+      options: .usesLineFragmentOrigin,
+      context: nil
+    ).height ?? 0
   }
 }
 
@@ -151,5 +218,10 @@ class LyricTableCell: UITableViewCell {
     guard let model = viewModel else { return }
     lyricLabel.attributedText = model.displayString
     lyricLabel.sizeThatFits(CGSize(width: bounds.width, height: bounds.height))
+    // §8.2 — each line reads its text; timed lines get the seek hint
+    isAccessibilityElement = true
+    accessibilityLabel = model.lyric?.value
+    accessibilityHint = model.isSeekable ? "Double-tap to play from this line" : nil
+    accessibilityTraits = model.isSeekable ? [.staticText, .button] : .staticText
   }
 }
