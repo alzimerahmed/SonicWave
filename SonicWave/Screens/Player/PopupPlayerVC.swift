@@ -23,6 +23,28 @@ import SonicWaveKit
 import CoreMedia
 import UIKit
 
+// MARK: - PlayerPane
+
+/// §5.4 three-pane model for the Now Playing sheet — Now Playing
+/// (center) / Lyrics (horizontal swipe) / Queue+Details (up swipe).
+/// No page dots; navigation is gesture-driven and announced to VoiceOver.
+enum PlayerPane {
+  case nowPlaying
+  case lyrics
+  case queue
+
+  var accessibilityAnnouncement: String {
+    switch self {
+    case .nowPlaying:
+      return "Now Playing"
+    case .lyrics:
+      return "Lyrics"
+    case .queue:
+      return "Up Next queue"
+    }
+  }
+}
+
 // MARK: - PopupPlayerVC
 
 class PopupPlayerVC: UIViewController, UIScrollViewDelegate {
@@ -41,6 +63,16 @@ class PopupPlayerVC: UIViewController, UIScrollViewDelegate {
   weak var controlPlaceholderHeightConstraint: NSLayoutConstraint!
   private let safetyMarginOnBottom = 20.0
   internal var artworkGradientColors = [UIColor]()
+  /// resolved §2.4 `sonicArtwork*` token set for the current track —
+  /// consumed by `PlayerControlView`/`LargeCurrentlyPlayingPlayerView`
+  internal var artworkTint = ArtworkTintPalette(
+    extractedColors: [],
+    fallbackTheme: .blue,
+    intensity: .subtle,
+    isTrueBlack: false
+  )
+  /// §2.4 persistent gradient — crossfades colors over 2s on track change
+  internal var artworkGradientLayer: AnimatedGradientLayer?
 
   lazy var tableViewKeyCommandsController = TableViewKeyCommandsController(
     tableView: tableView,
@@ -296,6 +328,71 @@ class PopupPlayerVC: UIViewController, UIScrollViewDelegate {
     hostingSplitVC.visualizePopupPlayer(direction: .close, animated: true)
   }
 
+  /// §5.4 pane navigation — gesture-driven, page-dot-free. Every pane
+  /// switch rides the signature 0.2s display-style choreography, fires a
+  /// soft haptic and announces itself to VoiceOver.
+  func show(pane: PlayerPane) {
+    switch pane {
+    case .nowPlaying:
+      if appDelegate.storage.settings.user.playerDisplayStyle == .compact {
+        setDisplayStylePersistent(.large)
+      }
+      if appDelegate.storage.settings.user.isPlayerLyricsDisplayed {
+        appDelegate.storage.settings.user.isPlayerLyricsDisplayed = false
+        largeCurrentlyPlayingView?.display(
+          element: largeCurrentlyPlayingView?.getDisplayElementBasedOnConfig() ?? .artwork
+        )
+      }
+    case .lyrics:
+      guard largeCurrentlyPlayingView?.isLyricsButtonAllowedToDisplay ?? false else { return }
+      if appDelegate.storage.settings.user.playerDisplayStyle != .large {
+        setDisplayStylePersistent(.large)
+      }
+      if !appDelegate.storage.settings.user.isPlayerLyricsDisplayed {
+        appDelegate.storage.settings.user.isPlayerLyricsDisplayed = true
+        appDelegate.storage.settings.user.isPlayerVisualizerDisplayed = false
+      }
+      largeCurrentlyPlayingView?.display(element: .lyrics)
+    case .queue:
+      guard appDelegate.storage.settings.user.playerDisplayStyle != .compact else { return }
+      setDisplayStylePersistent(.compact)
+    }
+    Haptics.soft.vibrate(
+      isHapticsEnabled: appDelegate.storage.settings.user.isHapticsEnabled
+    )
+    UIAccessibility.post(
+      notification: .announcement,
+      argument: pane.accessibilityAnnouncement
+    )
+  }
+
+  /// G21 album playthrough for the Now Playing indicator — prefers the
+  /// kit's album-shuffle session info; falls back to a contiguous
+  /// same-album run in the context queue (full-album playback).
+  func currentAlbumPlaythrough() -> AlbumProgressInfo? {
+    if let info = player.albumPlaythrough { return info }
+    guard let current = player.currentlyPlaying?.asSong,
+          let album = current.album
+    else { return nil }
+    let prev = player.getAllPrevQueueItems()
+    let next = player.getAllNextQueueItems()
+    let albumRun = prev + [current] + next
+    // only when the whole context queue is this album (≥2 tracks)
+    guard albumRun.count > 1,
+          albumRun.allSatisfy({ $0.asSong?.album?.id == album.id })
+    else { return nil }
+    let played = Double(prev.reduce(0) { $0 + $1.duration }) + player.elapsedTime
+    return AlbumProgressInfo(
+      albumName: album.name,
+      totalTrackCount: albumRun.count,
+      playedTrackCount: prev.count,
+      totalDurationInSeconds: albumRun.reduce(0) { $0 + $1.duration },
+      playedDurationInSeconds: played,
+      queuedAlbumCount: 0,
+      nextAlbumName: nil
+    )
+  }
+
   func closePopupPlayerAndDisplayInLibraryTab(vc: UIViewController) {
     #if targetEnvironment(macCatalyst)
       if view.window?.windowScene?.delegate is MiniPlayerSceneDelegate {
@@ -422,7 +519,11 @@ extension PopupPlayerVC: MusicPlayable {
   }
 
   func didPause() {}
-  func didElapsedTimeChange() {}
+
+  func didElapsedTimeChange() {
+    // G21 — the album playthrough indicator tracks elapsed time
+    largeCurrentlyPlayingView?.refreshAlbumPlaythrough()
+  }
 
   func didLyricsTimeChange(time: CMTime) {
     largeCurrentlyPlayingView?.refreshLyricsTime(time: time)

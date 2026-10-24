@@ -24,6 +24,36 @@ import MarqueeLabel
 import MediaPlayer
 import UIKit
 
+// MARK: - InsetLabel
+
+/// Padded label for the codec/bitrate chip (§5.4) — the fill hugs the
+/// text with `textInsets` breathing room instead of touching the glyphs.
+class InsetLabel: UILabel {
+  var textInsets = UIEdgeInsets(top: 1, left: 6, bottom: 1, right: 6) {
+    didSet { invalidateIntrinsicContentSize() }
+  }
+
+  override var intrinsicContentSize: CGSize {
+    var size = super.intrinsicContentSize
+    size.width += textInsets.left + textInsets.right
+    size.height += textInsets.top + textInsets.bottom
+    return size
+  }
+
+  override func textRect(forBounds bounds: CGRect, limitedToNumberOfLines numberOfLines: Int)
+    -> CGRect {
+    let insetBounds = bounds.inset(by: textInsets)
+    var rect = super.textRect(forBounds: insetBounds, limitedToNumberOfLines: numberOfLines)
+    rect.size.width += textInsets.left + textInsets.right
+    rect.size.height += textInsets.top + textInsets.bottom
+    return rect
+  }
+
+  override func drawText(in rect: CGRect) {
+    super.drawText(in: rect.inset(by: textInsets))
+  }
+}
+
 // MARK: - PlayerControlView
 
 class PlayerControlView: UIView {
@@ -110,6 +140,8 @@ class PlayerControlView: UIView {
     playerModeButton.tintColor = .label
     volumeButton.tintColor = .label
     optionsButton.imageView?.tintColor = .label
+    applySonicStyling()
+    addPaneSwipeGestures()
     refreshPlayer()
     playerHandler?.refreshPlayerOptions(
       optionsButton: optionsButton,
@@ -131,36 +163,126 @@ class PlayerControlView: UIView {
     )
   }
 
-  @IBAction
-  func swipeHandler(_ gestureRecognizer: UISwipeGestureRecognizer) {
-    if gestureRecognizer.state == .ended {
-      rootView?.closePopupPlayer()
+  /// §3.1 tokens + the codec chip: `sonicTime` (tabular) for the time
+  /// labels, `sonicAudioInfo` on a secondary-fill chip with the
+  /// `verySmall` radius. Re-applied on trait change in `refreshPlayer`.
+  private func applySonicStyling() {
+    let traits = traitCollection
+    elapsedTimeLabel.font = .sonicTime(compatibleWith: traits)
+    remainingTimeLabel.font = .sonicTime(compatibleWith: traits)
+    elapsedTimeLabel.adjustsFontForContentSizeCategory = true
+    remainingTimeLabel.adjustsFontForContentSizeCategory = true
+    liveLabel.font = UIFontMetrics(forTextStyle: .caption1)
+      .scaledFont(for: .boldSystemFont(ofSize: 14), compatibleWith: traits)
+    liveLabel.adjustsFontForContentSizeCategory = true
+    audioInfoLabel.font = .sonicAudioInfo(compatibleWith: traits)
+    audioInfoLabel.adjustsFontForContentSizeCategory = true
+    audioInfoLabel.backgroundColor = .secondarySystemFill
+    audioInfoLabel.layer.cornerRadius = CornerRadius.verySmall.asCGFloat
+    audioInfoLabel.clipsToBounds = true
+  }
+
+  /// §5.4 pane gestures on the transport cluster: up reveals the
+  /// queue pane, horizontal moves Now Playing ↔ Lyrics. The xib's
+  /// down-swipe stays — compact goes back to Now Playing, otherwise
+  /// it keeps dismissing the sheet.
+  private func addPaneSwipeGestures() {
+    let swipeUp = UISwipeGestureRecognizer(target: self, action: #selector(handlePaneSwipe(_:)))
+    swipeUp.direction = .up
+    let swipeLeft = UISwipeGestureRecognizer(target: self, action: #selector(handlePaneSwipe(_:)))
+    swipeLeft.direction = .left
+    let swipeRight = UISwipeGestureRecognizer(target: self, action: #selector(handlePaneSwipe(_:)))
+    swipeRight.direction = .right
+    addGestureRecognizer(swipeUp)
+    addGestureRecognizer(swipeLeft)
+    addGestureRecognizer(swipeRight)
+  }
+
+  @objc
+  private func handlePaneSwipe(_ gesture: UISwipeGestureRecognizer) {
+    switch gesture.direction {
+    case .up:
+      rootView?.show(pane: .queue)
+    case .left:
+      rootView?.show(pane: .lyrics)
+    case .right:
+      rootView?.show(pane: .nowPlaying)
+    default:
+      break
+    }
+  }
+
+  /// §2.4 — vivid intensity tints the progress slider and the selected
+  /// queue chip with `sonicArtworkAccent`; metadata text takes the
+  /// ≥4.5:1 contrast color whenever the artwork tint is active.
+  func applyArtworkTint(_ palette: ArtworkTintPalette) {
+    let labelColor: UIColor = palette.isArtworkTinted ? palette.contrast : .label
+    elapsedTimeLabel.textColor = labelColor
+    remainingTimeLabel.textColor = labelColor
+    audioInfoLabel.textColor = labelColor
+    liveLabel.textColor = labelColor
+
+    if palette.intensity == .vivid {
+      timeSlider.tintColor = palette.accent
+      if var config = displayPlaylistButton.configuration, displayPlaylistButton.isSelected {
+        config.baseBackgroundColor = palette.accent
+        config.baseForegroundColor = palette.accentContrast
+        config.background.strokeColor = palette.accent
+        displayPlaylistButton.configuration = config
+      }
+    } else {
+      timeSlider.tintColor = .label
     }
   }
 
   @IBAction
+  func swipeHandler(_ gestureRecognizer: UISwipeGestureRecognizer) {
+    guard gestureRecognizer.state == .ended else { return }
+    // pane model: a down-swipe on the queue pane returns to Now Playing;
+    // on Now Playing it keeps the classic swipe-down-to-dismiss
+    if appDelegate.storage.settings.user.playerDisplayStyle == .compact {
+      rootView?.show(pane: .nowPlaying)
+    } else {
+      rootView?.closePopupPlayer()
+    }
+  }
+
+  /// §6 — transport presses fire a light haptic so the controls feel
+  /// physical (gated by `isHapticsEnabled`, additive to the visuals)
+  private func transportHaptic() {
+    Haptics.light.vibrate(
+      isHapticsEnabled: appDelegate.storage.settings.user.isHapticsEnabled
+    )
+  }
+
+  @IBAction
   func playButtonPushed(_ sender: Any) {
+    transportHaptic()
     playerHandler?.playButtonPushed()
     playerHandler?.refreshPlayButton(playButton)
   }
 
   @IBAction
   func previousButtonPushed(_ sender: Any) {
+    transportHaptic()
     playerHandler?.previousButtonPushed()
   }
 
   @IBAction
   func nextButtonPushed(_ sender: Any) {
+    transportHaptic()
     playerHandler?.nextButtonPushed()
   }
 
   @IBAction
   func skipBackwardButtonPushed(_ sender: Any) {
+    transportHaptic()
     playerHandler?.skipBackwardButtonPushed()
   }
 
   @IBAction
   func skipForwardButtonPushed(_ sender: Any) {
+    transportHaptic()
     playerHandler?.skipForwardButtonPushed()
   }
 
@@ -266,6 +388,11 @@ class PlayerControlView: UIView {
     playerHandler?.refreshPrevNextButtons(previousButton: previousButton, nextButton: nextButton)
     playerHandler?.refreshDisplayPlaylistButton(displayPlaylistButton: displayPlaylistButton)
     refreshPlayerModeChangeButton()
+    // re-apply after every refresh — the selected-state config is rebuilt
+    // above, so the vivid accent tint has to land last
+    if let palette = rootView?.artworkTint {
+      applyArtworkTint(palette)
+    }
   }
 
   func createPlaybackRateMenu() -> UIMenuElement {

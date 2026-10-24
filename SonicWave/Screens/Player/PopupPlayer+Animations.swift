@@ -29,6 +29,14 @@ extension PopupPlayerVC {
     appDelegate.userStatistics.usedAction(.changePlayerDisplayStyle)
     var displayStyle = appDelegate.storage.settings.user.playerDisplayStyle
     displayStyle.switchToNextStyle()
+    setDisplayStylePersistent(displayStyle)
+  }
+
+  /// Pane-navigation variant — persists and animates to a target style
+  /// without toggling (used by the §5.4 swipe-driven pane model).
+  func setDisplayStylePersistent(_ displayStyle: PlayerDisplayStyle) {
+    guard appDelegate.storage.settings.user.playerDisplayStyle != displayStyle else { return }
+    appDelegate.userStatistics.usedAction(.changePlayerDisplayStyle)
     appDelegate.storage.settings.user.playerDisplayStyle = displayStyle
     changeDisplayStyleVisually(to: displayStyle, animated: true)
   }
@@ -84,98 +92,102 @@ extension PopupPlayerVC {
           let viewToApper = viewToApper
     else { return }
 
+    // §6 Reduce-Motion mapping: the shared-element flight becomes a
+    // crossfade-only transition — the alpha choreography still runs.
+    let isFlightAllowed = animated && !UIAccessibility.isReduceMotionEnabled
     if animated {
-      guard let artworkToDisapper = artworkToDisapper,
-            let artworkToApper = artworkToApper,
-            let detailsContainerToDisapper = detailsContainerToDisapper,
-            let detailsContainerToApper = detailsContainerToApper,
-            let favoriteToDisapper = favoriteToDisapper,
-            let favoriteToApper = favoriteToApper,
-            let optionsToDisapper = optionsToDisapper,
-            let optionsToApper = optionsToApper
-      else { return }
+      if isFlightAllowed {
+        guard let artworkToDisapper = artworkToDisapper,
+              let artworkToApper = artworkToApper,
+              let detailsContainerToDisapper = detailsContainerToDisapper,
+              let detailsContainerToApper = detailsContainerToApper,
+              let favoriteToDisapper = favoriteToDisapper,
+              let favoriteToApper = favoriteToApper,
+              let optionsToDisapper = optionsToDisapper,
+              let optionsToApper = optionsToApper
+        else { return }
 
-      // 1. Force autolayout to layout
-      artworkToApper.layoutIfNeeded()
-      // 2. Calculate source and target frames
-      var artworkSourceFrame = view.convert(artworkToDisapper.frame, from: containerToDisapper)
-      artworkSourceFrame = limitSizeToInsideThePlaceholder(
-        targetFrame: artworkSourceFrame,
-        placeholderFrame: largePlayerPlaceholderView.frame
-      )
-      var artworkTargetFrame = view.convert(artworkToApper.frame, from: containerToApper)
-      artworkTargetFrame = limitSizeToInsideThePlaceholder(
-        targetFrame: artworkTargetFrame,
-        placeholderFrame: largePlayerPlaceholderView.frame
-      )
-      // 3. Create fake image and animate it
-      animateArtwork(
-        image: largeCurrentlyPlayingView?.artworkImage.image,
-        sourceView: artworkToDisapper,
-        targetView: artworkToApper,
-        sourceFrame: artworkSourceFrame,
-        targetFrame: artworkTargetFrame
-      )
+        // 1. Force autolayout to layout
+        artworkToApper.layoutIfNeeded()
+        // 2. Calculate source and target frames
+        var artworkSourceFrame = view.convert(artworkToDisapper.frame, from: containerToDisapper)
+        artworkSourceFrame = limitSizeToInsideThePlaceholder(
+          targetFrame: artworkSourceFrame,
+          placeholderFrame: largePlayerPlaceholderView.frame
+        )
+        var artworkTargetFrame = view.convert(artworkToApper.frame, from: containerToApper)
+        artworkTargetFrame = limitSizeToInsideThePlaceholder(
+          targetFrame: artworkTargetFrame,
+          placeholderFrame: largePlayerPlaceholderView.frame
+        )
+        // 3. Create fake image and animate it
+        animateArtwork(
+          image: largeCurrentlyPlayingView?.artworkImage.image,
+          sourceView: artworkToDisapper,
+          targetView: artworkToApper,
+          sourceFrame: artworkSourceFrame,
+          targetFrame: artworkTargetFrame
+        )
 
-      favoriteToApper.layoutIfNeeded()
-      var favoriteSourceFrame = view.convert(
-        favoriteToDisapper.frame,
-        from: detailsContainerToDisapper
-      )
-      favoriteSourceFrame = limitSizeToInsideThePlaceholder(
-        targetFrame: favoriteSourceFrame,
-        placeholderFrame: largePlayerPlaceholderView.frame
-      )
-      var favoriteTargetFrame = view.convert(favoriteToApper.frame, from: detailsContainerToApper)
-      favoriteTargetFrame = limitSizeToInsideThePlaceholder(
-        targetFrame: favoriteTargetFrame,
-        placeholderFrame: largePlayerPlaceholderView.frame
-      )
-      animateFavorite(
-        sourceView: favoriteToDisapper,
-        targetView: favoriteToApper,
-        sourceFrame: favoriteSourceFrame,
-        targetFrame: favoriteTargetFrame
-      )
+        favoriteToApper.layoutIfNeeded()
+        var favoriteSourceFrame = view.convert(
+          favoriteToDisapper.frame,
+          from: detailsContainerToDisapper
+        )
+        favoriteSourceFrame = limitSizeToInsideThePlaceholder(
+          targetFrame: favoriteSourceFrame,
+          placeholderFrame: largePlayerPlaceholderView.frame
+        )
+        var favoriteTargetFrame = view.convert(favoriteToApper.frame, from: detailsContainerToApper)
+        favoriteTargetFrame = limitSizeToInsideThePlaceholder(
+          targetFrame: favoriteTargetFrame,
+          placeholderFrame: largePlayerPlaceholderView.frame
+        )
+        animateFavorite(
+          sourceView: favoriteToDisapper,
+          targetView: favoriteToApper,
+          sourceFrame: favoriteSourceFrame,
+          targetFrame: favoriteTargetFrame
+        )
 
-      optionsToApper.layoutIfNeeded()
-      var optionsSourceFrame = view.convert(
-        optionsToDisapper.frame,
-        from: detailsContainerToDisapper
-      )
-      optionsSourceFrame = limitSizeToInsideThePlaceholder(
-        targetFrame: optionsSourceFrame,
-        placeholderFrame: largePlayerPlaceholderView.frame
-      )
-      var optionsTargetFrame = view.convert(optionsToApper.frame, from: detailsContainerToApper)
-      optionsTargetFrame = limitSizeToInsideThePlaceholder(
-        targetFrame: optionsTargetFrame,
-        placeholderFrame: largePlayerPlaceholderView.frame
-      )
-      animateOptions(
-        sourceView: optionsToDisapper,
-        targetView: optionsToApper,
-        sourceFrame: optionsSourceFrame,
-        targetFrame: optionsTargetFrame
-      )
+        optionsToApper.layoutIfNeeded()
+        var optionsSourceFrame = view.convert(
+          optionsToDisapper.frame,
+          from: detailsContainerToDisapper
+        )
+        optionsSourceFrame = limitSizeToInsideThePlaceholder(
+          targetFrame: optionsSourceFrame,
+          placeholderFrame: largePlayerPlaceholderView.frame
+        )
+        var optionsTargetFrame = view.convert(optionsToApper.frame, from: detailsContainerToApper)
+        optionsTargetFrame = limitSizeToInsideThePlaceholder(
+          targetFrame: optionsTargetFrame,
+          placeholderFrame: largePlayerPlaceholderView.frame
+        )
+        animateOptions(
+          sourceView: optionsToDisapper,
+          targetView: optionsToApper,
+          sourceFrame: optionsSourceFrame,
+          targetFrame: optionsTargetFrame
+        )
+      }
 
       viewToDisapper.isHidden = false
       viewToApper.isHidden = false
-      UIView.animate(
+      // opacity-only crossfade, routed through the Reduce-Motion router —
+      // under Reduce Motion it applies instantly (§6)
+      SonicMotion.animate(
         withDuration: Self.displaStyleAnimationDuration * 2 / 3,
-        delay: 0,
         animations: ({
           viewToDisapper.alpha = 0.0
-        }),
-        completion: nil
+        })
       )
-      UIView.animate(
+      SonicMotion.animate(
         withDuration: Self.displaStyleAnimationDuration * 2 / 3,
         delay: Self.displaStyleAnimationDuration / 3,
         animations: ({
           viewToApper.alpha = 1.0
-        }),
-        completion: nil
+        })
       )
 
     } else {

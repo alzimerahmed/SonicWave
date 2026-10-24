@@ -33,6 +33,9 @@
 		501944192B78F9B800082D2E /* LargeCurrentlyPlayingPlayerView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 501944162B78F97F00082D2E /* LargeCurrentlyPlayingPlayerView.xib */; };
 		5019441B2B7A049A00082D2E /* PopupPlayer+Visuals.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5019441A2B7A049A00082D2E /* PopupPlayer+Visuals.swift */; };
 		5019441D2B7ACB0800082D2E /* PopupPlayer+Animations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5019441C2B7ACB0800082D2E /* PopupPlayer+Animations.swift */; };
+		7F20AB010000000000000102 /* SonicMotion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F20AB010000000000000101 /* SonicMotion.swift */; };
+		7F20AB010000000000000104 /* ArtworkTintPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F20AB010000000000000103 /* ArtworkTintPalette.swift */; };
+		7F20AB010000000000000106 /* AlbumPlaythroughView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F20AB010000000000000105 /* AlbumPlaythroughView.swift */; };
 		501A7D4D26820B080055A51B /* PodcastsVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 501A7D4C26820B080055A51B /* PodcastsVC.swift */; };
 		501A7D4F26820B3F0055A51B /* PodcastDetailVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 501A7D4E26820B3F0055A51B /* PodcastDetailVC.swift */; };
 		501DBE9F2632D2D000B31128 /* GenreDetailVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 501DBE9E2632D2CF00B31128 /* GenreDetailVC.swift */; };
@@ -692,6 +695,9 @@
 		501944172B78F97F00082D2E /* LargeCurrentlyPlayingPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LargeCurrentlyPlayingPlayerView.swift; sourceTree = "<group>"; };
 		5019441A2B7A049A00082D2E /* PopupPlayer+Visuals.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PopupPlayer+Visuals.swift"; sourceTree = "<group>"; };
 		5019441C2B7ACB0800082D2E /* PopupPlayer+Animations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PopupPlayer+Animations.swift"; sourceTree = "<group>"; };
+		7F20AB010000000000000101 /* SonicMotion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SonicMotion.swift; sourceTree = "<group>"; };
+		7F20AB010000000000000103 /* ArtworkTintPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtworkTintPalette.swift; sourceTree = "<group>"; };
+		7F20AB010000000000000105 /* AlbumPlaythroughView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumPlaythroughView.swift; sourceTree = "<group>"; };
 		501999DB26806B8600F72D37 /* NotificationBannerCustomization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationBannerCustomization.swift; sourceTree = "<group>"; };
 		501A7D1E26808A9D0055A51B /* podcast_episodes.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = podcast_episodes.xml; sourceTree = "<group>"; };
 		501A7D1F26808A9D0055A51B /* podcasts.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = podcasts.xml; sourceTree = "<group>"; };
@@ -1299,6 +1305,7 @@
 				500EB36725F8B3EB00B4B998 /* Corners.swift */,
 				509D55E6280FD5E000E0E0B5 /* PlayIndicator.swift */,
 				500EB36B25F8B42800B4B998 /* AnimatedGradientLayer.swift */,
+				7F20AB010000000000000101 /* SonicMotion.swift */,
 				501999DB26806B8600F72D37 /* NotificationBannerCustomization.swift */,
 				50DE29EE2B90642E00ABA78E /* SelectionAccessory.swift */,
 			);
@@ -1421,6 +1428,8 @@
 				50A30E5B2B7556FB00722894 /* PopupPlayer+TableViewExtension.swift */,
 				5019441A2B7A049A00082D2E /* PopupPlayer+Visuals.swift */,
 				5019441C2B7ACB0800082D2E /* PopupPlayer+Animations.swift */,
+				7F20AB010000000000000103 /* ArtworkTintPalette.swift */,
+				7F20AB010000000000000105 /* AlbumPlaythroughView.swift */,
 				50A30E572B7501E600722894 /* SectionHeader */,
 				501944162B78F97F00082D2E /* LargeCurrentlyPlayingPlayerView.xib */,
 				501944172B78F97F00082D2E /* LargeCurrentlyPlayingPlayerView.swift */,
@@ -2631,6 +2640,9 @@
 				632F51262C83A8400032860D /* LyricsVC.swift in Sources */,
 				509001B82716C8F400A8056D /* AppDelegateNotificationExtensions.swift in Sources */,
 				50A30E5C2B7556FB00722894 /* PopupPlayer+TableViewExtension.swift in Sources */,
+				7F20AB010000000000000102 /* SonicMotion.swift in Sources */,
+				7F20AB010000000000000104 /* ArtworkTintPalette.swift in Sources */,
+				7F20AB010000000000000106 /* AlbumPlaythroughView.swift in Sources */,
 				637A28B52C79409C0082FACC /* MiniPlayerSceneDelegate.swift in Sources */,
 				C0A1B0032EEE000000000003 /* MacWindowHelper.swift in Sources */,
 				505CA2112B88ECC700AA81CD /* SingleFetchedResultsTableViewController.swift in Sources */,

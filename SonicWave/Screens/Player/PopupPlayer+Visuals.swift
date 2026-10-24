@@ -107,55 +107,78 @@ extension PopupPlayerVC {
 
   func refreshBackgroundItemArtwork() {
     var artwork: UIImage?
-    var themePreference: ThemePreference = appDelegate.storage.settings.accounts.activeSetting.read
-      .themePreference
+    var accountSetting: AccountSetting = appDelegate.storage.settings.accounts.activeSetting.read
     if let playableInfo = player.currentlyPlaying, let accountInfo = playableInfo.account?.info {
-      themePreference = appDelegate.storage.settings.accounts.getSetting(accountInfo).read
-        .themePreference
+      accountSetting = appDelegate.storage.settings.accounts.getSetting(accountInfo).read
       artwork = LibraryEntityImage.getImageToDisplayImmediately(
         libraryEntity: playableInfo,
-        themePreference: themePreference,
-        artworkDisplayPreference: appDelegate.storage.settings.accounts.getSetting(accountInfo).read
-          .artworkDisplayPreference,
+        themePreference: accountSetting.themePreference,
+        artworkDisplayPreference: accountSetting.artworkDisplayPreference,
         useCache: true
       )
     } else {
       switch player.playerMode {
       case .music:
         artwork = .getGeneratedArtwork(
-          theme: themePreference,
+          theme: accountSetting.themePreference,
           artworkType: .song
         )
       case .podcast:
         artwork = .getGeneratedArtwork(
-          theme: themePreference,
+          theme: accountSetting.themePreference,
           artworkType: .podcastEpisode
         )
       }
     }
     guard let artwork = artwork else { return }
     backgroundImage.image = artwork
-    artworkGradientColors = (try? artwork.dominantColors(max: 2)) ?? [
-      themePreference.asColor,
-      UIColor.systemBackground,
-    ]
-    applyGradientBackground()
+
+    // §2.4 artwork-adaptive layer: extract up to four dominant colors so
+    // the most saturated one can become the accent; the account's
+    // `artworkTintIntensity` decides how far the tint reaches.
+    let extracted = (try? artwork.dominantColors(max: 4)) ?? []
+    artworkTint = ArtworkTintPalette(
+      extractedColors: extracted,
+      fallbackTheme: accountSetting.themePreference,
+      intensity: accountSetting.artworkTintIntensity,
+      isTrueBlack: appDelegate.isTrueBlackActive(in: traitCollection)
+    )
+    artworkGradientColors = artworkTint.gradientColors
+    applyGradientBackground(isAnimated: true)
+    applyArtworkTint()
   }
 
-  internal func applyGradientBackground() {
-    let colors = artworkGradientColors.compactMap { $0.cgColor }
-    // remove existing gradient layer
-    backgroundImage.layer.sublayers?.forEach { layer in
-      if layer is CAGradientLayer {
-        layer.removeFromSuperlayer()
-      }
+  /// pushes the resolved `sonicArtwork*` palette into the surfaces that
+  /// consume it — controls (slider tint, codec chip) and hero metadata
+  func applyArtworkTint() {
+    controlView?.applyArtworkTint(artworkTint)
+    largeCurrentlyPlayingView?.applyArtworkTint(artworkTint)
+  }
+
+  /// §2.4 — persistent gradient layer; color swaps ride the 2s linear
+  /// `AnimatedGradientLayer` crossfade on track change and go instant
+  /// under Reduce Motion. `.off` drops the artwork surface entirely and
+  /// leaves a pure semantic (or true-black) background.
+  internal func applyGradientBackground(isAnimated: Bool = false) {
+    let isTinted = artworkTint.isArtworkTinted
+    backgroundImage.isHidden = !isTinted
+    view.backgroundColor = isTinted
+      ? .clear
+      : .sonicSystemBackground(in: traitCollection)
+    guard isTinted else { return }
+
+    if artworkGradientLayer == nil {
+      let layer = AnimatedGradientLayer(view: backgroundImage)
+      layer.animationDuration = SonicMotion.artworkCrossfadeDuration
+      layer.animationStyle = .linear
+      artworkGradientLayer = layer
     }
-    let gradientLayer = CAGradientLayer()
-    gradientLayer.frame = backgroundImage.bounds
-    gradientLayer.colors = colors
-    gradientLayer.startPoint = CGPoint(x: 0.5, y: 0.0)
-    gradientLayer.endPoint = CGPoint(x: 0.5, y: 1.0)
-    backgroundImage.layer.insertSublayer(gradientLayer, at: 0)
+    artworkGradientLayer?.adjustTo(size: backgroundImage.bounds.size)
+    artworkGradientLayer?.setColors(
+      artworkGradientColors.compactMap { $0.cgColor },
+      at: artworkTint.gradientLocations,
+      isAnimated: isAnimated && !SonicMotion.isReduceMotionEnabled
+    )
   }
 
   @objc
