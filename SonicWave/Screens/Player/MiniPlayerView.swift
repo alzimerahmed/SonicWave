@@ -648,6 +648,16 @@ class MiniPlayerView: UIView {
     let tapGesture = UITapGestureRecognizer(target: self, action: #selector(miniPlayerGotTouched))
     addGestureRecognizer(tapGesture)
 
+    // §5.3 — long-press opens a quick context menu for the current track
+    // (UIContextMenuInteraction supplies the haptic like row long-press);
+    // horizontal swipe on the whole bar = track skip (Apple Music parity)
+    addInteraction(UIContextMenuInteraction(delegate: self))
+    for direction in [UISwipeGestureRecognizer.Direction.left, .right] {
+      let swipeGesture = UISwipeGestureRecognizer(target: self, action: #selector(miniPlayerSwiped(_:)))
+      swipeGesture.direction = direction
+      addGestureRecognizer(swipeGesture)
+    }
+
     miniPlayerGotTouchedView.translatesAutoresizingMaskIntoConstraints = false
     artworkImage.translatesAutoresizingMaskIntoConstraints = false
     titleLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -729,7 +739,22 @@ class MiniPlayerView: UIView {
 
   @objc
   private func miniPlayerGotTouched(_ recognizer: UITapGestureRecognizer) {
+    Haptics.soft.vibrate(isHapticsEnabled: appDelegate.storage.settings.user.isHapticsEnabled)
     openPlayerView()
+  }
+
+  @objc
+  private func miniPlayerSwiped(_ recognizer: UISwipeGestureRecognizer) {
+    guard recognizer.state == .ended else { return }
+    Haptics.light.vibrate(isHapticsEnabled: appDelegate.storage.settings.user.isHapticsEnabled)
+    switch recognizer.direction {
+    case .left:
+      playerHandler?.nextButtonPushed()
+    case .right:
+      playerHandler?.previousButtonPushed()
+    default:
+      break
+    }
   }
 
   public func openPlayerView(completion: (() -> ())? = nil) {
@@ -844,13 +869,9 @@ class MiniPlayerView: UIView {
   }
 
   func refreshPlayer() {
-    if traitCollection.userInterfaceStyle == .dark {
-      titleLabel.textColor = .white
-      subtitleLabel.textColor = .lightGray
-    } else {
-      titleLabel.textColor = .black
-      subtitleLabel.textColor = .darkGray
-    }
+    // §2.3 — semantic tokens instead of the former hard light/dark switch
+    titleLabel.textColor = .sonicHardLabel
+    subtitleLabel.textColor = .secondaryLabel
     playerHandler?.refreshCurrentlyPlayingInfo(
       artworkImage: artworkImage,
       titleLabel: titleLabel,
@@ -993,4 +1014,46 @@ extension MiniPlayerView: MusicPlayable {
   }
 
   func didPlaybackRateChange() {}
+}
+
+// MARK: UIContextMenuInteractionDelegate
+
+extension MiniPlayerView: UIContextMenuInteractionDelegate {
+  /// §5.3 — quick menu for the current track: transport toggle on top,
+  /// then the standard entity actions (favorite, download, queues,
+  /// go-to-album/artist) built by the same `EntityPreviewActionBuilder`
+  /// the options `⋯` button and row context menus use.
+  func contextMenuInteraction(
+    _ interaction: UIContextMenuInteraction,
+    configurationForMenuAtLocation location: CGPoint
+  ) -> UIContextMenuConfiguration? {
+    guard let hostVC = AppDelegate.mainWindowHostVC as? UIViewController else { return nil }
+    return UIContextMenuConfiguration(identifier: nil, previewProvider: {
+      guard let currentlyPlaying = self.player.currentlyPlaying else { return nil }
+      let previewVC = EntityPreviewVC()
+      previewVC.display(container: currentlyPlaying, on: hostVC)
+      return previewVC
+    }) { _ in
+      var menuActions = [UIMenuElement]()
+      if self.player.isPlaying {
+        menuActions.append(UIAction(title: "Pause", image: .pause) { _ in
+          self.player.pause()
+        })
+      } else {
+        menuActions.append(UIAction(title: "Play", image: .play) { _ in
+          self.player.play()
+        })
+      }
+      if let currentlyPlaying = self.player.currentlyPlaying {
+        menuActions.append(
+          UIMenu(
+            options: .displayInline,
+            children: EntityPreviewActionBuilder(container: currentlyPlaying, on: hostVC)
+              .createMenuActions()
+          )
+        )
+      }
+      return UIMenu(children: menuActions)
+    }
+  }
 }
