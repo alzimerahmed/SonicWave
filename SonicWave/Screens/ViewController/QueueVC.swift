@@ -275,6 +275,23 @@ extension QueueVC: UITableViewDelegate, UITableViewDataSource {
     }
   }
 
+  #if targetEnvironment(macCatalyst)
+    // on iOS PlayableTableCell already plays the tapped queue row itself;
+    // on Mac a single click selects only, so play the row's index here
+    // when one-tap row playback is enabled
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+      guard appDelegate.storage.settings.user.isRowTapPlaybackEnabled,
+            !tableView.isEditing,
+            let playerIndex = PlayerIndex.create(from: indexPath),
+            player.getPlayable(at: playerIndex) != nil
+      else { return }
+      tableView.cellForRow(at: indexPath)?.animateActivation()
+      Haptics.success
+        .vibrate(isHapticsEnabled: appDelegate.storage.settings.user.isHapticsEnabled)
+      player.play(playerIndex: playerIndex)
+    }
+  #endif
+
   // Override to allow editing only for certain rows
   func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
     // don't allow to delete via swipe
