@@ -279,6 +279,10 @@ final class SubsonicServerApi: URLCleanser, Sendable {
     if urlComp.port != nil {
       urlComp.port = nil
     }
+    // URLs can carry HTTP basic-auth userinfo (e.g. alternative server URLs
+    // like https://user:pass@host) — never leak it into logs
+    urlComp.user = nil
+    urlComp.password = nil
     var outputItems = [URLQueryItem]()
     for queryItem in queryItems {
       if queryItem.name == "p" {

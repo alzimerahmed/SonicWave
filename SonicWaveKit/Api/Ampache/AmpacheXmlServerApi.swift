@@ -224,7 +224,7 @@ final class AmpacheXmlServerApi: URLCleanser, Sendable {
         "Ampache authentication url is invalid: %s",
         log: log,
         type: .error,
-        urlComp.description
+        cleanse(urlComponents: urlComp).description
       )
       throw BackendError.invalidUrl
     }
@@ -233,14 +233,24 @@ final class AmpacheXmlServerApi: URLCleanser, Sendable {
 
   func cleanse(url: URL?) -> CleansedURL {
     guard let url = url,
-          var urlComp = URLComponents(url: url, resolvingAgainstBaseURL: false),
-          let queryItems = urlComp.queryItems
+          let urlComp = URLComponents(url: url, resolvingAgainstBaseURL: false)
+    else { return CleansedURL(urlString: "") }
+    return cleanse(urlComponents: urlComp)
+  }
+
+  func cleanse(urlComponents: URLComponents) -> CleansedURL {
+    var urlComp = urlComponents
+    guard let queryItems = urlComp.queryItems
     else { return CleansedURL(urlString: "") }
 
     urlComp.host = "SERVERURL"
     if urlComp.port != nil {
       urlComp.port = nil
     }
+    // URLs can carry HTTP basic-auth userinfo (e.g. alternative server URLs
+    // like https://user:pass@host) — never leak it into logs
+    urlComp.user = nil
+    urlComp.password = nil
     var outputItems = [URLQueryItem]()
     for queryItem in queryItems {
       if queryItem.name == "ssid" {
