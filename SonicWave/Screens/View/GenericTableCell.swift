@@ -163,6 +163,7 @@ class GenericTableCell: BasicTableCell {
     accessibilityLabel = [
       titleLabel.text,
       subtitleLabel.text,
+      infoLabel.isHidden ? nil : infoLabel.text,
       String(
         format: NSLocalizedString(
           "Album progress: track %d of %d",

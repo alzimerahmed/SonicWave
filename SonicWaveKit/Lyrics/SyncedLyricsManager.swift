@@ -55,7 +55,7 @@ public final class SyncedLyricsManager {
   private let fileManager = CacheFileManager.shared
   private let embeddedLyricsExtractor = EmbeddedLyricsExtractor()
   private let lrclibApi = LrclibApi()
-  /// session-scoped result cache (hits + misses) keyed by song id —
+  /// session-scoped result cache (hits only) keyed by song id —
   /// positive results are additionally persisted on disk
   private var sessionResultCache = [String: LyricsResult]()
 

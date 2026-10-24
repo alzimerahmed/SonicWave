@@ -44,7 +44,8 @@ struct LrclibTrack: Sendable, Codable, Equatable {
 /// deliberately decoupled from the account session stack:
 /// - own ephemeral `URLSession` (no account delegate, no TLS pinning, no
 ///   shared cookie/cache stores)
-/// - no credentials, no session token, no custom headers — the query carries
+/// - no credentials, no session token, no account headers (only an
+///   identifying `User-Agent` per LRCLIB etiquette) — the query carries
 ///   only public track metadata
 /// - no `ServerUnreachableMonitor` reporting: a dead lrclib.net must never
 ///   flip the account into offline mode

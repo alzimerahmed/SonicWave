@@ -289,6 +289,7 @@
         <swipeGestureRecognizer direction="down" id="UMb-bk-6ia">
             <connections>
                 <action selector="swipeHandler:" destination="iN0-l3-epB" id="o6g-Sz-f3c"/>
+                <outlet property="delegate" destination="iN0-l3-epB" id="dSw-iP-2de"/>
             </connections>
         </swipeGestureRecognizer>
     </objects>
