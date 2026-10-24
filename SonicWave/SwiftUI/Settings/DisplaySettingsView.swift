@@ -152,6 +152,9 @@ struct DisplaySettingsView: View {
             "Lyrics are smoothly scrolled to next line. Deactivating will result in jumping from line to line."
           )
 
+        }
+
+        if settings.activeAccountInfo != nil {
           SettingsSection(
             content: {
               SettingsCheckBoxRow(
@@ -160,7 +163,7 @@ struct DisplaySettingsView: View {
               )
             },
             footer:
-            String(localized: "When the server has no synced lyrics, title, artist, album, and duration of the current track are sent to lrclib.net — only while online, never your account data.")
+            String(localized: "Off by default. When enabled, title, artist, album, and duration of the current track are sent to lrclib.net if the server has no synced lyrics — only while online, never your account data.")
           )
         }
 

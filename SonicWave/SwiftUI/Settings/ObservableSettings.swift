@@ -112,7 +112,7 @@ final class Settings: ObservableObject {
   @Published
   var artworkTintIntensity: ArtworkTintIntensity = .defaultValue
   @Published
-  var isSyncedLyricsExternalLookupActive = true
+  var isSyncedLyricsExternalLookupActive = false
   @Published
   var isAlbumShuffleActive = false
 }

@@ -212,8 +212,7 @@ public struct UserSettings: Sendable, Codable {
   /// (`MusicHapticsService`). Defaults off — the analyzer tap costs CPU
   /// and haptics are an opt-in feel feature; no-op on devices without a
   /// haptic engine (e.g. Mac Catalyst).
-  /// Backed by an Optional so that decoding older persisted `UserSettings`s
-  /// (which lack this key) does not fail and silently reset all settings.
+  // optional backing to stay decodable for settings stored before this key existed
   private var _isMusicHapticsActive: Bool? = nil
   public var isMusicHapticsActive: Bool {
     get { _isMusicHapticsActive ?? false }
@@ -271,8 +270,7 @@ public struct UserSettings: Sendable, Codable {
   /// `appearanceMode`, `.dark` forces the dark interface, `.trueBlack`
   /// additionally swaps background surfaces to true black. Applied by
   /// `AppDelegate.setAppAppearanceMode` next to `appearanceMode`.
-  /// Backed by an Optional so that decoding older persisted `UserSettings`s
-  /// (which lack this key) does not fail and silently reset all settings.
+  // optional backing to stay decodable for settings stored before this key existed
   private var _blackModePreference: BlackModePreference? = nil
   public var blackModePreference: BlackModePreference {
     get { _blackModePreference ?? .system }
@@ -444,12 +442,12 @@ public struct AccountSetting: Sendable, Codable {
   /// synced lyrics (G4): allow lyric lookups against LRCLIB
   /// (`https://lrclib.net`) as the last-resort source. Third-party host —
   /// requests carry only public track metadata, never account credentials.
-  /// Defaults to `true`. Backed by an Optional so that decoding older
-  /// persisted `AccountSetting`s (which lack this key) does not fail and
-  /// silently reset all account settings.
+  /// Defaults to `false` — opt-in so self-hosted users get no third-party
+  /// calls unless they explicitly enable it.
+  // optional backing to stay decodable for settings stored before this key existed
   private var _isSyncedLyricsExternalLookupActive: Bool? = nil
   public var isSyncedLyricsExternalLookupActive: Bool {
-    get { _isSyncedLyricsExternalLookupActive ?? true }
+    get { _isSyncedLyricsExternalLookupActive ?? false }
     set { _isSyncedLyricsExternalLookupActive = newValue }
   }
 
@@ -457,9 +455,7 @@ public struct AccountSetting: Sendable, Codable {
   /// multi-album music context queues whole albums in shuffled order and
   /// lazily appends the next shuffled album as the queue drains
   /// ("album radio"), instead of shuffling individual songs.
-  /// Backed by an Optional so that decoding older persisted
-  /// `AccountSetting`s (which lack this key) does not fail and silently
-  /// reset all account settings.
+  // optional backing to stay decodable for settings stored before this key existed
   private var _isAlbumShuffleActive: Bool? = nil
   public var isAlbumShuffleActive: Bool {
     get { _isAlbumShuffleActive ?? false }
@@ -494,9 +490,7 @@ public struct AccountSetting: Sendable, Codable {
   /// Now Playing surface absorbs the current artwork's dominant colors —
   /// `.off` = pure semantic background, `.subtle` = two-stop gradient
   /// (default), `.vivid` = four-stop gradient + accent-tinted controls.
-  /// Backed by an Optional so that decoding older persisted
-  /// `AccountSetting`s (which lack this key) does not fail and silently
-  /// reset all account settings.
+  // optional backing to stay decodable for settings stored before this key existed
   private var _artworkTintIntensity: ArtworkTintIntensity? = nil
   public var artworkTintIntensity: ArtworkTintIntensity {
     get { _artworkTintIntensity ?? .defaultValue }
