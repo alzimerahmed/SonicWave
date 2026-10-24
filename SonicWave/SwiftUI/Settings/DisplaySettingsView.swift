@@ -55,6 +55,52 @@ struct DisplaySettingsView: View {
           }
         }
 
+        SettingsSection(
+          content: {
+            SettingsRow(title: "Black Mode") {
+              Menu(settings.blackModePreference.description) {
+                ForEach(BlackModePreference.allCases, id: \.self) { preference in
+                  Button {
+                    settings.blackModePreference = preference
+                  } label: {
+                    if settings.blackModePreference == preference {
+                      Label(preference.description, systemImage: "checkmark")
+                    } else {
+                      Text(preference.description)
+                    }
+                  }
+                }
+              }
+            }
+          },
+          footer:
+          "Dark forces the dark interface. True Black shows pure black surfaces in dark mode — saves battery on OLED screens."
+        )
+
+        if settings.activeAccountInfo != nil {
+          SettingsSection(
+            content: {
+              SettingsRow(title: "Artwork Tint") {
+                Menu(settings.artworkTintIntensity.description) {
+                  ForEach(ArtworkTintIntensity.allCases, id: \.self) { intensity in
+                    Button {
+                      settings.artworkTintIntensity = intensity
+                    } label: {
+                      if settings.artworkTintIntensity == intensity {
+                        Label(intensity.description, systemImage: "checkmark")
+                      } else {
+                        Text(intensity.description)
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            footer:
+            "How strongly the Now Playing background takes on the current artwork's colors. Stored per account."
+          )
+        }
+
         #if !targetEnvironment(macCatalyst)
           SettingsSection(
             content: {
@@ -102,6 +148,17 @@ struct DisplaySettingsView: View {
             },
             footer:
             "Lyrics are smoothly scrolled to next line. Deactivating will result in jumping from line to line."
+          )
+
+          SettingsSection(
+            content: {
+              SettingsCheckBoxRow(
+                title: "Synced Lyrics Online Lookup",
+                isOn: $settings.isSyncedLyricsExternalLookupActive
+              )
+            },
+            footer:
+            "When the server has no synced lyrics, title, artist, album, and duration of the current track are sent to lrclib.net — only while online, never your account data."
           )
         }
 

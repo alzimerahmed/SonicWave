@@ -256,6 +256,20 @@ class SettingsHostVC: UIViewController {
       self.appDelegate.setAppAppearanceMode(style: newValue)
     }))
 
+    settings.blackModePreference = appDelegate.storage.settings.user.blackModePreference
+    changesAgent.append(settings.$blackModePreference.sink(receiveValue: { newValue in
+      self.appDelegate.storage.settings.user.blackModePreference = newValue
+      // re-resolve the override — `.dark`/`.trueBlack` force the dark
+      // interface, `.trueBlack` additionally swaps surfaces to pure black
+      self.appDelegate
+        .setAppAppearanceMode(style: self.appDelegate.storage.settings.user.appearanceMode)
+    }))
+
+    settings.isMusicHapticsActive = appDelegate.storage.settings.user.isMusicHapticsActive
+    changesAgent.append(settings.$isMusicHapticsActive.sink(receiveValue: { newValue in
+      self.appDelegate.storage.settings.user.isMusicHapticsActive = newValue
+    }))
+
     // following account specific setting sinks are assigned.
     // the correct assignment is done in the account switched callback
 
@@ -299,6 +313,28 @@ class SettingsHostVC: UIViewController {
       self.appDelegate.storage.settings.accounts
         .updateSetting(activeAccountInfo) { accountSettings in
           accountSettings.isPlayQueueSyncActive = newValue
+        }
+    }))
+    changesAgent.append(settings.$artworkTintIntensity.sink(receiveValue: { newValue in
+      guard let activeAccountInfo = self.settings.activeAccountInfo else { return }
+      self.appDelegate.storage.settings.accounts
+        .updateSetting(activeAccountInfo) { accountSettings in
+          accountSettings.artworkTintIntensity = newValue
+        }
+    }))
+    changesAgent
+      .append(settings.$isSyncedLyricsExternalLookupActive.sink(receiveValue: { newValue in
+        guard let activeAccountInfo = self.settings.activeAccountInfo else { return }
+        self.appDelegate.storage.settings.accounts
+          .updateSetting(activeAccountInfo) { accountSettings in
+            accountSettings.isSyncedLyricsExternalLookupActive = newValue
+          }
+      }))
+    changesAgent.append(settings.$isAlbumShuffleActive.sink(receiveValue: { newValue in
+      guard let activeAccountInfo = self.settings.activeAccountInfo else { return }
+      self.appDelegate.storage.settings.accounts
+        .updateSetting(activeAccountInfo) { accountSettings in
+          accountSettings.isAlbumShuffleActive = newValue
         }
     }))
     changesAgent.append(settings.$cacheSizeLimitMB.sink(receiveValue: { newValue in
@@ -354,6 +390,18 @@ class SettingsHostVC: UIViewController {
     settings.cacheSizeLimitMB = appDelegate.storage.settings.accounts
       .getSetting(accountInfo).read
       .cacheSizeLimitMB
+
+    settings.artworkTintIntensity = appDelegate.storage.settings.accounts
+      .getSetting(accountInfo).read
+      .artworkTintIntensity
+
+    settings.isSyncedLyricsExternalLookupActive = appDelegate.storage.settings.accounts
+      .getSetting(accountInfo).read
+      .isSyncedLyricsExternalLookupActive
+
+    settings.isAlbumShuffleActive = appDelegate.storage.settings.accounts
+      .getSetting(accountInfo).read
+      .isAlbumShuffleActive
   }
 
   @IBSegueAction

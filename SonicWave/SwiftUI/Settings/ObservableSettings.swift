@@ -103,4 +103,16 @@ final class Settings: ObservableObject {
 
   @Published
   var isAutoplayEnabled = false
+
+  @Published
+  var blackModePreference: BlackModePreference = .defaultValue
+  @Published
+  var isMusicHapticsActive = false
+
+  @Published
+  var artworkTintIntensity: ArtworkTintIntensity = .defaultValue
+  @Published
+  var isSyncedLyricsExternalLookupActive = true
+  @Published
+  var isAlbumShuffleActive = false
 }

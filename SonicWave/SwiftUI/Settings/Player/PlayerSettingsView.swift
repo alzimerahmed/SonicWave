@@ -129,6 +129,30 @@ struct PlayerSettingsView: View {
           footer: "When the queue ends, automatically continue playback using Instant Mix to find similar songs."
         )
 
+        if settings.activeAccountInfo != nil {
+          SettingsSection(
+            content: {
+              SettingsCheckBoxRow(
+                title: "Album Shuffle",
+                isOn: $settings.isAlbumShuffleActive
+              )
+            },
+            footer: "Shuffle plays whole albums back-to-back; the next album is queued automatically. Stored per account."
+          )
+        }
+
+        if MusicHapticsService.isSupported {
+          SettingsSection(
+            content: {
+              SettingsCheckBoxRow(
+                title: "Music Haptics",
+                isOn: $settings.isMusicHapticsActive
+              )
+            },
+            footer: "Beat-synced haptics during playback, synthesized live from the audio. Uses extra battery."
+          )
+        }
+
         // Streaming Format Settings
         SettingsSection(
           content: {
