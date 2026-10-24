@@ -26,8 +26,8 @@ import Foundation
 /// Tolerant LRC parser — pure value types, no I/O.
 ///
 /// Supported:
-/// - line timestamps `[mm:ss.xx]` and `[mm:ss.xxx]` (also `[mm:ss]` and
-///   1-digit fractions)
+/// - line timestamps `[mm:ss.xx]` and `[mm:ss.xxx]` (also `[mm:ss]`,
+///   1-digit fractions, and the `[hh:mm:ss.xx]` variant)
 /// - multi-timestamp lines (`[t1][t2]text` -> one line per timestamp)
 /// - metadata tags `ti/ar/al/lang/la/offset` (other tags are consumed and
 ///   ignored — `by/au/lr/length/re/tool/ve`, unknown `[x:y]` tags)
@@ -83,13 +83,20 @@ enum LrcParser {
     return lyrics
   }
 
-  /// `mm:ss.xx` / `mm:ss.xxx` / `mm:ss` tag content -> milliseconds.
+  /// `[hh:]mm:ss[.xx]` tag content -> milliseconds.
   /// Returns nil for anything that is not a timestamp (metadata tags like
   /// `ti:`, `offset:`, garbage).
   static func parseTimestampContent(_ content: Substring) -> Int? {
     let parts = content.split(separator: ":", omittingEmptySubsequences: false)
-    guard parts.count == 2, let minutes = Int(parts[0]), minutes >= 0 else { return nil }
-    let secondParts = parts[1].split(separator: ".", omittingEmptySubsequences: false)
+    guard parts.count == 2 || parts.count == 3 else { return nil }
+    var hours = 0
+    if parts.count == 3 {
+      guard let parsedHours = Int(parts[0]), parsedHours >= 0 else { return nil }
+      hours = parsedHours
+    }
+    guard let minutes = Int(parts[parts.count - 2]), minutes >= 0 else { return nil }
+    let secondParts = parts[parts.count - 1]
+      .split(separator: ".", omittingEmptySubsequences: false)
     guard secondParts.count == 1 || secondParts.count == 2,
           let seconds = Int(secondParts[0]), seconds >= 0 else { return nil }
     var fractionMs = 0
@@ -100,7 +107,7 @@ enum LrcParser {
       // 1-2 digits are centiseconds, 3 digits are milliseconds
       fractionMs = fraction.count == 3 ? fractionInt : fractionInt * (fraction.count == 2 ? 10 : 100)
     }
-    return minutes * 60_000 + seconds * 1_000 + fractionMs
+    return hours * 3_600_000 + minutes * 60_000 + seconds * 1_000 + fractionMs
   }
 
   /// Applies `[key:value]` metadata to `title`/`artist`/`album`/`lang`/

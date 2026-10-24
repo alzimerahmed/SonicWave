@@ -399,10 +399,12 @@ class PlayerUIHandler: NSObject {
   func timeSliderChanged(timeSlider: UISlider) {
     player.seek(toSecond: Double(timeSlider.value))
     // G4 — the lyrics tick only runs during playback; nudge the tracker
-    // so a scrub while paused snaps the active line immediately
-    if appDelegate.storage.settings.user.isPlayerLyricsDisplayed {
-      AmperKit.shared.syncedLyricsTracker
-        .updatePlaybackPosition(seconds: Double(timeSlider.value))
+    // so a scrub while paused snaps the active line immediately. Only an
+    // already-live tracker is nudged — a bare seek must not materialize
+    // it for users who never open the lyrics pane.
+    if appDelegate.storage.settings.user.isPlayerLyricsDisplayed,
+       let tracker = AmperKit.shared.existingSyncedLyricsTracker {
+      tracker.updatePlaybackPosition(seconds: Double(timeSlider.value))
     }
   }
 

@@ -79,6 +79,9 @@ public final class SyncedLyricsTracker: ObservableObject {
   private let currentlyPlayingCB: @MainActor () -> AbstractPlayable?
   private let elapsedTimeCB: @MainActor () -> Double
   private let lyricsProvider: @MainActor (AbstractPlayable) async -> LyricsResult
+  /// drops the provider-side caches for a playable — invoked when a
+  /// fresh download may have added embedded/sidecar lyrics
+  private let invalidateLyricsCB: (@MainActor (AbstractPlayable) -> ())?
   private let notificationHandler: EventNotificationHandler?
   private var trackedPlayableObjectID: NSManagedObjectID?
   /// generation guard — a resolve that lands after the track already
@@ -89,12 +92,20 @@ public final class SyncedLyricsTracker: ObservableObject {
     currentlyPlayingCB: @escaping @MainActor () -> AbstractPlayable?,
     elapsedTimeCB: @escaping @MainActor () -> Double,
     lyricsProvider: @escaping @MainActor (AbstractPlayable) async -> LyricsResult,
+    invalidateLyricsCB: (@MainActor (AbstractPlayable) -> ())? = nil,
     notificationHandler: EventNotificationHandler? = nil
   ) {
     self.currentlyPlayingCB = currentlyPlayingCB
     self.elapsedTimeCB = elapsedTimeCB
     self.lyricsProvider = lyricsProvider
+    self.invalidateLyricsCB = invalidateLyricsCB
     self.notificationHandler = notificationHandler
+    notificationHandler?.register(
+      self,
+      selector: #selector(downloadFinishedSuccessful(notification:)),
+      name: .downloadFinishedSuccess,
+      object: nil
+    )
   }
 
   /// Forces a re-resolve of the current track's lyrics — e.g. after the
@@ -151,7 +162,24 @@ public final class SyncedLyricsTracker: ObservableObject {
     var newUpdate = update
     newUpdate.activeLine = line
     newUpdate.activeWordIndex = wordIndex
-    publish(newUpdate)
+    // `result` is untouched, so the field guard above already proved a
+    // change — publish directly and skip the deep `SyncedLyrics`
+    // Equatable compare `publish(_:)` would run on this 0.1s hot path
+    update = newUpdate
+    notificationHandler?.post(name: .syncedLyricsUpdate, object: self, userInfo: nil)
+  }
+
+  /// A finished download may have brought embedded USLT frames or an
+  /// `.lrc` sidecar the earlier resolve could not see — drop the
+  /// provider caches and re-resolve when it is the tracked track.
+  @objc
+  private func downloadFinishedSuccessful(notification: Notification) {
+    guard let downloadNotification = DownloadNotification.fromNotification(notification),
+          let playable = currentlyPlayingCB(),
+          playable.uniqueID == downloadNotification.id
+    else { return }
+    invalidateLyricsCB?(playable)
+    refresh()
   }
 
   /// Word-level index inside `line` — `activeWord` expects the already

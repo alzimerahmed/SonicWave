@@ -130,8 +130,8 @@ public class AmperKit {
   /// synced-lyrics playback tracker (G4) — vendored lazily; registers
   /// itself as a `MusicPlayable` notifier on first access so the player
   /// is only instantiated when a synced-lyrics UI actually appears.
-  @MainActor
-  public lazy var syncedLyricsTracker: SyncedLyricsTracker = {
+  public var syncedLyricsTracker: SyncedLyricsTracker {
+    if let tracker = _syncedLyricsTracker { return tracker }
     let tracker = SyncedLyricsTracker(
       currentlyPlayingCB: { [weak self] in self?.player.currentlyPlaying },
       elapsedTimeCB: { [weak self] in self?.player.elapsedTime ?? 0 },
@@ -141,11 +141,24 @@ public class AmperKit {
         return await self.getMeta(accountInfo).syncedLyricsManager
           .lyrics(for: playable)
       },
+      invalidateLyricsCB: { [weak self] playable in
+        guard let self, let accountInfo = playable.account?.info else { return }
+        self.getMeta(accountInfo).syncedLyricsManager.invalidateCache(for: playable)
+      },
       notificationHandler: notificationHandler
     )
     player.addNotifier(notifier: tracker)
+    _syncedLyricsTracker = tracker
     return tracker
-  }()
+  }
+
+  private var _syncedLyricsTracker: SyncedLyricsTracker?
+  /// non-materializing handle — nil until a synced-lyrics UI created the
+  /// tracker; for callers that should only nudge an already-live tracker
+  /// (a bare seek must not create it just to publish a position)
+  public var existingSyncedLyricsTracker: SyncedLyricsTracker? {
+    _syncedLyricsTracker
+  }
 
   @MainActor
   private func createPlayer() -> PlayerFacade {

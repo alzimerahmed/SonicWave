@@ -30,9 +30,11 @@ import Foundation
 /// One `SyncedLyrics` per stored language frame (USLT is keyed by
 /// ISO-639-2 language, a tag can hold several).
 final class EmbeddedLyricsExtractor: Sendable {
-  private let id3TagEditor = ID3TagEditor()
-
-  func extractLyrics(absFilePath: URL) -> [SyncedLyrics] {
+  /// Blocking whole-file parse — callers must keep it off the MainActor
+  /// (`Task.detached`). The editor is created per call; ID3TagEditor is
+  /// not documented as reentrant.
+  nonisolated func extractLyrics(absFilePath: URL) -> [SyncedLyrics] {
+    let id3TagEditor = ID3TagEditor()
     guard let id3Tag = try? id3TagEditor.read(from: absFilePath.path) else { return [] }
     let reader = ID3TagContentReader(id3Tag: id3Tag)
     return reader.unsynchronizedLyrics().compactMap { frame in

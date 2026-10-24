@@ -50,6 +50,10 @@ struct LrclibTrack: Sendable, Codable, Equatable {
 ///   flip the account into offline mode
 final class LrclibApi: Sendable {
   static let apiBaseURL = "https://lrclib.net/api/get"
+  /// `SonicWave/<version>` — same Bundle read `AmperKit.version` does,
+  /// kept nonisolated so the request path stays off-actor
+  private static let userAgent =
+    "SonicWave/\((Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String) ?? "")"
 
   private let log = OSLog(subsystem: "com.alzimerahmed.SonicWave", category: "Lrclib")
   /// boxed — `URLSession` predates the Sendable audit (same pattern the
@@ -94,7 +98,10 @@ final class LrclibApi: Sendable {
     urlComp.queryItems = queryItems
     guard let url = urlComp.url else { throw BackendError.invalidUrl }
 
-    let request = URLRequest(url: url)
+    var request = URLRequest(url: url)
+    // LRCLIB asks clients to identify themselves instead of sending
+    // the platform default UA
+    request.setValue(Self.userAgent, forHTTPHeaderField: "User-Agent")
     let (data, response) = try await session.wrappedValue.data(for: request)
     guard let httpResponse = response as? HTTPURLResponse else {
       throw ResponseError(type: .api, message: "no HTTP response")

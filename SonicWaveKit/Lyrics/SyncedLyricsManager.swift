@@ -79,7 +79,12 @@ public final class SyncedLyricsManager {
     guard let song = playable.asSong else { return .none }
     if let cached = sessionResultCache[song.id] { return cached }
     let result = await resolveLyrics(song: song)
-    sessionResultCache[song.id] = result
+    // misses are not session-cached — a download finishing or a flipped
+    // lookup toggle must re-run the source chain on the next request,
+    // and unbounded `.none` entries would grow the cache needlessly
+    if result != .none {
+      sessionResultCache[song.id] = result
+    }
     return result
   }
 
@@ -115,7 +120,7 @@ public final class SyncedLyricsManager {
     if let lyrics = await fetchServerLyrics(song: song) {
       return storeAndWrap(lyrics, song: song)
     }
-    if let lyrics = fetchLocalFileLyrics(song: song) {
+    if let lyrics = await fetchLocalFileLyrics(song: song) {
       return storeAndWrap(lyrics, song: song)
     }
     if let lyrics = await fetchLrclibLyrics(song: song) {
@@ -158,14 +163,20 @@ public final class SyncedLyricsManager {
   /// Sources (c)+(d): lyrics shipped with the local file — only for
   /// downloaded/cached playables. Embedded USLT first, then the `.lrc`
   /// sidecar next to the playable file.
-  private func fetchLocalFileLyrics(song: Song) -> SyncedLyrics? {
+  private func fetchLocalFileLyrics(song: Song) async -> SyncedLyrics? {
     guard song.isCached,
           let relFilePath = song.relFilePath,
           let absFilePath = fileManager.getAbsoluteAmperfyPath(relFilePath: relFilePath)
     else { return nil }
 
-    for embedded in embeddedLyricsExtractor.extractLyrics(absFilePath: absFilePath) {
-      return embedded // first stored language frame wins
+    // ID3TagEditor does synchronous whole-file I/O — keep it off the
+    // MainActor so a large download doesn't stall the UI
+    let embedded = await Task.detached(priority: .utility) {
+      [extractor = embeddedLyricsExtractor] in
+      extractor.extractLyrics(absFilePath: absFilePath)
+    }.value
+    if let first = embedded.first {
+      return first // first stored language frame wins
     }
 
     let sidecarPath = absFilePath.deletingPathExtension().appendingPathExtension("lrc")
