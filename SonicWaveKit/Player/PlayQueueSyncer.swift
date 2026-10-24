@@ -128,8 +128,14 @@ public class PlayQueueSyncer {
     debounceTimer = nil
   }
 
+  /// the account toggle (`AccountSetting.isPlayQueueSyncActive`, G9) is
+  /// read live — disabling it stops uploads/pulls without a restart;
+  /// `isPlayQueueDirty` keeps accumulating so a later re-enable still
+  /// resolves the divergence via `PlayQueueSyncPolicy` (local wins)
   private var isSyncAllowed: Bool {
-    isRunning && storage.settings.user.isOnlineMode && networkMonitor.isConnectedToNetwork
+    isRunning &&
+      storage.settings.accounts.getSetting(account.info).read.isPlayQueueSyncActive &&
+      storage.settings.user.isOnlineMode && networkMonitor.isConnectedToNetwork
   }
 
   private func syncPlayQueueOnStartup() async {

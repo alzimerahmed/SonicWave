@@ -152,6 +152,9 @@ class EntityPreviewActionBuilder {
     if isAddToPlaylist {
       elementHandlingActions.append(createAddToPlaylistAction())
     }
+    if let playlist = entityContainer as? Playlist {
+      elementHandlingActions.append(createAutoDownloadPlaylistAction(playlist: playlist))
+    }
     if isDownloadPossible {
       elementHandlingActions.append(createDownloadAction())
     }
@@ -735,6 +738,26 @@ class EntityPreviewActionBuilder {
         guard let hostingSplitVC = AppDelegate.mainWindowHostVC else { return }
         hostingSplitVC.pushNavLibrary(vc: podcastDetailVC)
       }
+    }
+  }
+
+  /// G5 watch toggle — `Playlist.isWatchedForAutoDownload` persists
+  /// immediately and is re-synced by `AutoDownloadLibrarySyncer` on the
+  /// next library sync. Enabling also pins the already-synced content so
+  /// the playlist is complete offline right away.
+  private func createAutoDownloadPlaylistAction(playlist: Playlist) -> UIAction {
+    UIAction(
+      title: "Download New Songs",
+      image: .download,
+      state: playlist.isWatchedForAutoDownload ? .on : .off
+    ) { action in
+      let isNowWatched = playlist.toggleWatchedForAutoDownload()
+      guard isNowWatched,
+            let account = playlist.account else { return }
+      let playables = playlist.playables
+      guard !playables.isEmpty else { return }
+      self.appDelegate.getMeta(account.info).playableDownloadManager
+        .download(objects: playables, asTier: .pinned)
     }
   }
 

@@ -55,6 +55,12 @@ final class Settings: ObservableObject {
   @Published
   var isAutoCacheLatestPodcastEpisodes = false
   @Published
+  var isAutoDownloadFavorites = false
+  @Published
+  var isPlayQueueSyncActive = true
+  @Published
+  var cacheSizeLimitMB = 0 // account-level .cache tier cap in MB (0 = unlimited)
+  @Published
   var isPlayerAutoCachePlayedItems = false
   @Published
   var isScrobbleStreamedItems = false

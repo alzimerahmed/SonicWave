@@ -46,29 +46,51 @@ struct LibrarySettingsView: View {
   @State
   var albumWithSyncedSongsCount = 0
   @State
-  var cachedSongCount = 0
+  var pinnedUsageText = ""
   @State
-  var cachedPodcastEpisodesCount = 0
+  var cacheUsageText = ""
   @State
-  var completeCacheSize = ""
-  @State
-  var cacheSizeLimit = ""
-  @State
-  var cacheSelection = ["0", " MB"]
+  var totalUsageText = ""
   @State
   var autoSyncProgressText = ""
 
+  @State
+  var isShowClearCacheAlert = false
   @State
   var isShowDeleteCacheAlert = false
   @State
   var isShowDownloadSongsAlert = false
 
-  let byteValues = (
-    stride(from: 0, through: 20, by: 1).map { $0.description } +
-      stride(from: 25, through: 50, by: 5).map { $0.description } +
-      stride(from: 60, through: 100, by: 10).map { $0.description } +
-      stride(from: 110, through: 975, by: 25).map { $0.description }
-  )
+  /// one preset for the account's `.cache` tier cap
+  /// (`AccountSetting.cacheSizeLimitMB`, G6) — 0 renders as "Unlimited"
+  private struct CacheLimitPreset: Hashable {
+    let title: String
+    let mb: Int
+  }
+
+  private static let cacheLimitPresets: [CacheLimitPreset] = [
+    CacheLimitPreset(title: "512 MB", mb: 512),
+    CacheLimitPreset(title: "1 GB", mb: 1_024),
+    CacheLimitPreset(title: "2 GB", mb: 2_048),
+    CacheLimitPreset(title: "5 GB", mb: 5_120),
+    CacheLimitPreset(title: "Unlimited", mb: 0),
+  ]
+
+  private var cacheLimitText: String {
+    let mb = settings.cacheSizeLimitMB
+    if let preset = Self.cacheLimitPresets.first(where: { $0.mb == mb }) {
+      return preset.title
+    }
+    return mb <= 0 ? "Unlimited" : (Int64(mb) * 1_048_576).asByteString
+  }
+
+  private static func usageText(itemCount: Int, byteCount: Int64) -> String {
+    "\(itemCount) item\(itemCount == 1 ? "" : "s"), \(byteCount.asByteString)"
+  }
+
+  private func setCacheLimit(mb: Int) {
+    settings.cacheSizeLimitMB = mb
+  }
 
   private func updateValues() {
     Task { @MainActor in do {
@@ -112,28 +134,19 @@ struct LibrarySettingsView: View {
         autoSyncProgressText = String(format: "%.1f", progress) + "%"
       }
 
-      cachedSongCount = try await appDelegate.storage.async.performAndGet { asyncCompanion in
+      let usage = try await appDelegate.storage.async.performAndGet { asyncCompanion in
         let accountAsync = asyncCompanion.library.getAccount(managedObjectId: accountObjectId)
-        return asyncCompanion.library.getCachedSongCount(for: accountAsync)
+        return asyncCompanion.library.getPlayableStorageUsage(for: accountAsync)
       }
-      cachedPodcastEpisodesCount = try await appDelegate.storage.async
-        .performAndGet { asyncCompanion in
-          let accountAsync = asyncCompanion.library.getAccount(managedObjectId: accountObjectId)
-          return asyncCompanion.library.getCachedPodcastEpisodeCount(for: accountAsync)
-        }
-      completeCacheSize = try await appDelegate.storage.async.performAndGet { asyncCompanion in
-        let accountAsync = asyncCompanion.library.getAccount(managedObjectId: accountObjectId)
-        let playableByteSize = fileManager.getPlayableCacheSize(for: accountAsync.info)
-        return (playableByteSize > 1_000_000) ? playableByteSize.asByteString : Int64(0)
-          .asByteString
-      }
-
-      let curCacheSizeLimit = Int64(settings.cacheSizeLimit)
-      cacheSizeLimit = curCacheSizeLimit > 0 ? curCacheSizeLimit.asByteString : "No Limit"
-      cacheSelection = curCacheSizeLimit > 0 ? [
-        curCacheSizeLimit.asByteString.components(separatedBy: " ")[0],
-        " " + curCacheSizeLimit.asByteString.components(separatedBy: " ")[1]
-      ] : ["0", " MB"]
+      pinnedUsageText = Self.usageText(
+        itemCount: usage.pinnedTierItemCount,
+        byteCount: usage.pinnedTierByteCount
+      )
+      cacheUsageText = Self.usageText(
+        itemCount: usage.cacheTierItemCount,
+        byteCount: usage.cacheTierByteCount
+      )
+      totalUsageText = usage.totalByteCount.asByteString
     } catch {
       // do nothing
     }}
@@ -178,48 +191,57 @@ struct LibrarySettingsView: View {
         }, header: "Background song sync")
 
         SettingsSection(content: {
-          let changeHandler: ([String], [String]) -> () = { oldCacheString, newCacheString in
-            if newCacheString[1] == "" {
-              settings.cacheSizeLimit = 0
-              cacheSelection = ["0", " MB"]
-            }
-            if let cacheInByte = (newCacheString[0] + newCacheString[1]).asByteCount {
-              settings.cacheSizeLimit = cacheInByte
-            }
-          }
+          SettingsRow(title: "Downloads") { SecondaryText(pinnedUsageText) }
+          SettingsRow(title: "Cache") { SecondaryText(cacheUsageText) }
+          SettingsRow(title: "Total") { SecondaryText(totalUsageText) }
+        }, header: "Storage", footer:
+        "Downloads are kept until you delete them. The cache holds automatically saved songs and podcast episodes and frees space on its own.")
 
-          SettingsRow(title: "Cached Songs") { SecondaryText(cachedSongCount.description) }
-          SettingsRow(title: "Cached Podcast Episodes") {
-            SecondaryText(cachedPodcastEpisodesCount.description)
-          }
-          SettingsRow(title: "Complete Cache Size") {
-            SecondaryText(completeCacheSize.description)
-          }
-
-          #if targetEnvironment(macCatalyst) // ok
-            // We can not present the picker in wheel style on macOS. It is not supported.
-            // Instead, we use a menu style picker without a navigation link.
-            MultiPickerView(
-              data: [("Cache Size Limit", byteValues), ("", [" MB", " GB"])],
-              selection: $cacheSelection
-            )
-            .onChange(of: cacheSelection, changeHandler)
-          #else
-            NavigationLink {
-              MultiPickerView(
-                data: [("Size", byteValues), (" Bytes", [" MB", " GB"])],
-                selection: $cacheSelection
-              )
-              .navigationTitle("Cache Size Limit")
-            } label: {
-              SettingsRow(title: "Cache Size Limit") {
-                SecondaryText(cacheSizeLimit.description)
+        SettingsSection(content: {
+          SettingsRow(title: "Cache Limit") {
+            Menu(cacheLimitText) {
+              ForEach(Self.cacheLimitPresets, id: \.self) { preset in
+                Button {
+                  setCacheLimit(mb: preset.mb)
+                } label: {
+                  if settings.cacheSizeLimitMB == preset.mb {
+                    Label(preset.title, systemImage: "checkmark")
+                  } else {
+                    Text(preset.title)
+                  }
+                }
               }
             }
-            .onChange(of: cacheSelection, changeHandler)
-          #endif
-
+            .accessibilityLabel("Cache limit")
+            .accessibilityValue(cacheLimitText)
+          }
           if let activeAccountInfo = settings.activeAccountInfo {
+            SettingsButtonRow(title: "Clear Cache", actionType: .destructive) {
+              isShowClearCacheAlert = true
+            }.alert(isPresented: $isShowClearCacheAlert) {
+              Alert(
+                title: Text("Clear Cache"),
+                message: Text(
+                  "This removes all automatically cached songs and podcast episodes. Your downloads are kept."
+                ),
+                primaryButton: .destructive(Text("Clear")) {
+                  let account = appDelegate.storage.main.library
+                    .getAccount(info: activeAccountInfo)
+                  let cachedPlayables = appDelegate.storage.main.library
+                    .getCachedPlayables(for: account, downloadTier: .cache)
+                  appDelegate.storage.main.library.deleteCache(of: cachedPlayables)
+                  appDelegate.storage.main.library.saveContext()
+                  updateValues()
+                },
+                secondaryButton: .cancel()
+              )
+            }
+          }
+        }, header: "Cache", footer:
+        "When the cache exceeds the limit, the least recently played items are removed automatically. Downloads are never removed.")
+
+        if settings.activeAccountInfo != nil {
+          SettingsSection(content: {
             SettingsButtonRow(title: "Download all songs in library") {
               isShowDownloadSongsAlert = true
             }
@@ -230,43 +252,47 @@ struct LibrarySettingsView: View {
                   "This will add all uncached songs in your library to the download queue. This may use a lot of data and storage. Continue?"
                 ),
                 primaryButton: .default(Text("OK")) {
-                  let account = appDelegate.storage.main.library
-                    .getAccount(info: activeAccountInfo)
-                  let allSongsToDownload = appDelegate.storage.main.library
-                    .getSongsForCompleteLibraryDownload(for: account)
-                  appDelegate.getMeta(account.info).playableDownloadManager
-                    .download(objects: allSongsToDownload)
+                  if let activeAccountInfo = settings.activeAccountInfo {
+                    let account = appDelegate.storage.main.library
+                      .getAccount(info: activeAccountInfo)
+                    let allSongsToDownload = appDelegate.storage.main.library
+                      .getSongsForCompleteLibraryDownload(for: account)
+                    appDelegate.getMeta(account.info).playableDownloadManager
+                      .download(objects: allSongsToDownload)
+                  }
                 },
                 secondaryButton: .cancel()
               )
             }
 
             SettingsButtonRow(
-              title: "Delete downloaded songs and podcast episodes",
+              title: "Delete all downloads and cached files",
               actionType: .destructive
             ) {
               isShowDeleteCacheAlert = true
             }.alert(isPresented: $isShowDeleteCacheAlert) {
               Alert(
-                title: Text("Delete Cache"),
+                title: Text("Delete All Downloads"),
                 message: Text(
-                  "Are you sure you want to delete this account’s downloaded songs and podcast episodes?"
+                  "This removes all downloaded and cached songs and podcast episodes for this account."
                 ),
                 primaryButton: .destructive(Text("Delete")) {
-                  appDelegate.player.stop()
-                  let account = appDelegate.storage.main.library
-                    .getAccount(info: activeAccountInfo)
-                  appDelegate.getMeta(account.info).playableDownloadManager.stop()
-                  appDelegate.storage.main.library
-                    .deletePlayableCachePaths(for: account)
-                  appDelegate.storage.main.library.saveContext()
-                  fileManager.deletePlayableCache(accountInfo: account.info)
-                  appDelegate.getMeta(account.info).playableDownloadManager.start()
+                  if let activeAccountInfo = settings.activeAccountInfo {
+                    appDelegate.player.stop()
+                    let account = appDelegate.storage.main.library
+                      .getAccount(info: activeAccountInfo)
+                    appDelegate.getMeta(account.info).playableDownloadManager.stop()
+                    appDelegate.storage.main.library
+                      .deletePlayableCachePaths(for: account)
+                    appDelegate.storage.main.library.saveContext()
+                    fileManager.deletePlayableCache(accountInfo: account.info)
+                    appDelegate.getMeta(account.info).playableDownloadManager.start()
+                  }
                 }, secondaryButton: .cancel()
               )
             }
-          }
-        }, header: "Cache")
+          })
+        }
       }
     }
     .navigationTitle("Library")

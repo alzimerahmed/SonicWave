@@ -191,16 +191,37 @@ struct AccountSettingsView: View {
             }
           }
 
-          SettingsSection(content: {
-            SettingsCheckBoxRow(
-              title: "Newest Songs",
-              isOn: $settings.isAutoCacheLatestSongs
-            )
-            SettingsCheckBoxRow(
-              title: "Newest Podcast Episodes",
-              isOn: $settings.isAutoCacheLatestPodcastEpisodes
-            )
-          }, header: "Auto Cache")
+          SettingsSection(
+            content: {
+              SettingsCheckBoxRow(
+                title: "Newest Songs",
+                isOn: $settings.isAutoCacheLatestSongs
+              )
+              SettingsCheckBoxRow(
+                title: "Newest Podcast Episodes",
+                isOn: $settings.isAutoCacheLatestPodcastEpisodes
+              )
+              SettingsCheckBoxRow(
+                title: "Favorite Songs and Albums",
+                isOn: $settings.isAutoDownloadFavorites
+              )
+            },
+            header: "Auto Download",
+            footer:
+            "Favorites are kept downloaded permanently. To keep a playlist downloaded, open its ⋯ menu and enable “Download New Songs”."
+          )
+
+          SettingsSection(
+            content: {
+              SettingsCheckBoxRow(
+                title: "Play Queue",
+                isOn: $settings.isPlayQueueSyncActive
+              )
+            },
+            header: "Sync with Server",
+            footer:
+            "Saves your play queue to the server and restores newer changes from it. Not supported by all servers."
+          )
 
           SettingsSection(
             content: {

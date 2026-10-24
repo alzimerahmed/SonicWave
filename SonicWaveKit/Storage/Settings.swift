@@ -388,6 +388,18 @@ public struct AccountSetting: Sendable, Codable {
     set { _isAutoDownloadFavoritesActive = newValue }
   }
 
+  /// play-queue sync (G9): mirrors the music play queue to the server via
+  /// `savePlayQueue`/`getPlayQueue` and restores newer remote queues
+  /// (`PlayQueueSyncer`). Defaults to `true` — the feature shipped enabled
+  /// before this toggle existed; backends without support silently no-op.
+  /// Backed by an Optional so that decoding older persisted `AccountSetting`s
+  /// (which lack this key) does not fail and silently reset all account settings.
+  private var _isPlayQueueSyncActive: Bool? = nil
+  public var isPlayQueueSyncActive: Bool {
+    get { _isPlayQueueSyncActive ?? true }
+    set { _isPlayQueueSyncActive = newValue }
+  }
+
   /// two-tier storage (G6): maximum size of the evictable `.cache` download
   /// tier in megabytes — user-pinned `.pinned` downloads never count against
   /// it and are never evicted by it. `0` disables the limit (unbounded cache).

@@ -287,6 +287,39 @@ class SettingsHostVC: UIViewController {
           accountSettings.isScrobbleStreamedItems = newValue
         }
     }))
+    changesAgent.append(settings.$isAutoDownloadFavorites.sink(receiveValue: { newValue in
+      guard let activeAccountInfo = self.settings.activeAccountInfo else { return }
+      self.appDelegate.storage.settings.accounts
+        .updateSetting(activeAccountInfo) { accountSettings in
+          accountSettings.isAutoDownloadFavoritesActive = newValue
+        }
+    }))
+    changesAgent.append(settings.$isPlayQueueSyncActive.sink(receiveValue: { newValue in
+      guard let activeAccountInfo = self.settings.activeAccountInfo else { return }
+      self.appDelegate.storage.settings.accounts
+        .updateSetting(activeAccountInfo) { accountSettings in
+          accountSettings.isPlayQueueSyncActive = newValue
+        }
+    }))
+    changesAgent.append(settings.$cacheSizeLimitMB.sink(receiveValue: { newValue in
+      guard let activeAccountInfo = self.settings.activeAccountInfo else { return }
+      // guarded: the sink fires on the initial assignment too — only
+      // persist + trim on a real user change
+      let hasValueChanged = self.appDelegate.storage.settings.accounts
+        .getSetting(activeAccountInfo).read.cacheSizeLimitMB != newValue
+      guard hasValueChanged else { return }
+      self.appDelegate.storage.settings.accounts
+        .updateSetting(activeAccountInfo) { accountSettings in
+          accountSettings.cacheSizeLimitMB = newValue
+        }
+      // retire the legacy global hard-stop (user.cacheLimit) — the
+      // per-account LRU cap is now the single user-facing cache limit
+      self.appDelegate.storage.settings.user.cacheLimit = 0
+      Task { @MainActor in
+        await self.appDelegate.getMeta(activeAccountInfo).playableDownloadManager
+          .trimCacheToLimit()
+      }
+    }))
   }
 
   // account is changed via the active account changed callback
@@ -309,6 +342,18 @@ class SettingsHostVC: UIViewController {
     settings.isScrobbleStreamedItems = appDelegate.storage.settings.accounts
       .getSetting(accountInfo).read
       .isScrobbleStreamedItems
+
+    settings.isAutoDownloadFavorites = appDelegate.storage.settings.accounts
+      .getSetting(accountInfo).read
+      .isAutoDownloadFavoritesActive
+
+    settings.isPlayQueueSyncActive = appDelegate.storage.settings.accounts
+      .getSetting(accountInfo).read
+      .isPlayQueueSyncActive
+
+    settings.cacheSizeLimitMB = appDelegate.storage.settings.accounts
+      .getSetting(accountInfo).read
+      .cacheSizeLimitMB
   }
 
   @IBSegueAction
