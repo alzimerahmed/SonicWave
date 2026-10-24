@@ -30,6 +30,7 @@ import UIKit
 /// of `SonicWaveAppIcon.icon` — Icon Composer is macOS-only) and declare
 /// them under `CFBundleAlternateIcons` in Info.plist. Until then
 /// `alternateIcons` is empty and the settings picker row stays hidden.
+@MainActor
 enum AppIconManager {
   static var isSupported: Bool {
     #if targetEnvironment(macCatalyst) // ok
@@ -62,8 +63,10 @@ enum AppIconManager {
       guard isSupported else { return }
       UIApplication.shared.setAlternateIconName(name) { error in
         guard let error else { return }
-        (UIApplication.shared.delegate as? AppDelegate)?.eventLogger
-          .report(topic: "App Icon", error: error)
+        Task { @MainActor in
+          (UIApplication.shared.delegate as? AppDelegate)?.eventLogger
+            .report(topic: "App Icon", error: error)
+        }
       }
     #endif
   }

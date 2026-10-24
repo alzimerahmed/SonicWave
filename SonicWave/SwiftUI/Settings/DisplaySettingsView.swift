@@ -28,7 +28,7 @@ struct DisplaySettingsView: View {
   @EnvironmentObject
   private var settings: Settings
   @State
-  private var activeIconName: String? = AppIconManager.activeIconName
+  private var activeIconName: String?
 
   func setAppearanceMode(style: UIUserInterfaceStyle) {
     settings.appearanceMode = style
@@ -261,6 +261,9 @@ struct DisplaySettingsView: View {
           )
         }
       }
+    }
+    .onAppear {
+      activeIconName = AppIconManager.activeIconName
     }
     .navigationTitle("Display")
     .navigationBarTitleDisplayMode(.inline)
