@@ -843,6 +843,17 @@ final class SubsonicServerApi: URLCleanser, Sendable {
     }
   }
 
+  /// `getPlayQueue`/`savePlayQueue` exist only on Subsonic API >= 1.12.0 —
+  /// older servers answer every call with an error, so both directions of
+  /// the G9 queue sync must gate on this instead of spamming requests.
+  /// Resolves the negotiated server version (ping on first use, cached
+  /// afterwards) rather than a separate capability round-trip.
+  public func isServerPlayQueueSupported() async throws -> Bool {
+    let _ = try await determineApiVersionToUse()
+    guard let serverApi = serverApiVersion.wrappedValue else { return false }
+    return serverApi >= SubsonicVersion(major: 1, minor: 12, patch: 0)
+  }
+
   /// G9: fetch the server-side play queue (Subsonic API >= 1.12.0)
   public func requestPlayQueue() async throws -> APIDataResponse {
     try await request { version in

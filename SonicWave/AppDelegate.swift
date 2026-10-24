@@ -252,6 +252,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     storage.applyMultiAccountSettingsUpdateIfNeeded()
     storage.applyCredentialsKeychainMigrationIfNeeded()
+    // Retire the legacy global cache hard-stop (`user.cacheLimit`): the
+    // per-account `.cache` tier cap (`cacheSizeLimitMB`, G6) replaced it,
+    // so a leftover non-zero value would silently keep blocking new
+    // downloads via `DownloadManager.isAllowedToTriggerDownload`. Runs at
+    // launch (not only on settings-screen load) so the hard-stop lifts
+    // even for users who never open Settings; the `!= 0` guard makes it
+    // a no-op after the first run.
+    if storage.settings.user.cacheLimit != 0 {
+      storage.settings.user.cacheLimit = 0
+    }
     libraryUpdater.performAccountCleanUpIfNeccessaryInBackground()
 
     configureDefaultNavigationBarStyle()

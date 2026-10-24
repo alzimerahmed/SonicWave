@@ -47,6 +47,10 @@ class AmpacheLibrarySyncer: CommonLibrarySyncer, LibrarySyncer {
 
   @MainActor
   func syncInitial(statusNotifyier: SyncCallbacks?) async throws {
+    // captured BEFORE any fetch — `markLibrarySyncFinished` stamps this
+    // (minus a safety overlap) as the delta-sync marker so entities
+    // created server-side during the sync stay inside the next window
+    let syncStartDate = Date()
     try await super.createCachedItemRepresentationsInCoreData(statusNotifyier: statusNotifyier)
     let auth = try await ampacheXmlServerApi.requesetLibraryMetaData()
     statusNotifyier?.notifySyncStarted(ofType: .genre, totalCount: auth.genreCount)
@@ -180,40 +184,43 @@ class AmpacheLibrarySyncer: CommonLibrarySyncer, LibrarySyncer {
       )
     }
 
-    markLibrarySyncFinished()
-
     let isSupported = try await ampacheXmlServerApi.requestServerPodcastSupport()
-    guard isSupported else { return }
-    statusNotifyier?.notifySyncStarted(ofType: .podcast, totalCount: auth.podcastCount)
-    let podcastsResponse = try await ampacheXmlServerApi.requestPodcasts()
-    try await storage.async.perform { asyncCompanion in
-      let accountAsync = Account(
-        managedObject: asyncCompanion.context
-          .object(with: self.accountObjectId) as! AccountMO
-      )
-      let idParserDelegate = IDsParserDelegate(performanceMonitor: self.performanceMonitor)
-      try self.parse(
-        response: podcastsResponse,
-        delegate: idParserDelegate,
-        isThrowingErrorsAllowed: false
-      )
-      let prefetch = asyncCompanion.library.getElements(
-        account: accountAsync,
-        prefetchIDs: idParserDelegate.prefetchIDs
-      )
+    if isSupported {
+      statusNotifyier?.notifySyncStarted(ofType: .podcast, totalCount: auth.podcastCount)
+      let podcastsResponse = try await ampacheXmlServerApi.requestPodcasts()
+      try await storage.async.perform { asyncCompanion in
+        let accountAsync = Account(
+          managedObject: asyncCompanion.context
+            .object(with: self.accountObjectId) as! AccountMO
+        )
+        let idParserDelegate = IDsParserDelegate(performanceMonitor: self.performanceMonitor)
+        try self.parse(
+          response: podcastsResponse,
+          delegate: idParserDelegate,
+          isThrowingErrorsAllowed: false
+        )
+        let prefetch = asyncCompanion.library.getElements(
+          account: accountAsync,
+          prefetchIDs: idParserDelegate.prefetchIDs
+        )
 
-      let parserDelegate = PodcastParserDelegate(
-        performanceMonitor: self.performanceMonitor, prefetch: prefetch, account: accountAsync,
-        library: asyncCompanion.library,
-        parseNotifier: statusNotifyier
-      )
-      try self.parse(
-        response: podcastsResponse,
-        delegate: parserDelegate,
-        isThrowingErrorsAllowed: false
-      )
-      parserDelegate.performPostParseOperations()
+        let parserDelegate = PodcastParserDelegate(
+          performanceMonitor: self.performanceMonitor, prefetch: prefetch, account: accountAsync,
+          library: asyncCompanion.library,
+          parseNotifier: statusNotifyier
+        )
+        try self.parse(
+          response: podcastsResponse,
+          delegate: parserDelegate,
+          isThrowingErrorsAllowed: false
+        )
+        parserDelegate.performPostParseOperations()
+      }
     }
+
+    // stamp at the actual finish point — also reached when the server
+    // has no podcast support
+    markLibrarySyncFinished(syncStartDate: syncStartDate)
   }
 
   @MainActor

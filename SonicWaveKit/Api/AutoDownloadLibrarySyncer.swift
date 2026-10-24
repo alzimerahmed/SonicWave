@@ -123,6 +123,11 @@ public class AutoDownloadLibrarySyncer {
     let albumsToExpand = favoriteAlbums.filter { !$0.isSongsMetaDataSynced }
     try await withThrowingTaskGroup(of: Void.self) { taskGroup in
       for album in albumsToExpand {
+        // `Album` (CoreData wrapper class) is not Sendable, but
+        // `taskGroup.addTask` operations inherit the caller's isolation —
+        // the @MainActor closure stays in the same isolation domain, so
+        // the capture is permitted (same shape as the syncers' per-album
+        // task groups)
         taskGroup.addTask { @MainActor @Sendable in
           try await self.librarySyncer.sync(album: album)
         }

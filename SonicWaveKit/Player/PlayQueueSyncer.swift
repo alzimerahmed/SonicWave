@@ -89,6 +89,7 @@ public class PlayQueueSyncer {
   private var isRunning = false
   private var isActive = false
   private var debounceTimer: Timer?
+  private var reconnectObservers = [NSObjectProtocol]()
 
   private var playerData: PlayerData {
     storage.main.library.getPlayerData()
@@ -113,6 +114,7 @@ public class PlayQueueSyncer {
   /// pull-check on login/sync completion, then push when the policy says so
   public func start() {
     isRunning = true
+    registerReconnectObservers()
     if !isActive {
       isActive = true
       Task { @MainActor in
@@ -126,6 +128,37 @@ public class PlayQueueSyncer {
     isRunning = false
     debounceTimer?.invalidate()
     debounceTimer = nil
+    reconnectObservers.forEach { NotificationCenter.default.removeObserver($0) }
+    reconnectObservers = []
+  }
+
+  /// A debounced upload scheduled while offline/no-network no-ops in
+  /// `isSyncAllowed` and is never retried — the dirty flag survives, so
+  /// re-arm the debounced upload when connectivity or online mode
+  /// returns. Dirty wins per `PlayQueueSyncPolicy` (the queue is pushed,
+  /// never clobbered by a restore), so a still-dirty queue only needs an
+  /// upload, not a full pull-check.
+  private func registerReconnectObservers() {
+    guard reconnectObservers.isEmpty else { return }
+    for name in [Notification.Name.networkStatusChanged, .offlineModeChanged] {
+      let observer = NotificationCenter.default.addObserver(
+        forName: name,
+        object: nil,
+        queue: nil
+      ) { _ in
+        Task { @MainActor in
+          self.flushDirtyQueueOnReconnect()
+        }
+      }
+      reconnectObservers.append(observer)
+    }
+  }
+
+  private func flushDirtyQueueOnReconnect() {
+    guard isSyncAllowed, playerData.isPlayQueueDirty else { return }
+    // route through the debounce so a burst of connectivity changes
+    // collapses into a single upload
+    scheduleDebouncedUpload()
   }
 
   /// the account toggle (`AccountSetting.isPlayQueueSyncActive`, G9) is
@@ -188,9 +221,18 @@ public class PlayQueueSyncer {
     )
     let now = Date()
     data.setPlayQueueLastSyncDate(now)
-    // our own upload is the newest remote state — stamping it prevents
-    // the next pull-check from restoring the queue we just wrote
-    data.setPlayQueueRemoteChangeDate(now)
+    // stamp the server's authoritative `changed` (re-fetch getPlayQueue)
+    // so the pull-check compares server clocks on both sides — a local
+    // `now` stamp could lag or lead the server clock and mis-trigger a
+    // restore. One extra round-trip per upload, chosen over a local
+    // estimate because `changed` is the conflict-resolution basis.
+    // Fallback (Ampache returns nil, or the re-fetch fails): a monotonic
+    // local stamp that can never move backwards.
+    let authoritativeChangeDate = (try? await librarySyncer.syncDownRemotePlayQueue())?
+      .changedDate
+    data.setPlayQueueRemoteChangeDate(
+      authoritativeChangeDate ?? max(now, data.playQueueRemoteChangeDate ?? now)
+    )
     data.setPlayQueueDirty(false)
   }
 

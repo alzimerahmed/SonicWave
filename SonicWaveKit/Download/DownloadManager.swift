@@ -496,6 +496,12 @@ actor DownloadManager: NSObject, DownloadManageable {
     } catch {
       if let fetchError = error as? DownloadError {
         await finishDownload(downloadRequest: downloadRequest, task: nil, error: fetchError)
+      } else if RequestFailureKind.classify(error: error) == .connectivity {
+        // a transport-level failure during URL preparation (e.g. the
+        // delegate's preflight request hitting an outage) is not a
+        // permanent fetch failure — defer so the networkStatusChanged
+        // sweep re-queues the request on recovery
+        await finishDownload(downloadRequest: downloadRequest, task: nil, error: .noConnectivity)
       } else {
         await finishDownload(downloadRequest: downloadRequest, task: nil, error: .fetchFailed)
       }

@@ -336,10 +336,11 @@ final class DownloadRequestManager: Sendable {
     }
   }
 
-  /// Cancels one unfinished download (queued or in-flight): stamps
-  /// `error = .canceled` so the FRC-driven queue UI reflects the state
-  /// immediately and the entry becomes removable. The in-flight
-  /// URLSession task is cancelled separately by `DownloadManager`.
+  /// Cancels one unfinished download (queued or in-flight): sets
+  /// `isCanceled` (which stamps `error = .canceled` via the wrapper
+  /// setter) so the FRC-driven queue UI reflects the state immediately
+  /// and the entry becomes removable. The in-flight URLSession task is
+  /// cancelled separately by `DownloadManager`.
   func cancelDownload(for uniqueID: String) async {
     try? await storage.perform { asyncCompanion in
       let account = asyncCompanion.library.getAccount(managedObjectId: self.accountObjectId)

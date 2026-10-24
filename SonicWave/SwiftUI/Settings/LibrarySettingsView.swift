@@ -225,13 +225,28 @@ struct LibrarySettingsView: View {
                   "This removes all automatically cached songs and podcast episodes. Your downloads are kept."
                 ),
                 primaryButton: .destructive(Text("Clear")) {
-                  let account = appDelegate.storage.main.library
-                    .getAccount(info: activeAccountInfo)
-                  let cachedPlayables = appDelegate.storage.main.library
-                    .getCachedPlayables(for: account, downloadTier: .cache)
-                  appDelegate.storage.main.library.deleteCache(of: cachedPlayables)
-                  appDelegate.storage.main.library.saveContext()
-                  updateValues()
+                  // mirror the "Delete all downloads" path: stop playback
+                  // first so a cached file can't be deleted from under an
+                  // in-flight play, and run the per-item file deletes on
+                  // the async context instead of blocking the main thread
+                  appDelegate.player.stop()
+                  let accountObjectId = appDelegate.storage.main.library
+                    .getAccount(info: activeAccountInfo).managedObject.objectID
+                  Task { @MainActor in
+                    // `AsyncCoreDataAccessWrapper.perform` swallows errors
+                    // then saves — acceptable here (same trade-off as
+                    // CacheEvictionHandler): a failed file delete leaves
+                    // the file on disk while the cache bookkeeping resets
+                    try? await appDelegate.storage.async.perform { asyncCompanion in
+                      let accountAsync = asyncCompanion.library
+                        .getAccount(managedObjectId: accountObjectId)
+                      let cachedPlayables = asyncCompanion.library
+                        .getCachedPlayables(for: accountAsync, downloadTier: .cache)
+                      asyncCompanion.library.deleteCache(of: cachedPlayables)
+                      asyncCompanion.saveContext()
+                    }
+                    updateValues()
+                  }
                 },
                 secondaryButton: .cancel()
               )

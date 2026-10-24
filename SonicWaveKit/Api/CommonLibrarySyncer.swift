@@ -55,15 +55,28 @@ class CommonLibrarySyncer {
     self.eventLogger = eventLogger
   }
 
+  /// safety overlap subtracted from the sync-start timestamp when the
+  /// `lastLibrarySyncDate` marker is stamped — albums created
+  /// server-side mid-fetch (and moderate device-vs-server clock skew)
+  /// are re-fetched by the next delta window instead of missed
+  /// permanently; merge-by-id makes the overlap idempotent
+  static let syncMarkerSafetyOverlapInSec: TimeInterval = 5 * 60
+
   /// Stamps `Account.lastLibrarySyncDate` — the marker consumed by the
   /// delta sync path (`getAlbumList2 type=newest` window) to fetch only
-  /// albums added since the last completed library sync. Must only be
-  /// called after a sync finished successfully; a failed sync leaves the
-  /// old date so the next run retries the same window.
-  func markLibrarySyncFinished() {
+  /// albums added since the last completed library sync. The stamp is
+  /// `syncStartDate` (captured BEFORE the album fetch section, not the
+  /// post-fetch local now) shifted back by `syncMarkerSafetyOverlapInSec`:
+  /// stamping `Date()` at finish would put the marker ahead of every
+  /// album created server-side during the fetch, so those albums fall
+  /// outside the next delta window forever. Must only be called after a
+  /// sync finished successfully; a failed sync leaves the old date so
+  /// the next run retries the same window.
+  func markLibrarySyncFinished(syncStartDate: Date) {
     storage.main.perform { companion in
       let accountMain = companion.library.getAccount(managedObjectId: self.accountObjectId)
-      accountMain.lastLibrarySyncDate = Date()
+      accountMain.lastLibrarySyncDate = syncStartDate
+        .addingTimeInterval(-Self.syncMarkerSafetyOverlapInSec)
     }
   }
 

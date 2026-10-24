@@ -752,6 +752,9 @@ class EntityPreviewActionBuilder {
       state: playlist.isWatchedForAutoDownload ? .on : .off
     ) { action in
       let isNowWatched = playlist.toggleWatchedForAutoDownload()
+      // keep the checkmark in sync — the action's `state` was captured
+      // at menu build time and does not track the toggle by itself
+      action.state = isNowWatched ? .on : .off
       guard isNowWatched,
             let account = playlist.account else { return }
       let playables = playlist.playables

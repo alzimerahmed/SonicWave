@@ -51,6 +51,10 @@ class SubsonicLibrarySyncer: CommonLibrarySyncer, LibrarySyncer {
 
   @MainActor
   func syncInitial(statusNotifyier: SyncCallbacks?) async throws {
+    // captured BEFORE any fetch — `markLibrarySyncFinished` stamps this
+    // (minus a safety overlap) as the delta-sync marker, so albums
+    // created server-side during the sync stay inside the next window
+    let syncStartDate = Date()
     try await super.createCachedItemRepresentationsInCoreData(statusNotifyier: statusNotifyier)
 
     statusNotifyier?.notifySyncStarted(ofType: .genre, totalCount: 0)
@@ -223,40 +227,44 @@ class SubsonicLibrarySyncer: CommonLibrarySyncer, LibrarySyncer {
       )
     }
 
-    markLibrarySyncFinished()
-
     let isSupported = try await subsonicServerApi.requestServerPodcastSupport()
-    guard isSupported else { return }
-    statusNotifyier?.notifySyncStarted(ofType: .podcast, totalCount: 0)
-    let podcastsResponse = try await subsonicServerApi.requestPodcasts()
-    try await storage.async.perform { asyncCompanion in
-      let accountAsync = Account(
-        managedObject: asyncCompanion.context
-          .object(with: self.accountObjectId) as! AccountMO
-      )
-      let idParserDelegate = SsIDsParserDelegate(performanceMonitor: self.performanceMonitor)
-      try self.parse(
-        response: podcastsResponse,
-        delegate: idParserDelegate,
-        isThrowingErrorsAllowed: false
-      )
-      let prefetch = asyncCompanion.library.getElements(
-        account: accountAsync,
-        prefetchIDs: idParserDelegate.prefetchIDs
-      )
+    if isSupported {
+      statusNotifyier?.notifySyncStarted(ofType: .podcast, totalCount: 0)
+      let podcastsResponse = try await subsonicServerApi.requestPodcasts()
+      try await storage.async.perform { asyncCompanion in
+        let accountAsync = Account(
+          managedObject: asyncCompanion.context
+            .object(with: self.accountObjectId) as! AccountMO
+        )
+        let idParserDelegate = SsIDsParserDelegate(performanceMonitor: self.performanceMonitor)
+        try self.parse(
+          response: podcastsResponse,
+          delegate: idParserDelegate,
+          isThrowingErrorsAllowed: false
+        )
+        let prefetch = asyncCompanion.library.getElements(
+          account: accountAsync,
+          prefetchIDs: idParserDelegate.prefetchIDs
+        )
 
-      let parserDelegate = SsPodcastParserDelegate(
-        performanceMonitor: self.performanceMonitor, prefetch: prefetch, account: accountAsync,
-        library: asyncCompanion.library,
-        parseNotifier: statusNotifyier
-      )
-      try self.parse(
-        response: podcastsResponse,
-        delegate: parserDelegate,
-        isThrowingErrorsAllowed: false
-      )
-      parserDelegate.performPostParseOperations()
+        let parserDelegate = SsPodcastParserDelegate(
+          performanceMonitor: self.performanceMonitor, prefetch: prefetch, account: accountAsync,
+          library: asyncCompanion.library,
+          parseNotifier: statusNotifyier
+        )
+        try self.parse(
+          response: podcastsResponse,
+          delegate: parserDelegate,
+          isThrowingErrorsAllowed: false
+        )
+        parserDelegate.performPostParseOperations()
+      }
     }
+
+    // stamp at the actual finish point — also reached when the server
+    // has no podcast support (the marker only feeds the album delta
+    // window, so its placement is about completeness, not ordering)
+    markLibrarySyncFinished(syncStartDate: syncStartDate)
   }
 
   /// Delta album resync (fix: "duplicate albums after resync").
@@ -1182,7 +1190,19 @@ class SubsonicLibrarySyncer: CommonLibrarySyncer, LibrarySyncer {
   /// have no server representation and are skipped upstream.
   @MainActor
   func syncUpload(playQueue: PlayQueueSnapshot) async throws {
-    guard isSyncAllowed else { return }
+    // no silent no-op: `PlayQueueSyncer` clears `isPlayQueueDirty` only
+    // after a real upload — a suppressed upload must surface as an
+    // error so the dirty flag survives for the reconnect flush
+    guard isSyncAllowed else {
+      throw ResponseError(
+        type: .api,
+        message: "Play queue upload skipped: server sync is not allowed"
+      )
+    }
+    // capability gate (API < 1.12.0): degrade to the Ampache-style
+    // no-op — the queue can never be mirrored, so keeping the dirty
+    // flag set would only error every sync attempt
+    guard try await subsonicServerApi.isServerPlayQueueSupported() else { return }
     os_log(
       "Save play queue on server: %i songs",
       log: self.log,
@@ -1204,6 +1224,9 @@ class SubsonicLibrarySyncer: CommonLibrarySyncer, LibrarySyncer {
   @MainActor
   func syncDownRemotePlayQueue() async throws -> RemotePlayQueue? {
     guard isSyncAllowed else { return nil }
+    // capability gate: `getPlayQueue` requires API >= 1.12.0 — without
+    // the check every startup pull errors on older servers
+    guard try await subsonicServerApi.isServerPlayQueueSupported() else { return nil }
     let response = try await subsonicServerApi.requestPlayQueue()
     let parserDelegate = SsPlayQueueParserDelegate(performanceMonitor: performanceMonitor)
     try parse(response: response, delegate: parserDelegate)
