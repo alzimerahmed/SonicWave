@@ -31,6 +31,12 @@ class SsPlaylistParserDelegate: SsXmlParser {
   private var parsedPlaylists: Set<Playlist>
   private let account: Account
   private let library: LibraryStorage
+  /// G8: ids of playlists the server flagged `readonly="true"` — Navidrome's
+  /// marker for `.nsp`-backed smart playlists (see `buildOSPlaylist` in
+  /// `server/subsonic/playlists.go`). Persisted by the database agent
+  /// (`PlaylistMO.isServerReadOnly`); kept as data so the UI can badge
+  /// smart playlists before the schema lands.
+  private(set) var readonlyPlaylistIds = Set<String>()
 
   init(performanceMonitor: ThreadPerformanceMonitor, account: Account, library: LibraryStorage) {
     self.account = account
@@ -81,6 +87,10 @@ class SsPlaylistParserDelegate: SsXmlParser {
       }
 
       playlist?.name = attributePlaylistName
+
+      if Bool(attributeDict["readonly"] ?? "false") ?? false {
+        readonlyPlaylistIds.insert(playlistId)
+      }
 
       if let attributeDuration = attributeDict["duration"], let duration = Int(attributeDuration) {
         playlist?.remoteDuration = duration

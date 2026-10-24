@@ -125,6 +125,11 @@ final class SubsonicServerApi: URLCleanser, Sendable {
   private let alamofireSession = Atomic<Alamofire.Session?>(wrappedValue: nil)
   private let openSubsonicExtensionsSupport =
     Atomic<OpenSubsonicExtensionsSupport?>(wrappedValue: nil)
+  /// G8: server product name from `subsonic-response type=…`
+  /// (`navidrome`, `gonic`, `lms`, …) — captured on the first ping,
+  /// gates the `.nsp` smart-playlist native-API read.
+  internal let serverType = Atomic<String?>(wrappedValue: nil)
+  private let navidromeNativeApi: NavidromeNativeApi
   init(
     performanceMonitor: ThreadPerformanceMonitor,
     eventLogger: EventLogger,
@@ -136,6 +141,7 @@ final class SubsonicServerApi: URLCleanser, Sendable {
     self.eventLogger = eventLogger
     self.settings = settings
     self.serverUnreachableMonitor = serverUnreachableMonitor
+    self.navidromeNativeApi = NavidromeNativeApi(sessionSecurity: sessionSecurity)
     self.alamofireSession.wrappedValue = Alamofire.Session(
       delegate: AccountSessionDelegate(security: sessionSecurity)
     )
@@ -438,6 +444,9 @@ final class SubsonicServerApi: URLCleanser, Sendable {
       throw ResponseError(type: .xml, cleansedURL: cleanse(url: response.url), data: response.data)
     }
     self.serverApiVersion.wrappedValue = serverApiVersion
+    // G8: server product attributes (`type="navidrome"` etc.) are emitted
+    // on the same root element — capture them with the version handshake
+    self.serverType.wrappedValue = delegate.serverType
     return serverApiVersion
   }
 
@@ -1026,6 +1035,186 @@ final class SubsonicServerApi: URLCleanser, Sendable {
       )
       urlComp.addQueryItem(name: "count", value: count)
       return try self.createUrl(from: urlComp)
+    }
+  }
+
+  // MARK: G20 enrichment
+
+  public func requestArtistInfo2(id: String) async throws -> APIDataResponse {
+    try await request { version in
+      let urlComp = try self.createAuthApiUrlComponent(
+        version: version,
+        forAction: "getArtistInfo2",
+        id: id
+      )
+      return try self.createUrl(from: urlComp)
+    }
+  }
+
+  public func requestAlbumInfo(id: String) async throws -> APIDataResponse {
+    try await request { version in
+      let urlComp = try self.createAuthApiUrlComponent(
+        version: version,
+        forAction: "getAlbumInfo",
+        id: id
+      )
+      return try self.createUrl(from: urlComp)
+    }
+  }
+
+  public func requestTopSongs(artistName: String, count: Int) async throws -> APIDataResponse {
+    try await request { version in
+      var urlComp = try self.createAuthApiUrlComponent(
+        version: version,
+        forAction: "getTopSongs"
+      )
+      urlComp.addQueryItem(name: "artist", value: artistName)
+      urlComp.addQueryItem(name: "count", value: count)
+      return try self.createUrl(from: urlComp)
+    }
+  }
+
+  public func requestSimilarArtists(id: String, count: Int) async throws -> APIDataResponse {
+    try await request { version in
+      var urlComp = try self.createAuthApiUrlComponent(
+        version: version,
+        forAction: "getSimilarArtists2",
+        id: id
+      )
+      urlComp.addQueryItem(name: "count", value: count)
+      return try self.createUrl(from: urlComp)
+    }
+  }
+
+  /// decade browse — `getAlbumList2 type=byYear` (Subsonic API >= 1.10.0)
+  public func requestAlbumsByYear(
+    fromYear: Int,
+    toYear: Int,
+    offset: Int,
+    count: Int
+  ) async throws
+    -> APIDataResponse {
+    try await request { version in
+      var urlComp = try self.createAuthApiUrlComponent(
+        version: version,
+        forAction: "getAlbumList2"
+      )
+      urlComp.addQueryItem(name: "type", value: "byYear")
+      urlComp.addQueryItem(name: "fromYear", value: fromYear)
+      urlComp.addQueryItem(name: "toYear", value: toYear)
+      urlComp.addQueryItem(name: "size", value: count)
+      urlComp.addQueryItem(name: "offset", value: offset)
+      return try self.createUrl(from: urlComp)
+    }
+  }
+
+  // MARK: G18 shares (Subsonic API >= 1.8.0)
+
+  public func requestShares() async throws -> APIDataResponse {
+    try await request { version in
+      let urlComp = try self.createAuthApiUrlComponent(version: version, forAction: "getShares")
+      return try self.createUrl(from: urlComp)
+    }
+  }
+
+  public func requestCreateShare(
+    id: String,
+    description: String?,
+    expiresInDays: Int?
+  ) async throws
+    -> APIDataResponse {
+    try await request { version in
+      var urlComp = try self.createAuthApiUrlComponent(
+        version: version,
+        forAction: "createShare"
+      )
+      urlComp.addQueryItem(name: "id", value: id)
+      if let description { urlComp.addQueryItem(name: "description", value: description) }
+      if let expiresInDays {
+        let expiresMs = Int(
+          Date().addingTimeInterval(TimeInterval(expiresInDays) * 86_400)
+            .timeIntervalSince1970 * 1_000
+        )
+        urlComp.addQueryItem(name: "expires", value: expiresMs)
+      }
+      return try self.createUrl(from: urlComp)
+    }
+  }
+
+  /// `updateShare` exists only on Subsonic API >= 1.15.0
+  public func isShareUpdateSupported() async throws -> Bool {
+    let _ = try await determineApiVersionToUse()
+    guard let serverApi = serverApiVersion.wrappedValue else { return false }
+    return serverApi >= SubsonicVersion(major: 1, minor: 15, patch: 0)
+  }
+
+  public func requestUpdateShare(
+    id: String,
+    description: String?,
+    expiresInDays: Int?
+  ) async throws
+    -> APIDataResponse {
+    try await request { version in
+      var urlComp = try self.createAuthApiUrlComponent(
+        version: version,
+        forAction: "updateShare",
+        id: id
+      )
+      if let description { urlComp.addQueryItem(name: "description", value: description) }
+      if let expiresInDays {
+        let expiresMs = Int(
+          Date().addingTimeInterval(TimeInterval(expiresInDays) * 86_400)
+            .timeIntervalSince1970 * 1_000
+        )
+        urlComp.addQueryItem(name: "expires", value: expiresMs)
+      }
+      return try self.createUrl(from: urlComp)
+    }
+  }
+
+  public func requestDeleteShare(id: String) async throws -> APIDataResponse {
+    try await request { version in
+      let urlComp = try self.createAuthApiUrlComponent(
+        version: version,
+        forAction: "deleteShare",
+        id: id
+      )
+      return try self.createUrl(from: urlComp)
+    }
+  }
+
+  // MARK: G8 .nsp smart-playlist rules (Navidrome native API)
+
+  /// `true` when the server identified itself as Navidrome via the
+  /// `subsonic-response type` attribute — the `.nsp` rules channel
+  /// (unstable native API) is only attempted there.
+  public var isNavidromeServer: Bool {
+    serverType.wrappedValue?.lowercased() == "navidrome"
+  }
+
+  /// Fetches the `.nsp` criteria JSON of a smart playlist through the
+  /// Navidrome native API. `nil` on any failure — callers degrade to
+  /// `.notSupported`; the playlist stays playable via `getPlaylist`.
+  public func requestSmartPlaylistRules(playlistId: String) async throws -> Data? {
+    let _ = try await determineApiVersionToUse()
+    guard isNavidromeServer, let credentials = credentials.wrappedValue else { return nil }
+    return try await navidromeNativeApi.requestPlaylistRules(
+      playlistId: playlistId,
+      credentials: credentials,
+      urlCleanser: self
+    )
+  }
+
+  /// G18: rewrites share URLs through the account's `publicUrlOverride`
+  /// (reverse-proxy public base). No-op when the setting is unset.
+  public func applyPublicUrlOverride(to shares: [ShareDescription]) -> [ShareDescription] {
+    guard let accountInfo = account else { return shares }
+    let override = settings.accounts.getSetting(accountInfo).read.publicUrlOverride
+    guard override != nil else { return shares }
+    return shares.map {
+      var share = $0
+      share.url = ShareUrlRewriter.rewrite(urlString: share.url, publicBaseUrl: override)
+      return share
     }
   }
 

@@ -1,0 +1,9 @@
+<subsonic-response xmlns="http://subsonic.org/restapi" status="ok" version="1.16.1" type="navidrome" serverVersion="0.52.5">
+  <shares>
+    <share id="sh1" url="https://internal.example.com/share/sh1" description="for bob" username="alice" created="2024-05-01T10:00:00Z" expires="2024-06-01T10:00:00Z" visitCount="3">
+      <entry id="657"/>
+      <entry id="748"/>
+    </share>
+    <share id="sh2" url="https://internal.example.com/share/sh2" username="alice" created="2024-05-02T10:00:00Z" visitCount="0"/>
+  </shares>
+</subsonic-response>

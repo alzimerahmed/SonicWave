@@ -25,6 +25,11 @@ import os.log
 class SsPingParserDelegate: SsXmlParser {
   var isAuthValid: Bool = false
   var serverApiVersion: String?
+  /// G8: OpenSubsonic server product attributes emitted by Navidrome/
+  /// Gonic/LMS on the root element (`type="navidrome"`,
+  /// `serverVersion="0.60.2"`) — the server-product feature gate.
+  var serverType: String?
+  var serverProductVersion: String?
 
   override func parser(
     _ parser: XMLParser,
@@ -45,6 +50,12 @@ class SsPingParserDelegate: SsXmlParser {
     case "subsonic-response":
       if let version = attributeDict["version"] {
         serverApiVersion = version
+      }
+      if let type = attributeDict["type"] {
+        serverType = type
+      }
+      if let serverVersion = attributeDict["serverVersion"] {
+        serverProductVersion = serverVersion
       }
     default:
       break

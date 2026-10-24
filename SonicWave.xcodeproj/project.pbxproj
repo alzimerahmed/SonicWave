@@ -575,6 +575,20 @@
 		638920F02C8C8E9000932EE8 /* SettingsList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 638920EF2C8C8E9000932EE8 /* SettingsList.swift */; };
 		63DCDB7A2C674B5D00522F68 /* SettingsSceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63DCDB792C674B5D00522F68 /* SettingsSceneDelegate.swift */; };
 		641708592C13BF5100BA2619 /* Haptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 641708582C13BF5100BA2619 /* Haptics.swift */; };
+		8D15C801000000000000000002 /* DiscoveryModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D15C801000000000000000001 /* DiscoveryModels.swift */; };
+		8D15C801000000000000000004 /* SmartPlaylistCriteria.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D15C801000000000000000003 /* SmartPlaylistCriteria.swift */; };
+		8D15C801000000000000000006 /* NspCriteriaParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D15C801000000000000000005 /* NspCriteriaParser.swift */; };
+		8D15C801000000000000000008 /* SmartPlaylistEvaluator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D15C801000000000000000007 /* SmartPlaylistEvaluator.swift */; };
+		8D15C801000000000000000010 /* MixProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D15C801000000000000000009 /* MixProvider.swift */; };
+		8D15C801000000000000000012 /* SsDiscoveryParserDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D15C801000000000000000011 /* SsDiscoveryParserDelegate.swift */; };
+		8D15C801000000000000000014 /* NavidromeNativeApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D15C801000000000000000013 /* NavidromeNativeApi.swift */; };
+		8D15C801000000000000000016 /* AmpacheDiscoveryParserDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D15C801000000000000000015 /* AmpacheDiscoveryParserDelegate.swift */; };
+		8D15C801000000000000000018 /* SsDiscoveryParserTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D15C801000000000000000017 /* SsDiscoveryParserTest.swift */; };
+		8D15C801000000000000000020 /* DiscoveryTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D15C801000000000000000019 /* DiscoveryTest.swift */; };
+		8D15C801000000000000000022 /* shares_example_1.xml in Resources */ = {isa = PBXBuildFile; fileRef = 8D15C801000000000000000021 /* shares_example_1.xml */; };
+		8D15C801000000000000000024 /* artistInfo2_example_1.xml in Resources */ = {isa = PBXBuildFile; fileRef = 8D15C801000000000000000023 /* artistInfo2_example_1.xml */; };
+		8D15C801000000000000000026 /* topSongs_example_1.xml in Resources */ = {isa = PBXBuildFile; fileRef = 8D15C801000000000000000025 /* topSongs_example_1.xml */; };
+		8D15C801000000000000000028 /* smartplaylist_example_1.json in Resources */ = {isa = PBXBuildFile; fileRef = 8D15C801000000000000000027 /* smartplaylist_example_1.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1237,6 +1251,20 @@
 		641708582C13BF5100BA2619 /* Haptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Haptics.swift; sourceTree = "<group>"; };
 		643A04712CD29AB20012DEA3 /* SonicWave v39.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "SonicWave v39.xcdatamodel"; sourceTree = "<group>"; };
 		64C433822E1391FA0082A165 /* SonicWave v46.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "SonicWave v46.xcdatamodel"; sourceTree = "<group>"; };
+		8D15C801000000000000000001 /* DiscoveryModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveryModels.swift; sourceTree = "<group>"; };
+		8D15C801000000000000000003 /* SmartPlaylistCriteria.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartPlaylistCriteria.swift; sourceTree = "<group>"; };
+		8D15C801000000000000000005 /* NspCriteriaParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NspCriteriaParser.swift; sourceTree = "<group>"; };
+		8D15C801000000000000000007 /* SmartPlaylistEvaluator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartPlaylistEvaluator.swift; sourceTree = "<group>"; };
+		8D15C801000000000000000009 /* MixProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MixProvider.swift; sourceTree = "<group>"; };
+		8D15C801000000000000000011 /* SsDiscoveryParserDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SsDiscoveryParserDelegate.swift; sourceTree = "<group>"; };
+		8D15C801000000000000000013 /* NavidromeNativeApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavidromeNativeApi.swift; sourceTree = "<group>"; };
+		8D15C801000000000000000015 /* AmpacheDiscoveryParserDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmpacheDiscoveryParserDelegate.swift; sourceTree = "<group>"; };
+		8D15C801000000000000000017 /* SsDiscoveryParserTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SsDiscoveryParserTest.swift; sourceTree = "<group>"; };
+		8D15C801000000000000000019 /* DiscoveryTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveryTest.swift; sourceTree = "<group>"; };
+		8D15C801000000000000000021 /* shares_example_1.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = shares_example_1.xml; sourceTree = "<group>"; };
+		8D15C801000000000000000023 /* artistInfo2_example_1.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = artistInfo2_example_1.xml; sourceTree = "<group>"; };
+		8D15C801000000000000000025 /* topSongs_example_1.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = topSongs_example_1.xml; sourceTree = "<group>"; };
+		8D15C801000000000000000027 /* smartplaylist_example_1.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = smartplaylist_example_1.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1625,7 +1653,10 @@
 				50C80F2726831DB40022F710 /* SsPodcastEpisodeParserDelegate.swift */,
 				50CEC6442D1F399700D0E696 /* SsRadioParserDelegate.swift */,
 				50E964A925E8E20E00E3210F /* SubsonicVersion.swift */,
-			);
+							8D15C801000000000000000011 /* SsDiscoveryParserDelegate.swift */,
+				8D15C801000000000000000013 /* NavidromeNativeApi.swift */,
+				8D15C801000000000000000015 /* AmpacheDiscoveryParserDelegate.swift */,
+);
 			path = Subsonic;
 			sourceTree = "<group>";
 		};
@@ -2031,6 +2062,7 @@
 			isa = PBXGroup;
 			children = (
 				5086F87322384A4300546F5A /* Api */,
+				8D15C801000000000000000029 /* Discovery */,
 				50BA931F21DA4CEF00E5901D /* Assets */,
 				5041B7FE220D4DF600603F02 /* Common */,
 				50073BDB222EFEDC000130D8 /* Download */,
@@ -2175,7 +2207,9 @@
 				50AE79B72C1F68080085CBB3 /* SsLyricsBySongId2ParserTest.swift */,
 				6AC5D1010000000000000005 /* SsPlayQueueParserTest.swift */,
 				6AC5D1010000000000000007 /* SsSavePlayQueueRequestTest.swift */,
-			);
+							8D15C801000000000000000017 /* SsDiscoveryParserTest.swift */,
+				8D15C801000000000000000019 /* DiscoveryTest.swift */,
+);
 			path = Subsonic;
 			sourceTree = "<group>";
 		};
@@ -2205,7 +2239,11 @@
 				50F3A1C3308A1B8A00A1B2C3 /* similarSongs2_example_1.xml */,
 				50CEC6392D1EDB0000D0E696 /* internetRadioStations_example_1.xml */,
 				6AC5D101000000000000000D /* playqueue_example_1.xml */,
-			);
+							8D15C801000000000000000021 /* shares_example_1.xml */,
+				8D15C801000000000000000023 /* artistInfo2_example_1.xml */,
+				8D15C801000000000000000025 /* topSongs_example_1.xml */,
+				8D15C801000000000000000027 /* smartplaylist_example_1.json */,
+);
 			path = Samples;
 			sourceTree = "<group>";
 		};
@@ -2313,6 +2351,18 @@
 				7E8D2B010000000000000003 /* MusicHapticsService.swift */,
 			);
 			path = Player;
+			sourceTree = "<group>";
+		};
+		8D15C801000000000000000029 /* Discovery */ = {
+			isa = PBXGroup;
+			children = (
+				8D15C801000000000000000001 /* DiscoveryModels.swift */,
+				8D15C801000000000000000003 /* SmartPlaylistCriteria.swift */,
+				8D15C801000000000000000005 /* NspCriteriaParser.swift */,
+				8D15C801000000000000000007 /* SmartPlaylistEvaluator.swift */,
+				8D15C801000000000000000009 /* MixProvider.swift */,
+			);
+			path = Discovery;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -2506,7 +2556,21 @@
 				508385ED21C5965B00C4BB32 /* Main.storyboard in Resources */,
 				500B97D02B7C9555005554BF /* EntityPreviewVC.xib in Resources */,
 				50A30E642B756CF100722894 /* CurrentlyPlayingTableCell.xib in Resources */,
-			);
+							8D15C801000000000000000002 /* DiscoveryModels.swift in Sources */,
+				8D15C801000000000000000004 /* SmartPlaylistCriteria.swift in Sources */,
+				8D15C801000000000000000006 /* NspCriteriaParser.swift in Sources */,
+				8D15C801000000000000000008 /* SmartPlaylistEvaluator.swift in Sources */,
+				8D15C801000000000000000010 /* MixProvider.swift in Sources */,
+				8D15C801000000000000000012 /* SsDiscoveryParserDelegate.swift in Sources */,
+				8D15C801000000000000000014 /* NavidromeNativeApi.swift in Sources */,
+				8D15C801000000000000000016 /* AmpacheDiscoveryParserDelegate.swift in Sources */,
+				8D15C801000000000000000018 /* SsDiscoveryParserTest.swift in Sources */,
+				8D15C801000000000000000020 /* DiscoveryTest.swift in Sources */,
+				8D15C801000000000000000022 /* shares_example_1.xml in Resources */,
+				8D15C801000000000000000024 /* artistInfo2_example_1.xml in Resources */,
+				8D15C801000000000000000026 /* topSongs_example_1.xml in Resources */,
+				8D15C801000000000000000028 /* smartplaylist_example_1.json in Resources */,
+);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		50C9D603284FA847007F18D0 /* Resources */ = {

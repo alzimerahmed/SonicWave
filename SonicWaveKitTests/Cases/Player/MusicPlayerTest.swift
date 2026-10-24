@@ -266,6 +266,64 @@ final class MOCK_BackendApi: BackendApi {
     -> DownloadManagerDelegate { MOCK_DownloadManagerDelegate() }
   func extractArtworkInfoFromURL(urlString: String) -> ArtworkRemoteInfo? { nil }
   func cleanse(url: URL?) -> CleansedURL { CleansedURL(urlString: "") }
+
+  // Phase-8 discovery surface — canned results, injectable for tests
+  var artistInfoResult: BackendFeatureResult<ArtistInfo> = .notSupported
+  var albumInfoResult: BackendFeatureResult<AlbumInfo> = .notSupported
+  var topSongsResult: BackendFeatureResult<[RemoteSongInfo]> = .notSupported
+  var similarArtistsResult: BackendFeatureResult<[ArtistStub]> = .notSupported
+  var albumsByYearResult: BackendFeatureResult<[RemoteAlbumInfo]> = .notSupported
+  var sharesResult: BackendFeatureResult<[ShareDescription]> = .notSupported
+  var createdShareResult: BackendFeatureResult<ShareDescription> = .notSupported
+  var updatedShareResult: BackendFeatureResult<ShareDescription> = .notSupported
+  var deletedShareResult: BackendFeatureResult<Bool> = .notSupported
+  var smartPlaylistCriteriaResult: BackendFeatureResult<SmartPlaylistCriteria> = .notSupported
+  var dislikeResult: DislikeResolution = .localOnly
+  func getArtistInfo(artistId: String) async throws -> BackendFeatureResult<ArtistInfo> {
+    artistInfoResult
+  }
+
+  func getAlbumInfo(albumId: String) async throws -> BackendFeatureResult<AlbumInfo> {
+    albumInfoResult
+  }
+
+  func getTopSongs(
+    artistName: String,
+    count: Int
+  ) async throws -> BackendFeatureResult<[RemoteSongInfo]> { topSongsResult }
+  func getSimilarArtists(
+    artistId: String,
+    count: Int
+  ) async throws -> BackendFeatureResult<[ArtistStub]> { similarArtistsResult }
+  func getAlbums(
+    fromYear: Int,
+    toYear: Int,
+    offset: Int,
+    count: Int
+  ) async throws -> BackendFeatureResult<[RemoteAlbumInfo]> { albumsByYearResult }
+  func getShares() async throws -> BackendFeatureResult<[ShareDescription]> { sharesResult }
+  func createShare(
+    shareableType: ShareableType,
+    shareableId: String,
+    description: String?,
+    expiresInDays: Int?
+  ) async throws -> BackendFeatureResult<ShareDescription> { createdShareResult }
+  func updateShare(
+    id: String,
+    description: String?,
+    expiresInDays: Int?
+  ) async throws -> BackendFeatureResult<ShareDescription> { updatedShareResult }
+  func deleteShare(id: String) async throws -> BackendFeatureResult<Bool> { deletedShareResult }
+  func getSmartPlaylistCriteria(
+    playlistId: String
+  ) async throws -> BackendFeatureResult<SmartPlaylistCriteria> { smartPlaylistCriteriaResult }
+  func setDislike(playableInfo: AbstractPlayableInfo) async throws -> DislikeResolution {
+    dislikeResult
+  }
+
+  func clearDislike(playableInfo: AbstractPlayableInfo) async throws -> DislikeResolution {
+    dislikeResult
+  }
 }
 
 // MARK: - MOCK_NetworkMonitor

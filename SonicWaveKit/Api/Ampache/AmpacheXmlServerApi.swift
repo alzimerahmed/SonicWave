@@ -765,6 +765,84 @@ final class AmpacheXmlServerApi: URLCleanser, Sendable {
     }
   }
 
+  // MARK: G20 enrichment
+
+  public func requestSimilarArtists(id: String, count: Int) async throws -> APIDataResponse {
+    try await request { auth in
+      var urlComp = try self.createAuthApiUrlComponent(auth: auth)
+      urlComp.addQueryItem(name: "action", value: "get_similar")
+      urlComp.addQueryItem(name: "type", value: "artist")
+      urlComp.addQueryItem(name: "filter", value: id)
+      urlComp.addQueryItem(name: "limit", value: count)
+      return try self.createUrl(from: urlComp)
+    }
+  }
+
+  // MARK: G18 shares
+
+  public func requestShares() async throws -> APIDataResponse {
+    try await request { auth in
+      var urlComp = try self.createAuthApiUrlComponent(auth: auth)
+      urlComp.addQueryItem(name: "action", value: "shares")
+      return try self.createUrl(from: urlComp)
+    }
+  }
+
+  public func requestShareCreate(
+    objectType: String,
+    objectId: String,
+    description: String?,
+    expiresInDays: Int?
+  ) async throws
+    -> APIDataResponse {
+    try await request { auth in
+      var urlComp = try self.createAuthApiUrlComponent(auth: auth)
+      urlComp.addQueryItem(name: "action", value: "share_create")
+      urlComp.addQueryItem(name: "type", value: objectType)
+      urlComp.addQueryItem(name: "filter", value: objectId)
+      if let description { urlComp.addQueryItem(name: "description", value: description) }
+      if let expiresInDays { urlComp.addQueryItem(name: "expires", value: expiresInDays) }
+      return try self.createUrl(from: urlComp)
+    }
+  }
+
+  public func requestShareEdit(
+    id: String,
+    description: String?,
+    expiresInDays: Int?
+  ) async throws
+    -> APIDataResponse {
+    try await request { auth in
+      var urlComp = try self.createAuthApiUrlComponent(auth: auth)
+      urlComp.addQueryItem(name: "action", value: "share_edit")
+      urlComp.addQueryItem(name: "filter", value: id)
+      if let description { urlComp.addQueryItem(name: "description", value: description) }
+      if let expiresInDays { urlComp.addQueryItem(name: "expires", value: expiresInDays) }
+      return try self.createUrl(from: urlComp)
+    }
+  }
+
+  public func requestShareDelete(id: String) async throws -> APIDataResponse {
+    try await request { auth in
+      var urlComp = try self.createAuthApiUrlComponent(auth: auth)
+      urlComp.addQueryItem(name: "action", value: "share_delete")
+      urlComp.addQueryItem(name: "filter", value: id)
+      return try self.createUrl(from: urlComp)
+    }
+  }
+
+  /// G18: rewrites share URLs through the account's `publicUrlOverride`
+  public func applyPublicUrlOverride(to shares: [ShareDescription]) -> [ShareDescription] {
+    guard let accountInfo = account else { return shares }
+    let override = settings.accounts.getSetting(accountInfo).read.publicUrlOverride
+    guard override != nil else { return shares }
+    return shares.map {
+      var share = $0
+      share.url = ShareUrlRewriter.rewrite(urlString: share.url, publicBaseUrl: override)
+      return share
+    }
+  }
+
   private func createUrl(from urlComp: URLComponents) throws -> URL {
     if let url = urlComp.url {
       return url

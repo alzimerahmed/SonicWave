@@ -127,4 +127,163 @@ extension SubsonicApi: BackendApi {
   func cleanse(url: URL?) -> CleansedURL {
     subsonicServerApi.cleanse(url: url)
   }
+
+  // MARK: G20 enrichment
+
+  /// shared response → delegate plumbing for DTO-level endpoints
+  /// (`parse` mirrors SubsonicLibrarySyncer's private variant, kept
+  /// internal for cross-file extension members)
+  internal func parse<Delegate: SsXmlParser>(
+    response: APIDataResponse,
+    delegate: Delegate
+  ) throws {
+    let parser = XMLParser(data: response.data)
+    parser.delegate = delegate
+    parser.parse()
+    if let error = delegate.error {
+      throw ResponseError.createFromSubsonicError(
+        cleansedURL: response.url?.asCleansedURL(cleanser: subsonicServerApi),
+        error: error,
+        data: response.data
+      )
+    }
+  }
+
+  func getArtistInfo(artistId: String) async throws -> BackendFeatureResult<ArtistInfo> {
+    let response = try await subsonicServerApi.requestArtistInfo2(id: artistId)
+    let delegate = SsArtistInfoParserDelegate(performanceMonitor: performanceMonitor)
+    try parse(response: response, delegate: delegate)
+    return .supported(delegate.artistInfo)
+  }
+
+  func getAlbumInfo(albumId: String) async throws -> BackendFeatureResult<AlbumInfo> {
+    let response = try await subsonicServerApi.requestAlbumInfo(id: albumId)
+    let delegate = SsAlbumInfoParserDelegate(performanceMonitor: performanceMonitor)
+    try parse(response: response, delegate: delegate)
+    return .supported(delegate.albumInfo)
+  }
+
+  func getTopSongs(
+    artistName: String,
+    count: Int
+  ) async throws -> BackendFeatureResult<[RemoteSongInfo]> {
+    let response = try await subsonicServerApi.requestTopSongs(
+      artistName: artistName,
+      count: count
+    )
+    let delegate = SsTopSongsParserDelegate(performanceMonitor: performanceMonitor)
+    try parse(response: response, delegate: delegate)
+    return .supported(delegate.topSongs)
+  }
+
+  func getSimilarArtists(
+    artistId: String,
+    count: Int
+  ) async throws -> BackendFeatureResult<[ArtistStub]> {
+    let response = try await subsonicServerApi.requestSimilarArtists(
+      id: artistId,
+      count: count
+    )
+    let delegate = SsSimilarArtistsParserDelegate(performanceMonitor: performanceMonitor)
+    try parse(response: response, delegate: delegate)
+    return .supported(delegate.similarArtists)
+  }
+
+  func getAlbums(
+    fromYear: Int,
+    toYear: Int,
+    offset: Int,
+    count: Int
+  ) async throws -> BackendFeatureResult<[RemoteAlbumInfo]> {
+    let response = try await subsonicServerApi.requestAlbumsByYear(
+      fromYear: fromYear,
+      toYear: toYear,
+      offset: offset,
+      count: count
+    )
+    let delegate = SsAlbumListParserDelegate(performanceMonitor: performanceMonitor)
+    try parse(response: response, delegate: delegate)
+    return .supported(delegate.albums)
+  }
+
+  // MARK: G18 shares
+
+  func getShares() async throws -> BackendFeatureResult<[ShareDescription]> {
+    let response = try await subsonicServerApi.requestShares()
+    let delegate = SsSharesParserDelegate(performanceMonitor: performanceMonitor)
+    try parse(response: response, delegate: delegate)
+    return .supported(subsonicServerApi.applyPublicUrlOverride(to: delegate.shares))
+  }
+
+  func createShare(
+    shareableType: ShareableType,
+    shareableId: String,
+    description: String?,
+    expiresInDays: Int?
+  ) async throws -> BackendFeatureResult<ShareDescription> {
+    let response = try await subsonicServerApi.requestCreateShare(
+      id: shareableId,
+      description: description,
+      expiresInDays: expiresInDays
+    )
+    let delegate = SsSharesParserDelegate(performanceMonitor: performanceMonitor)
+    try parse(response: response, delegate: delegate)
+    let shares = subsonicServerApi.applyPublicUrlOverride(to: delegate.shares)
+    guard let created = shares.first else {
+      throw ResponseError(type: .xml, cleansedURL: nil, data: response.data)
+    }
+    return .supported(created)
+  }
+
+  func updateShare(
+    id: String,
+    description: String?,
+    expiresInDays: Int?
+  ) async throws -> BackendFeatureResult<ShareDescription> {
+    guard try await subsonicServerApi.isShareUpdateSupported() else { return .notSupported }
+    let response = try await subsonicServerApi.requestUpdateShare(
+      id: id,
+      description: description,
+      expiresInDays: expiresInDays
+    )
+    let delegate = SsSharesParserDelegate(performanceMonitor: performanceMonitor)
+    try parse(response: response, delegate: delegate)
+    let shares = subsonicServerApi.applyPublicUrlOverride(to: delegate.shares)
+    guard let updated = shares.first else {
+      throw ResponseError(type: .xml, cleansedURL: nil, data: response.data)
+    }
+    return .supported(updated)
+  }
+
+  func deleteShare(id: String) async throws -> BackendFeatureResult<Bool> {
+    let response = try await subsonicServerApi.requestDeleteShare(id: id)
+    try parse(response: response, delegate: SsPingParserDelegate(
+      performanceMonitor: performanceMonitor
+    ))
+    return .supported(true)
+  }
+
+  // MARK: G8 smart playlists
+
+  func getSmartPlaylistCriteria(
+    playlistId: String
+  ) async throws -> BackendFeatureResult<SmartPlaylistCriteria> {
+    guard subsonicServerApi.isNavidromeServer,
+          let rulesData = try await subsonicServerApi.requestSmartPlaylistRules(
+            playlistId: playlistId
+          ),
+          let nsp = NspCriteriaParser.parse(data: rulesData)
+    else { return .notSupported }
+    return .supported(nsp.criteria)
+  }
+
+  // MARK: dislike (#587) — Subsonic has no dislike concept; rating=0 would
+  // destroy the user's stars, so the flag is local-only
+  func setDislike(playableInfo: AbstractPlayableInfo) async throws -> DislikeResolution {
+    .localOnly
+  }
+
+  func clearDislike(playableInfo: AbstractPlayableInfo) async throws -> DislikeResolution {
+    .localOnly
+  }
 }

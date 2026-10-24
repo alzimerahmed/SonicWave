@@ -95,6 +95,23 @@ public class MetaManager {
     LibrarySyncerProxy(backendApi: backendApi, account: account, storage: storage)
   }()
 
+  /// G7: mixes/discovery provider — composes server similar-songs with
+  /// local criteria evaluation; offline-safe by construction.
+  public lazy var mixProvider: MixProvider = {
+    MixProvider(
+      account: account,
+      storage: storage,
+      librarySyncer: librarySyncer,
+      networkMonitor: networkMonitor
+    )
+  }()
+
+  /// G8: smart-playlist criteria evaluator — resolves persisted criteria
+  /// and imported `.nsp` playlists to playable lists.
+  public lazy var smartPlaylistEvaluator: SmartPlaylistEvaluator = {
+    SmartPlaylistEvaluator(storage: storage, account: account)
+  }()
+
   /// G4: multi-source synced-lyrics provider for this account
   /// (server lyrics -> embedded/sidecar -> LRCLIB, disk-cached).
   public lazy var syncedLyricsManager: SyncedLyricsManager = {

@@ -1,0 +1,17 @@
+{
+  // .nsp line comments must be stripped
+  "name": "80s Top Songs",
+  "comment": "rated gems of the eighties",
+  "public": true,
+  "all": [
+    { "any": [ { "is": { "loved": true } }, { "gt": { "rating": 3 } } ] },
+    { "inTheRange": { "year": [ 1981, 1990 ] } },
+    { "inTheLast": { "lastPlayed": 30 } },
+    { "contains": { "artist": "Queen" } },
+    { "isNot": { "genre": "Classical" } },
+    { "isMissing": { "bpm": true } }
+  ],
+  "sort": "year",
+  "order": "desc",
+  "limit": 25
+}

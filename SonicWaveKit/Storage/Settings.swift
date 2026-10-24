@@ -496,6 +496,15 @@ public struct AccountSetting: Sendable, Codable {
     get { _artworkTintIntensity ?? .defaultValue }
     set { _artworkTintIntensity = newValue }
   }
+
+  /// share links (G18): public base URL for servers behind a reverse
+  /// proxy — server-generated share URLs are rewritten to this host when
+  /// set (`ShareUrlRewriter`). `nil` = use the server-provided URL as-is.
+  private var _publicUrlOverride: String? = nil
+  public var publicUrlOverride: String? {
+    get { _publicUrlOverride }
+    set { _publicUrlOverride = newValue }
+  }
 }
 
 // MARK: - ReadOnlyAccountSetting

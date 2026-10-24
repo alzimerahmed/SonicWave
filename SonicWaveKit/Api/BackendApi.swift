@@ -337,4 +337,54 @@ public protocol BackendApi: URLCleanser, Sendable {
   func createLibrarySyncer(account: Account, storage: PersistentStorage) -> LibrarySyncer
   func createArtworkDownloadDelegate() -> DownloadManagerDelegate
   func extractArtworkInfoFromURL(urlString: String) -> ArtworkRemoteInfo?
+
+  // MARK: G20 enrichment — typed `.notSupported` when the backend can't
+  // answer, never an error for missing capability
+  func getArtistInfo(artistId: String) async throws -> BackendFeatureResult<ArtistInfo>
+  func getAlbumInfo(albumId: String) async throws -> BackendFeatureResult<AlbumInfo>
+  func getTopSongs(
+    artistName: String,
+    count: Int
+  ) async throws -> BackendFeatureResult<[RemoteSongInfo]>
+  func getSimilarArtists(
+    artistId: String,
+    count: Int
+  ) async throws -> BackendFeatureResult<[ArtistStub]>
+  /// decade browse — Subsonic `getAlbumList2 type=byYear`
+  func getAlbums(
+    fromYear: Int,
+    toYear: Int,
+    offset: Int,
+    count: Int
+  ) async throws -> BackendFeatureResult<[RemoteAlbumInfo]>
+
+  // MARK: G18 shares
+  func getShares() async throws -> BackendFeatureResult<[ShareDescription]>
+  func createShare(
+    shareableType: ShareableType,
+    shareableId: String,
+    description: String?,
+    expiresInDays: Int?
+  ) async throws -> BackendFeatureResult<ShareDescription>
+  func updateShare(
+    id: String,
+    description: String?,
+    expiresInDays: Int?
+  ) async throws -> BackendFeatureResult<ShareDescription>
+  func deleteShare(id: String) async throws -> BackendFeatureResult<Bool>
+
+  // MARK: G8 smart playlists
+  /// `.nsp` criteria of a server smart playlist (Navidrome native API).
+  /// `.notSupported` on non-Navidrome servers — the playlist stays
+  /// playable via its server-resolved song list.
+  func getSmartPlaylistCriteria(
+    playlistId: String
+  ) async throws -> BackendFeatureResult<SmartPlaylistCriteria>
+
+  // MARK: dislike / thumbs-down (#587)
+  /// Server mapping is decided per backend (see `DislikeResolution`) —
+  /// both shipped backends report `.localOnly` today; the flag itself is
+  /// persisted on `AbstractPlayableMO.isDisliked` (schema v51).
+  func setDislike(playableInfo: AbstractPlayableInfo) async throws -> DislikeResolution
+  func clearDislike(playableInfo: AbstractPlayableInfo) async throws -> DislikeResolution
 }

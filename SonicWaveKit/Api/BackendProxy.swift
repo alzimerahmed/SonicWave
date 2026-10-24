@@ -578,4 +578,90 @@ extension BackendProxy: BackendApi {
   public func cleanse(url: URL?) -> CleansedURL {
     activeApi.cleanse(url: url)
   }
+
+  // MARK: Phase-8 discovery surface — forwards to the detected backend
+
+  public func getArtistInfo(artistId: String) async throws -> BackendFeatureResult<ArtistInfo> {
+    try await activeApi.getArtistInfo(artistId: artistId)
+  }
+
+  public func getAlbumInfo(albumId: String) async throws -> BackendFeatureResult<AlbumInfo> {
+    try await activeApi.getAlbumInfo(albumId: albumId)
+  }
+
+  public func getTopSongs(
+    artistName: String,
+    count: Int
+  ) async throws -> BackendFeatureResult<[RemoteSongInfo]> {
+    try await activeApi.getTopSongs(artistName: artistName, count: count)
+  }
+
+  public func getSimilarArtists(
+    artistId: String,
+    count: Int
+  ) async throws -> BackendFeatureResult<[ArtistStub]> {
+    try await activeApi.getSimilarArtists(artistId: artistId, count: count)
+  }
+
+  public func getAlbums(
+    fromYear: Int,
+    toYear: Int,
+    offset: Int,
+    count: Int
+  ) async throws -> BackendFeatureResult<[RemoteAlbumInfo]> {
+    try await activeApi.getAlbums(
+      fromYear: fromYear,
+      toYear: toYear,
+      offset: offset,
+      count: count
+    )
+  }
+
+  public func getShares() async throws -> BackendFeatureResult<[ShareDescription]> {
+    try await activeApi.getShares()
+  }
+
+  public func createShare(
+    shareableType: ShareableType,
+    shareableId: String,
+    description: String?,
+    expiresInDays: Int?
+  ) async throws -> BackendFeatureResult<ShareDescription> {
+    try await activeApi.createShare(
+      shareableType: shareableType,
+      shareableId: shareableId,
+      description: description,
+      expiresInDays: expiresInDays
+    )
+  }
+
+  public func updateShare(
+    id: String,
+    description: String?,
+    expiresInDays: Int?
+  ) async throws -> BackendFeatureResult<ShareDescription> {
+    try await activeApi.updateShare(
+      id: id,
+      description: description,
+      expiresInDays: expiresInDays
+    )
+  }
+
+  public func deleteShare(id: String) async throws -> BackendFeatureResult<Bool> {
+    try await activeApi.deleteShare(id: id)
+  }
+
+  public func getSmartPlaylistCriteria(
+    playlistId: String
+  ) async throws -> BackendFeatureResult<SmartPlaylistCriteria> {
+    try await activeApi.getSmartPlaylistCriteria(playlistId: playlistId)
+  }
+
+  public func setDislike(playableInfo: AbstractPlayableInfo) async throws -> DislikeResolution {
+    try await activeApi.setDislike(playableInfo: playableInfo)
+  }
+
+  public func clearDislike(playableInfo: AbstractPlayableInfo) async throws -> DislikeResolution {
+    try await activeApi.clearDislike(playableInfo: playableInfo)
+  }
 }

@@ -1,0 +1,6 @@
+<subsonic-response xmlns="http://subsonic.org/restapi" status="ok" version="1.16.1">
+  <topSongs>
+    <song id="s1" title="Hit One" artist="The Act" album="Big Album" duration="210" year="1999" coverArt="al-9"/>
+    <song id="s2" title="Hit Two" artist="The Act" album="Small Album" duration="180" year="2001"/>
+  </topSongs>
+</subsonic-response>

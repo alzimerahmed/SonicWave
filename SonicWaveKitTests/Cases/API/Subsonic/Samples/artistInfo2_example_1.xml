@@ -1,0 +1,6 @@
+<subsonic-response xmlns="http://subsonic.org/restapi" status="ok" version="1.16.1">
+  <artistInfo2 biography="A fine band." musicBrainzId="mb-123" lastFmUrl="https://last.fm/x" smallImageUrl="https://i/s.png" mediumImageUrl="https://i/m.png" largeImageUrl="https://i/l.png">
+    <similarArtist id="a1" name="Band One"/>
+    <similarArtist name="Band Two"/>
+  </artistInfo2>
+</subsonic-response>

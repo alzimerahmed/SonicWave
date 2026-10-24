@@ -114,4 +114,173 @@ final class AmpacheApi: BackendApi {
   func cleanse(url: URL?) -> CleansedURL {
     ampacheXmlServerApi.cleanse(url: url)
   }
+
+  // MARK: Phase-8 discovery surface
+
+  /// DTO-level response → delegate plumbing (mirrors SubsonicApi.parse)
+  internal func parse<Delegate: AmpacheXmlParser>(
+    response: APIDataResponse,
+    delegate: Delegate
+  ) throws {
+    let parser = XMLParser(data: response.data)
+    parser.delegate = delegate
+    parser.parse()
+    if let error = delegate.error {
+      throw ResponseError.createFromAmpacheError(
+        cleansedURL: response.url?.asCleansedURL(cleanser: ampacheXmlServerApi),
+        error: error,
+        data: response.data
+      )
+    }
+  }
+
+  /// Ampache answers "method not implemented / disabled" with typed errors
+  /// — collapse them into `.notSupported` per the degraded-path contract.
+  internal func unsupportedIfMissing<T: Sendable>(
+    _ body: () async throws -> BackendFeatureResult<T>
+  ) async throws -> BackendFeatureResult<T> {
+    do {
+      return try await body()
+    } catch let error as ResponseError {
+      switch error.asAmpacheError {
+      case .missing, .depreciated, .accessDenied, .accessControlNotEnabled:
+        return .notSupported
+      default:
+        throw error
+      }
+    }
+  }
+
+  func getArtistInfo(artistId: String) async throws -> BackendFeatureResult<ArtistInfo> {
+    try await unsupportedIfMissing {
+      let response = try await self.ampacheXmlServerApi.requestArtistInfo(id: artistId)
+      let delegate = AmpacheArtistInfoParserDelegate(performanceMonitor: self.performanceMonitor)
+      try self.parse(response: response, delegate: delegate)
+      return .supported(delegate.artistInfo)
+    }
+  }
+
+  func getAlbumInfo(albumId: String) async throws -> BackendFeatureResult<AlbumInfo> {
+    try await unsupportedIfMissing {
+      let response = try await self.ampacheXmlServerApi.requestAlbumInfo(id: albumId)
+      let delegate = AmpacheAlbumInfoParserDelegate(performanceMonitor: self.performanceMonitor)
+      try self.parse(response: response, delegate: delegate)
+      return .supported(delegate.albumInfo)
+    }
+  }
+
+  func getTopSongs(
+    artistName: String,
+    count: Int
+  ) async throws -> BackendFeatureResult<[RemoteSongInfo]> {
+    // Ampache has no per-artist top-songs endpoint in the XML API
+    .notSupported
+  }
+
+  func getSimilarArtists(
+    artistId: String,
+    count: Int
+  ) async throws -> BackendFeatureResult<[ArtistStub]> {
+    try await unsupportedIfMissing {
+      let response = try await self.ampacheXmlServerApi.requestSimilarArtists(
+        id: artistId,
+        count: count
+      )
+      let delegate = AmpacheArtistInfoParserDelegate(performanceMonitor: self.performanceMonitor)
+      try self.parse(response: response, delegate: delegate)
+      return .supported(delegate.similarArtists)
+    }
+  }
+
+  func getAlbums(
+    fromYear: Int,
+    toYear: Int,
+    offset: Int,
+    count: Int
+  ) async throws -> BackendFeatureResult<[RemoteAlbumInfo]> {
+    // no year-range album listing in the Ampache XML API — decade browse
+    // falls back to the local mirror via SmartPlaylistCriteria
+    .notSupported
+  }
+
+  func getShares() async throws -> BackendFeatureResult<[ShareDescription]> {
+    try await unsupportedIfMissing {
+      let response = try await self.ampacheXmlServerApi.requestShares()
+      let delegate = AmpacheSharesParserDelegate(performanceMonitor: self.performanceMonitor)
+      try self.parse(response: response, delegate: delegate)
+      return .supported(self.ampacheXmlServerApi.applyPublicUrlOverride(to: delegate.shares))
+    }
+  }
+
+  func createShare(
+    shareableType: ShareableType,
+    shareableId: String,
+    description: String?,
+    expiresInDays: Int?
+  ) async throws -> BackendFeatureResult<ShareDescription> {
+    try await unsupportedIfMissing {
+      let response = try await self.ampacheXmlServerApi.requestShareCreate(
+        objectType: shareableType.rawValue,
+        objectId: shareableId,
+        description: description,
+        expiresInDays: expiresInDays
+      )
+      let delegate = AmpacheSharesParserDelegate(performanceMonitor: self.performanceMonitor)
+      try self.parse(response: response, delegate: delegate)
+      let shares = self.ampacheXmlServerApi.applyPublicUrlOverride(to: delegate.shares)
+      guard let created = shares.first else {
+        throw ResponseError(type: .xml, cleansedURL: nil, data: response.data)
+      }
+      return .supported(created)
+    }
+  }
+
+  func updateShare(
+    id: String,
+    description: String?,
+    expiresInDays: Int?
+  ) async throws -> BackendFeatureResult<ShareDescription> {
+    try await unsupportedIfMissing {
+      let response = try await self.ampacheXmlServerApi.requestShareEdit(
+        id: id,
+        description: description,
+        expiresInDays: expiresInDays
+      )
+      let delegate = AmpacheSharesParserDelegate(performanceMonitor: self.performanceMonitor)
+      try self.parse(response: response, delegate: delegate)
+      let shares = self.ampacheXmlServerApi.applyPublicUrlOverride(to: delegate.shares)
+      guard let updated = shares.first else {
+        throw ResponseError(type: .xml, cleansedURL: nil, data: response.data)
+      }
+      return .supported(updated)
+    }
+  }
+
+  func deleteShare(id: String) async throws -> BackendFeatureResult<Bool> {
+    try await unsupportedIfMissing {
+      let response = try await self.ampacheXmlServerApi.requestShareDelete(id: id)
+      try self.parse(
+        response: response,
+        delegate: AmpacheXmlParser(performanceMonitor: self.performanceMonitor)
+      )
+      return .supported(true)
+    }
+  }
+
+  func getSmartPlaylistCriteria(
+    playlistId: String
+  ) async throws -> BackendFeatureResult<SmartPlaylistCriteria> {
+    // Ampache has no .nsp concept — local smart playlists only
+    .notSupported
+  }
+
+  // dislike (#587): Ampache `flag` is already the favorites channel —
+  // dislike is local-only on this backend too
+  func setDislike(playableInfo: AbstractPlayableInfo) async throws -> DislikeResolution {
+    .localOnly
+  }
+
+  func clearDislike(playableInfo: AbstractPlayableInfo) async throws -> DislikeResolution {
+    .localOnly
+  }
 }
