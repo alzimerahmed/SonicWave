@@ -416,6 +416,18 @@ public struct AccountSetting: Sendable, Codable {
     Int64(max(0, cacheSizeLimitMB)) * 1_048_576
   }
 
+  /// synced lyrics (G4): allow lyric lookups against LRCLIB
+  /// (`https://lrclib.net`) as the last-resort source. Third-party host —
+  /// requests carry only public track metadata, never account credentials.
+  /// Defaults to `true`. Backed by an Optional so that decoding older
+  /// persisted `AccountSetting`s (which lack this key) does not fail and
+  /// silently reset all account settings.
+  private var _isSyncedLyricsExternalLookupActive: Bool? = nil
+  public var isSyncedLyricsExternalLookupActive: Bool {
+    get { _isSyncedLyricsExternalLookupActive ?? true }
+    set { _isSyncedLyricsExternalLookupActive = newValue }
+  }
+
   private var _isScrobbleStreamedItems: Bool = false
   public var isScrobbleStreamedItems: Bool {
     get { _isScrobbleStreamedItems }

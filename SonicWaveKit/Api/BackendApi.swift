@@ -262,6 +262,15 @@ public protocol LibrarySyncer: Sendable {
   func setFavorite(artist: Artist, isFavorite: Bool) async throws
   @MainActor
   func parseLyrics(relFilePath: URL) async throws -> LyricsList
+  /// G4 synced lyrics: live lyrics fetch from the backend, parsed but not
+  /// stored to a CoreData mirror (Subsonic additionally persists the raw XML
+  /// to `Song.lyricsRelFilePath` so the plain-lyrics path keeps working).
+  /// Subsonic -> `getLyricsBySongId` (`songLyrics` extension-gated,
+  /// structured lyrics), Ampache -> the plain `lyrics` field of the `song`
+  /// action. Throws `BackendError.notSupported` when the backend/server
+  /// offers no lyrics.
+  @MainActor
+  func fetchLyrics(song: Song) async throws -> LyricsList
 }
 
 // MARK: - AbstractBackgroundLibrarySyncer

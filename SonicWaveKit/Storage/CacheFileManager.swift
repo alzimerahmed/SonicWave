@@ -309,6 +309,8 @@ final public class CacheFileManager: Sendable {
 
   private static let artworkFileExtension = "png"
   private static let lyricsFileExtension = "xml"
+  private static let syncedLyricsCacheDir = URL(string: "synced")!
+  private static let syncedLyricsCacheFileExtension = "swlyrics.json"
   private static let accountsDir = URL(string: "accounts")!
   private static let songsDir = URL(string: "songs")!
   private static let episodesDir = URL(string: "episodes")!
@@ -702,6 +704,22 @@ final public class CacheFileManager: Sendable {
       cacheInfo.append(LyricsCacheInfo(url: url, id: id, isSong: isSong, relFilePath: relFilePath))
     }
     return cacheInfo
+  }
+
+  /// G4 synced lyrics: disk cache path for a resolved `SyncedLyrics` JSON,
+  /// keyed by playable id (md5 — server ids are opaque and could contain
+  /// path-unsafe characters). Lives under `lyrics/synced/` — deliberately
+  /// outside the `lyrics/songs`/`lyrics/episodes` roots scanned by
+  /// `getCachedLyrics`, so the library syncer never mistakes a cache file
+  /// for a server lyrics XML. Written via `writeDataExcludedFromBackup` →
+  /// evictable, matching `.cache`-tier semantics.
+  public func createRelPathForSyncedLyricsCache(playableId: String, account: AccountInfo) -> URL? {
+    guard !playableId.isEmpty else { return nil }
+    let filename = StringHasher.md5Hex(dataString: playableId)
+    return getRelLyricsDirectory(for: account)?
+      .appendingPathComponent(Self.syncedLyricsCacheDir.path)
+      .appendingPathComponent(filename)
+      .appendingPathExtension(Self.syncedLyricsCacheFileExtension)
   }
 
   public func createRelPath(forLyricsOf song: Song) -> URL? {

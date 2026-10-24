@@ -566,57 +566,70 @@ class SubsonicLibrarySyncer: CommonLibrarySyncer, LibrarySyncer {
   @MainActor
   private func syncLyrics(song: Song) async throws {
     do {
-      let isSupported = await subsonicServerApi
-        .isOpenSubsonicExtensionSupported(extension: .songLyrics)
-      guard isSupported else { return }
-      let response = try await subsonicServerApi.requestLyricsBySongId(id: song.id)
-      let songObjectId = song.managedObject.objectID
-      try await storage.async.perform { asyncCompanion in
-        guard let songAsyncMO = asyncCompanion.context.object(with: songObjectId) as? SongMO,
-              let accountAsyncMO = asyncCompanion.context
-              .object(with: self.accountObjectId) as? AccountMO
-        else { return }
-        let songAsync = Song(managedObject: songAsyncMO)
-        let accountAsync = Account(managedObject: accountAsyncMO)
-
-        guard let lyricsRelFilePath = self.fileManager.createRelPath(forLyricsOf: songAsync),
-              let lyricsAbsFilePath = self.fileManager
-              .getAbsoluteAmperfyPath(relFilePath: lyricsRelFilePath)
-        else { return }
-
-        let parserDelegate = SsLyricsParserDelegate(performanceMonitor: self.performanceMonitor)
-        try self.parse(response: response, delegate: parserDelegate, isThrowingErrorsAllowed: false)
-        // save xml response only if it contains valid lyrics
-        if (parserDelegate.lyricsList?.lyrics.count ?? 0) > 0 {
-          do {
-            try self.fileManager.writeDataExcludedFromBackup(
-              data: response.data,
-              to: lyricsAbsFilePath,
-              accountInfo: accountAsync.info
-            )
-            songAsync.lyricsRelFilePath = lyricsRelFilePath
-            os_log(
-              "Lyrics found for <%s> and saved to: %s",
-              log: self.log,
-              type: .info,
-              songAsync.displayString,
-              lyricsRelFilePath.path
-            )
-          } catch {
-            songAsync.lyricsRelFilePath = nil
-          }
-        } else {
-          os_log(
-            "No lyrics available for <%s>",
-            log: self.log,
-            type: .info,
-            songAsync.displayString
-          )
-        }
-      }
+      _ = try await fetchLyrics(song: song)
     } catch {
-      // do nothing
+      // lyrics are optional — every failure path degrades silently
     }
+  }
+
+  /// G4: live `getLyricsBySongId` fetch — `songLyrics` extension-gated like
+  /// the sync path. The raw XML is persisted to `Song.lyricsRelFilePath`
+  /// (same as the old `syncLyrics`) so the plain-lyrics consumers
+  /// (`LyricsVC`, `PlainDetailsVC`, `getCachedLyrics`) keep working.
+  @MainActor
+  func fetchLyrics(song: Song) async throws -> LyricsList {
+    guard isSyncAllowed else { throw BackendError.notSupported }
+    let isSupported = await subsonicServerApi
+      .isOpenSubsonicExtensionSupported(extension: .songLyrics)
+    guard isSupported else { throw BackendError.notSupported }
+    let response = try await subsonicServerApi.requestLyricsBySongId(id: song.id)
+
+    let parserDelegate = SsLyricsParserDelegate(performanceMonitor: performanceMonitor)
+    try parse(response: response, delegate: parserDelegate, isThrowingErrorsAllowed: false)
+    guard let lyricsList = parserDelegate.lyricsList, !lyricsList.lyrics.isEmpty else {
+      os_log(
+        "No lyrics available for <%s>",
+        log: self.log,
+        type: .info,
+        song.displayString
+      )
+      throw ResponseError(type: .xml)
+    }
+
+    let songObjectId = song.managedObject.objectID
+    try await storage.async.perform { asyncCompanion in
+      guard let songAsyncMO = asyncCompanion.context.object(with: songObjectId) as? SongMO,
+            let accountAsyncMO = asyncCompanion.context
+            .object(with: self.accountObjectId) as? AccountMO
+      else { return }
+      let songAsync = Song(managedObject: songAsyncMO)
+      let accountAsync = Account(managedObject: accountAsyncMO)
+
+      guard let lyricsRelFilePath = self.fileManager.createRelPath(forLyricsOf: songAsync),
+            let lyricsAbsFilePath = self.fileManager
+            .getAbsoluteAmperfyPath(relFilePath: lyricsRelFilePath)
+      else { return }
+
+      // save xml response only if it contains valid lyrics
+      do {
+        try self.fileManager.writeDataExcludedFromBackup(
+          data: response.data,
+          to: lyricsAbsFilePath,
+          accountInfo: accountAsync.info
+        )
+        songAsync.lyricsRelFilePath = lyricsRelFilePath
+        os_log(
+          "Lyrics found for <%s> and saved to: %s",
+          log: self.log,
+          type: .info,
+          songAsync.displayString,
+          lyricsRelFilePath.path
+        )
+      } catch {
+        songAsync.lyricsRelFilePath = nil
+      }
+    }
+    return lyricsList
   }
 
   @MainActor

@@ -1,0 +1,13 @@
+[ti:Sonic Wave]
+[ar:The Testers]
+[al:Parser Sessions]
+[lang:en]
+[by:SonicWave tests]
+[offset:-100]
+[re:SonicWave]
+[ve:1.0]
+[00:04.00]First synced line
+[00:08.50]Second synced line
+[01:00.00]Outro
+[00:12.34]Third synced line (ms precision)
+[00:20.00][00:40.00]Repeated chorus

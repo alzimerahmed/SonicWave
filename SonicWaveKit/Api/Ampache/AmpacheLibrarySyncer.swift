@@ -1445,6 +1445,31 @@ class AmpacheLibrarySyncer: CommonLibrarySyncer, LibrarySyncer {
     throw ResponseError(type: .xml, cleansedURL: nil, data: nil)
   }
 
+  /// G4: Ampache has no synced-lyrics endpoint — the `song` action carries a
+  /// plain `<lyrics>` field since API 5.4.1 ("Include lyrics in Song
+  /// objects"). Wrapped as unsynced `LyricsList`; older servers simply miss
+  /// the field and yield `.xml` error here.
+  @MainActor
+  func fetchLyrics(song: Song) async throws -> LyricsList {
+    guard isSyncAllowed else { throw BackendError.notSupported }
+    let response = try await ampacheXmlServerApi.requestSongInfo(id: song.id)
+    let parserDelegate = AmpacheLyricsParserDelegate(performanceMonitor: performanceMonitor)
+    try parse(response: response, delegate: parserDelegate)
+    guard let lyricsText = parserDelegate.lyricsText, !lyricsText.isEmpty else {
+      throw ResponseError(type: .xml)
+    }
+    var lyricsList = LyricsList()
+    var structuredLyrics = StructuredLyrics()
+    structuredLyrics.synced = false
+    structuredLyrics.line = lyricsText.components(separatedBy: .newlines).map { text in
+      var line = LyricsLine()
+      line.value = text
+      return line
+    }
+    lyricsList.lyrics.append(structuredLyrics)
+    return lyricsList
+  }
+
   private func parseForError(response: APIDataResponse) throws {
     let parserDelegate = AmpacheXmlParser(performanceMonitor: performanceMonitor)
     try parse(response: response, delegate: parserDelegate)

@@ -95,6 +95,18 @@ public class MetaManager {
     LibrarySyncerProxy(backendApi: backendApi, account: account, storage: storage)
   }()
 
+  /// G4: multi-source synced-lyrics provider for this account
+  /// (server lyrics -> embedded/sidecar -> LRCLIB, disk-cached).
+  public lazy var syncedLyricsManager: SyncedLyricsManager = {
+    SyncedLyricsManager(
+      account: account,
+      networkMonitor: networkMonitor,
+      storage: storage,
+      librarySyncer: librarySyncer,
+      eventLogger: eventLogger
+    )
+  }()
+
   public lazy var duplicateEntitiesResolver: DuplicateEntitiesResolver = {
     DuplicateEntitiesResolver(account: account, storage: storage)
   }()
