@@ -374,14 +374,15 @@ public enum ArtworkTintIntensity: Int, CaseIterable, Sendable, Codable {
 
   public static let defaultValue: ArtworkTintIntensity = .subtle
 
+  // `bundle: .main` — the Localizable catalog ships in the app target
   public var description: String {
     switch self {
     case .off:
-      return "Off"
+      return String(localized: "Off", bundle: .main)
     case .subtle:
-      return "Subtle"
+      return String(localized: "Subtle", bundle: .main)
     case .vivid:
-      return "Vivid"
+      return String(localized: "Vivid", bundle: .main)
     }
   }
 }
@@ -398,14 +399,15 @@ public enum BlackModePreference: Int, CaseIterable, Sendable, Codable {
 
   public static let defaultValue: BlackModePreference = .system
 
+  // `bundle: .main` — the Localizable catalog ships in the app target
   public var description: String {
     switch self {
     case .system:
-      return "System"
+      return String(localized: "System", bundle: .main)
     case .dark:
-      return "Dark"
+      return String(localized: "Dark", bundle: .main)
     case .trueBlack:
-      return "True Black (OLED)"
+      return String(localized: "True Black (OLED)", bundle: .main)
     }
   }
 }

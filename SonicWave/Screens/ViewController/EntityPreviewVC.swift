@@ -477,7 +477,14 @@ class EntityPreviewActionBuilder {
           .map { appDelegate.storage.settings.accounts.getSetting($0.info).read.isAlbumShuffleActive } ??
           false
       )
-    return UIAction(title: "Shuffle Albums", image: .shuffle, state: isActive ? .on : .off) { _ in
+    return UIAction(
+      title: NSLocalizedString(
+        "Shuffle Albums",
+        comment: "Context menu action: start album-radio mode (shuffled whole albums)"
+      ),
+      image: .shuffle,
+      state: isActive ? .on : .off
+    ) { _ in
       guard !self.entityPlayables.isEmpty else { return }
       if let account = self.entityContainer.account {
         self.appDelegate.storage.settings.accounts

@@ -221,7 +221,10 @@ class LyricTableCell: UITableViewCell {
     // §8.2 — each line reads its text; timed lines get the seek hint
     isAccessibilityElement = true
     accessibilityLabel = model.lyric?.value
-    accessibilityHint = model.isSeekable ? "Double-tap to play from this line" : nil
+    accessibilityHint = model.isSeekable ? NSLocalizedString(
+      "Double-tap to play from this line",
+      comment: "VoiceOver hint on a seekable synced-lyric line"
+    ) : nil
     accessibilityTraits = model.isSeekable ? [.staticText, .button] : .staticText
   }
 }

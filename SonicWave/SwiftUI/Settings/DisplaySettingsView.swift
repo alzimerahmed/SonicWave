@@ -59,7 +59,7 @@ struct DisplaySettingsView: View {
 
         SettingsSection(
           content: {
-            SettingsRow(title: "Black Mode") {
+            SettingsRow(title: String(localized: "Black Mode")) {
               Menu(settings.blackModePreference.description) {
                 ForEach(BlackModePreference.allCases, id: \.self) { preference in
                   Button {
@@ -76,13 +76,13 @@ struct DisplaySettingsView: View {
             }
           },
           footer:
-          "Dark forces the dark interface. True Black shows pure black surfaces in dark mode — saves battery on OLED screens."
+          String(localized: "Dark forces the dark interface. True Black shows pure black surfaces in dark mode — saves battery on OLED screens.")
         )
 
         if settings.activeAccountInfo != nil {
           SettingsSection(
             content: {
-              SettingsRow(title: "Artwork Tint") {
+              SettingsRow(title: String(localized: "Artwork Tint")) {
                 Menu(settings.artworkTintIntensity.description) {
                   ForEach(ArtworkTintIntensity.allCases, id: \.self) { intensity in
                     Button {
@@ -99,7 +99,7 @@ struct DisplaySettingsView: View {
               }
             },
             footer:
-            "How strongly the Now Playing background takes on the current artwork's colors. Stored per account."
+            String(localized: "How strongly the Now Playing background takes on the current artwork's colors. Stored per account.")
           )
         }
 
@@ -155,12 +155,12 @@ struct DisplaySettingsView: View {
           SettingsSection(
             content: {
               SettingsCheckBoxRow(
-                title: "Synced Lyrics Online Lookup",
+                title: String(localized: "Synced Lyrics Online Lookup"),
                 isOn: $settings.isSyncedLyricsExternalLookupActive
               )
             },
             footer:
-            "When the server has no synced lyrics, title, artist, album, and duration of the current track are sent to lrclib.net — only while online, never your account data."
+            String(localized: "When the server has no synced lyrics, title, artist, album, and duration of the current track are sent to lrclib.net — only while online, never your account data.")
           )
         }
 
@@ -229,8 +229,8 @@ struct DisplaySettingsView: View {
         if AppIconManager.isSupported, !AppIconManager.alternateIcons.isEmpty {
           SettingsSection(
             content: {
-              SettingsRow(title: "App Icon") {
-                Menu(activeIconName ?? "Default") {
+              SettingsRow(title: String(localized: "App Icon")) {
+                Menu(activeIconName ?? String(localized: "Default")) {
                   Button {
                     AppIconManager.setIcon(named: nil)
                     activeIconName = nil
@@ -257,7 +257,7 @@ struct DisplaySettingsView: View {
               }
             },
             footer:
-            "Choose an alternate Home Screen icon."
+            String(localized: "Choose an alternate Home Screen icon.")
           )
         }
       }

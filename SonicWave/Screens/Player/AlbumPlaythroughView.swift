@@ -109,9 +109,23 @@ class AlbumPlaythroughView: UIView {
     isHidden = false
     progressRatio = info.progressRatio
     let trackNumber = min(info.playedTrackCount + 1, info.totalTrackCount)
-    captionLabel.text = "Track \(trackNumber) of \(info.totalTrackCount)"
+    captionLabel.text = String(
+      format: NSLocalizedString(
+        "Track %d of %d",
+        comment: "Album playthrough caption: first %d = current track, second %d = total"
+      ),
+      trackNumber,
+      info.totalTrackCount
+    )
     fillView.backgroundColor = tint ?? .secondaryLabel
-    accessibilityLabel = "Album progress: track \(trackNumber) of \(info.totalTrackCount)"
+    accessibilityLabel = String(
+      format: NSLocalizedString(
+        "Album progress: track %d of %d",
+        comment: "VoiceOver label for the album playthrough hairline"
+      ),
+      trackNumber,
+      info.totalTrackCount
+    )
     updateFillWidth()
   }
 

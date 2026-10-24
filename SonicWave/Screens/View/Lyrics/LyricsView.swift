@@ -242,7 +242,10 @@ class LyricsView: UITableView, UITableViewDataSource, UITableViewDelegate {
       stateLabel.isHidden = false
       stateSpinner.isHidden = false
       stateSpinner.startAnimating()
-      stateLabel.text = "Loading lyrics…"
+      stateLabel.text = NSLocalizedString(
+        "Loading lyrics…",
+        comment: "Lyrics pane loading state"
+      )
     case .empty:
       stateOverlay.isHidden = false
       stateIcon.isHidden = false
@@ -250,7 +253,10 @@ class LyricsView: UITableView, UITableViewDataSource, UITableViewDelegate {
       stateSpinner.isHidden = true
       stateSpinner.stopAnimating()
       stateIcon.image = .lyrics
-      stateLabel.text = "No lyrics available for this song"
+      stateLabel.text = NSLocalizedString(
+        "No lyrics available for this song",
+        comment: "Lyrics pane empty state"
+      )
     case .offlineEmpty:
       stateOverlay.isHidden = false
       stateIcon.isHidden = false
@@ -258,7 +264,10 @@ class LyricsView: UITableView, UITableViewDataSource, UITableViewDelegate {
       stateSpinner.isHidden = true
       stateSpinner.stopAnimating()
       stateIcon.image = .lyrics
-      stateLabel.text = "Offline — no cached lyrics for this song"
+      stateLabel.text = NSLocalizedString(
+        "Offline — no cached lyrics for this song",
+        comment: "Lyrics pane empty state while offline"
+      )
     }
     // the overlay's label is the only accessible element in the cluster
     stateOverlay.accessibilityElementsHidden = stateOverlay.isHidden

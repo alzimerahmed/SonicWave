@@ -177,7 +177,14 @@ class GenericTableCell: BasicTableCell {
       playthroughFillWidthConstraint = constraint
     }
     let trackNumber = min(info.playedTrackCount + 1, info.totalTrackCount)
-    track.accessibilityLabel = "Album progress: track \(trackNumber) of \(info.totalTrackCount)"
+    track.accessibilityLabel = String(
+      format: NSLocalizedString(
+        "Album progress: track %d of %d",
+        comment: "VoiceOver label for the album playthrough hairline"
+      ),
+      trackNumber,
+      info.totalTrackCount
+    )
   }
 
   func display(container: PlayableContainable, rootView: UITableViewController) {

@@ -133,11 +133,11 @@ struct PlayerSettingsView: View {
           SettingsSection(
             content: {
               SettingsCheckBoxRow(
-                title: "Album Shuffle",
+                title: String(localized: "Album Shuffle"),
                 isOn: $settings.isAlbumShuffleActive
               )
             },
-            footer: "Shuffle plays whole albums back-to-back; the next album is queued automatically. Stored per account."
+            footer: String(localized: "Shuffle plays whole albums back-to-back; the next album is queued automatically. Stored per account.")
           )
         }
 
@@ -145,11 +145,11 @@ struct PlayerSettingsView: View {
           SettingsSection(
             content: {
               SettingsCheckBoxRow(
-                title: "Music Haptics",
+                title: String(localized: "Music Haptics"),
                 isOn: $settings.isMusicHapticsActive
               )
             },
-            footer: "Beat-synced haptics during playback, synthesized live from the audio. Uses extra battery."
+            footer: String(localized: "Beat-synced haptics during playback, synthesized live from the audio. Uses extra battery.")
           )
         }
 

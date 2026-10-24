@@ -36,11 +36,20 @@ enum PlayerPane {
   var accessibilityAnnouncement: String {
     switch self {
     case .nowPlaying:
-      return "Now Playing"
+      return NSLocalizedString(
+        "Now Playing",
+        comment: "VoiceOver announcement when returning to the Now Playing pane"
+      )
     case .lyrics:
-      return "Lyrics"
+      return NSLocalizedString(
+        "Lyrics",
+        comment: "VoiceOver announcement when swiping to the lyrics pane of Now Playing"
+      )
     case .queue:
-      return "Up Next queue"
+      return NSLocalizedString(
+        "Up Next queue",
+        comment: "VoiceOver announcement when swiping to the queue pane of Now Playing"
+      )
     }
   }
 }

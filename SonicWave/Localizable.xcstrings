@@ -1,0 +1,378 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Album Shuffle" : {
+      "comment" : "Settings row title: enables whole-album shuffle mode",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Album Shuffle"
+          }
+        }
+      }
+    },
+    "Album progress: track %d of %d" : {
+      "comment" : "VoiceOver label for the album playthrough hairline. First %d = current track number, second %d = total tracks on the album.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Album progress: track %d of %d"
+          }
+        }
+      }
+    },
+    "App Icon" : {
+      "comment" : "Settings row title for the alternate app icon picker",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Icon"
+          }
+        }
+      }
+    },
+    "Artwork Tint" : {
+      "comment" : "Settings row title: how strongly Now Playing takes on artwork colors",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Artwork Tint"
+          }
+        }
+      }
+    },
+    "Beat-synced haptics during playback, synthesized live from the audio. Uses extra battery." : {
+      "comment" : "Settings footer under the Music Haptics toggle",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beat-synced haptics during playback, synthesized live from the audio. Uses extra battery."
+          }
+        }
+      }
+    },
+    "Black Mode" : {
+      "comment" : "Settings row title: dark / true-black appearance preference",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Black Mode"
+          }
+        }
+      }
+    },
+    "Choose an alternate Home Screen icon." : {
+      "comment" : "Settings footer under the App Icon picker",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose an alternate Home Screen icon."
+          }
+        }
+      }
+    },
+    "Dark" : {
+      "comment" : "Black Mode preference option: forces the dark interface",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dark"
+          }
+        }
+      }
+    },
+    "Dark forces the dark interface. True Black shows pure black surfaces in dark mode — saves battery on OLED screens." : {
+      "comment" : "Settings footer under the Black Mode row",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dark forces the dark interface. True Black shows pure black surfaces in dark mode — saves battery on OLED screens."
+          }
+        }
+      }
+    },
+    "Default" : {
+      "comment" : "App Icon picker option: the primary app icon",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Default"
+          }
+        }
+      }
+    },
+    "Double-tap to play from this line" : {
+      "comment" : "VoiceOver hint on a seekable synced-lyric line",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Double-tap to play from this line"
+          }
+        }
+      }
+    },
+    "How strongly the Now Playing background takes on the current artwork's colors. Stored per account." : {
+      "comment" : "Settings footer under the Artwork Tint row",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How strongly the Now Playing background takes on the current artwork's colors. Stored per account."
+          }
+        }
+      }
+    },
+    "Loading lyrics…" : {
+      "comment" : "Lyrics pane loading state (ellipsis is U+2026)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading lyrics…"
+          }
+        }
+      }
+    },
+    "Lyrics" : {
+      "comment" : "VoiceOver announcement when swiping to the lyrics pane of Now Playing",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lyrics"
+          }
+        }
+      }
+    },
+    "Music Haptics" : {
+      "comment" : "Settings row title: beat-synced haptic feedback during playback",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Music Haptics"
+          }
+        }
+      }
+    },
+    "No lyrics available for this song" : {
+      "comment" : "Lyrics pane empty state",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No lyrics available for this song"
+          }
+        }
+      }
+    },
+    "Now Playing" : {
+      "comment" : "VoiceOver announcement when returning to the Now Playing pane",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Now Playing"
+          }
+        }
+      }
+    },
+    "Off" : {
+      "comment" : "Artwork Tint preference option: tinting disabled",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Off"
+          }
+        }
+      }
+    },
+    "Offline — no cached lyrics for this song" : {
+      "comment" : "Lyrics pane empty state while offline (em dash separates 'Offline' from the reason)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Offline — no cached lyrics for this song"
+          }
+        }
+      }
+    },
+    "Pause" : {
+      "comment" : "Mini-player context menu action: pause playback",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pause"
+          }
+        }
+      }
+    },
+    "Play" : {
+      "comment" : "Mini-player context menu action: resume playback",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play"
+          }
+        }
+      }
+    },
+    "Shuffle Albums" : {
+      "comment" : "Context menu action: start album-radio mode (whole albums played back-to-back, shuffled)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shuffle Albums"
+          }
+        }
+      }
+    },
+    "Shuffle plays whole albums back-to-back; the next album is queued automatically. Stored per account." : {
+      "comment" : "Settings footer under the Album Shuffle row",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shuffle plays whole albums back-to-back; the next album is queued automatically. Stored per account."
+          }
+        }
+      }
+    },
+    "Subtle" : {
+      "comment" : "Artwork Tint preference option: gentle two-stop gradient",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subtle"
+          }
+        }
+      }
+    },
+    "Synced Lyrics Online Lookup" : {
+      "comment" : "Settings row title: send track metadata to lrclib.net when the server lacks synced lyrics",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synced Lyrics Online Lookup"
+          }
+        }
+      }
+    },
+    "System" : {
+      "comment" : "Black Mode preference option: follow the appearance mode setting",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System"
+          }
+        }
+      }
+    },
+    "Track %d of %d" : {
+      "comment" : "Album playthrough caption under Now Playing. First %d = current track number, second %d = total tracks on the album.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Track %d of %d"
+          }
+        }
+      }
+    },
+    "True Black (OLED)" : {
+      "comment" : "Black Mode preference option: dark interface with pure black surfaces",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "True Black (OLED)"
+          }
+        }
+      }
+    },
+    "Up Next queue" : {
+      "comment" : "VoiceOver announcement when swiping to the queue pane of Now Playing",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up Next queue"
+          }
+        }
+      }
+    },
+    "Vivid" : {
+      "comment" : "Artwork Tint preference option: full gradient plus accent-tinted controls",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vivid"
+          }
+        }
+      }
+    },
+    "When the server has no synced lyrics, title, artist, album, and duration of the current track are sent to lrclib.net — only while online, never your account data." : {
+      "comment" : "Settings footer under Synced Lyrics Online Lookup; 'lrclib.net' is a service name, keep it untranslated",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When the server has no synced lyrics, title, artist, album, and duration of the current track are sent to lrclib.net — only while online, never your account data."
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

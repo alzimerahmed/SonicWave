@@ -1036,11 +1036,23 @@ extension MiniPlayerView: UIContextMenuInteractionDelegate {
     }) { _ in
       var menuActions = [UIMenuElement]()
       if self.player.isPlaying {
-        menuActions.append(UIAction(title: "Pause", image: .pause) { _ in
+        menuActions.append(UIAction(
+          title: NSLocalizedString(
+            "Pause",
+            comment: "Mini-player context menu action: pause playback"
+          ),
+          image: .pause
+        ) { _ in
           self.player.pause()
         })
       } else {
-        menuActions.append(UIAction(title: "Play", image: .play) { _ in
+        menuActions.append(UIAction(
+          title: NSLocalizedString(
+            "Play",
+            comment: "Mini-player context menu action: resume playback"
+          ),
+          image: .play
+        ) { _ in
           self.player.play()
         })
       }
