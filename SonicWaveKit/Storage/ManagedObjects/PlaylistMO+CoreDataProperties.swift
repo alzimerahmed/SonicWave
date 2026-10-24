@@ -41,6 +41,8 @@ extension PlaylistMO {
   @NSManaged
   public var isCached: Bool
   @NSManaged
+  public var isWatchedForAutoDownload: Bool
+  @NSManaged
   public var lastPlayedDate: Date?
   @NSManaged
   public var name: String?

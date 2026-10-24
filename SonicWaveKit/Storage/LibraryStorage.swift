@@ -1105,6 +1105,14 @@ public class LibraryStorage: PlayableFileCachable {
     }
   }
 
+  func getFetchPredicate(onlyDownloadTier tier: PlayableDownloadTier) -> NSPredicate {
+    NSPredicate(
+      format: "%K == %i",
+      #keyPath(AbstractPlayableMO.downloadTier),
+      tier.rawValue
+    )
+  }
+
   func getFetchPredicate(songsDisplayFilter: DisplayCategoryFilter) -> NSPredicate {
     switch songsDisplayFilter {
     case .all, .newest, .recent:
@@ -1696,6 +1704,46 @@ public class LibraryStorage: PlayableFileCachable {
     return songs?.lazy.compactMap { Song(managedObject: $0) }.first
   }
 
+  // MARK: Playables (Songs + PodcastEpisodes)
+
+  public func getAllPlayables() -> [AbstractPlayable] {
+    let songs: [AbstractPlayable] = getAllSongs()
+    let podcastEpisodes: [AbstractPlayable] = getAllPodcastEpisodes()
+    return songs + podcastEpisodes
+  }
+
+  /// two-tier storage (G6): cached playables (file present) of a given tier.
+  /// `.cache` = evictable, `.pinned` = user-pinned download.
+  public func getCachedPlayables(
+    for account: Account,
+    downloadTier: PlayableDownloadTier
+  )
+    -> [AbstractPlayable] {
+    var playables = [AbstractPlayable]()
+
+    let songRequest = SongMO.identifierSortedFetchRequest
+    songRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
+      getFetchPredicate(forAccount: account),
+      getFetchPredicate(onlyCachedSongs: true),
+      getFetchPredicate(onlyDownloadTier: downloadTier),
+    ])
+    let foundSongs = try? context.fetch(songRequest)
+    playables += foundSongs?
+      .compactMap { Song(managedObject: $0) as AbstractPlayable } ?? []
+
+    let episodeRequest = PodcastEpisodeMO.identifierSortedFetchRequest
+    episodeRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
+      getFetchPredicate(forAccount: account),
+      getFetchPredicate(onlyCachedPodcastEpisodes: true),
+      getFetchPredicate(onlyDownloadTier: downloadTier),
+    ])
+    let foundEpisodes = try? context.fetch(episodeRequest)
+    playables += foundEpisodes?
+      .compactMap { PodcastEpisode(managedObject: $0) as AbstractPlayable } ?? []
+
+    return playables
+  }
+
   // MARK: Radios
 
   public func getRadios(for account: Account) -> [Radio] {
@@ -1830,6 +1878,22 @@ public class LibraryStorage: PlayableFileCachable {
         .relationshipKeyPathsForPrefetching
       fetchRequest.returnsObjectsAsFaults = false
     }
+    let foundPlaylists = try? context.fetch(fetchRequest)
+    let playlists = foundPlaylists?.compactMap { Playlist(library: self, managedObject: $0) }
+    return playlists ?? [Playlist]()
+  }
+
+  /// auto-sync watches (G5): user playlists marked for auto-download
+  public func getWatchedPlaylists(for account: Account) -> [Playlist] {
+    let fetchRequest = PlaylistMO.identifierSortedFetchRequest
+    fetchRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
+      getFetchPredicate(forAccount: account),
+      PlaylistMO.excludeSystemPlaylistsFetchPredicate,
+      NSPredicate(
+        format: "%K == TRUE",
+        #keyPath(PlaylistMO.isWatchedForAutoDownload)
+      ),
+    ])
     let foundPlaylists = try? context.fetch(fetchRequest)
     let playlists = foundPlaylists?.compactMap { Playlist(library: self, managedObject: $0) }
     return playlists ?? [Playlist]()

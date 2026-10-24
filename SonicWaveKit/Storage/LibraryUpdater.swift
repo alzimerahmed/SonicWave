@@ -233,6 +233,45 @@ public class LibraryUpdater {
         type: .info
       )
     }
+    if storage.settings.app.librarySyncVersion < .v22 {
+      storage
+        .settings.app.librarySyncVersion =
+        .v22 // if App crashes don't do this step again -> This step is only for convenience
+      os_log(
+        "Perform blocking library update (START): Playable downloadTier backfill",
+        log: self.log,
+        type: .info
+      )
+      try await backfillDownloadTier(notifier: notifier)
+      os_log(
+        "Perform blocking library update (DONE): Playable downloadTier backfill",
+        log: self.log,
+        type: .info
+      )
+    }
+  }
+
+  /// Two-tier storage (G6, CoreDataMigrationVersion v50):
+  /// before v50 every cached file was kept forever, i.e. all existing cached
+  /// playables are backfilled to `.pinned` to preserve that semantic.
+  /// Files cached later (auto-cache, streaming) default to `.cache` and are
+  /// evictable; only new explicit downloads get marked `.pinned`.
+  @MainActor
+  private func backfillDownloadTier(notifier: LibraryUpdaterCallbacks) async throws {
+    try await storage.async.perform { asyncCompanion in
+      let playables = asyncCompanion.library.getAllPlayables()
+      notifier.startOperation(
+        name: "Playable Download Tier Update",
+        totalCount: playables.count
+      )
+      for playable in playables {
+        usleep(Self.sleepTimeInMicroSecToReduceCpuLoad)
+        if playable.isCached, playable.downloadTier != .pinned {
+          playable.downloadTier = .pinned
+        }
+        notifier.tickOperation()
+      }
+    }
   }
 
   @MainActor

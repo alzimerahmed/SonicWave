@@ -202,6 +202,16 @@ public class Playlist: Identifyable {
     }
   }
 
+  /// auto-sync watch (G5): new songs added to this playlist are auto-downloaded
+  public var isWatchedForAutoDownload: Bool {
+    get { managedObject.isWatchedForAutoDownload }
+    set {
+      if managedObject.isWatchedForAutoDownload != newValue {
+        managedObject.isWatchedForAutoDownload = newValue
+      }
+    }
+  }
+
   public var duration: Int { Int(managedObject.duration) }
 
   public var remoteDuration: Int {

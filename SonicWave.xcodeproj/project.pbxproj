@@ -47,6 +47,7 @@
 		5023D9B22BDAA48200310144 /* UpdateVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5023D9B12BDAA48200310144 /* UpdateVC.swift */; };
 		502B8A4D2EE0CE40004CA3AD /* AudioStreaming in Frameworks */ = {isa = PBXBuildFile; productRef = 502B8A4C2EE0CE40004CA3AD /* AudioStreaming */; };
 		502B8A532EE0D354004CA3AD /* AccountTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 502B8A522EE0D354004CA3AD /* AccountTest.swift */; };
+		5F50B0010000000000000003 /* OfflineFirstSchemaV50Test.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F50B0010000000000000002 /* OfflineFirstSchemaV50Test.swift */; };
 		502B98ED2D03A02D000FE187 /* PlaylistEditVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 502B98EC2D03A02D000FE187 /* PlaylistEditVC.swift */; };
 		502E56BC27561AD900638BD2 /* UserQueueSectionHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 502E56BB27561AD900638BD2 /* UserQueueSectionHeader.swift */; };
 		502E56BD27561C2700638BD2 /* UserQueueSectionHeader.xib in Resources */ = {isa = PBXBuildFile; fileRef = 502E56BA27561AD900638BD2 /* UserQueueSectionHeader.xib */; };
@@ -708,6 +709,7 @@
 		5029288D2657B78B00DA3A8F /* UserStatisticsMO+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UserStatisticsMO+CoreDataProperties.swift"; sourceTree = "<group>"; };
 		5029E0382235A8EC0027F96F /* CommonString.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommonString.swift; sourceTree = "<group>"; };
 		502B8A522EE0D354004CA3AD /* AccountTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountTest.swift; sourceTree = "<group>"; };
+		5F50B0010000000000000002 /* OfflineFirstSchemaV50Test.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineFirstSchemaV50Test.swift; sourceTree = "<group>"; };
 		502B98EC2D03A02D000FE187 /* PlaylistEditVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistEditVC.swift; sourceTree = "<group>"; };
 		502C0044224C0B1400DA0D1E /* SubsonicArtworkDownloadDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SubsonicArtworkDownloadDelegate.swift; sourceTree = "<group>"; };
 		502E56BA27561AD900638BD2 /* UserQueueSectionHeader.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = UserQueueSectionHeader.xib; sourceTree = "<group>"; };
@@ -773,6 +775,7 @@
 		5068D37F26A85C2D0006710D /* DownloadError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadError.swift; sourceTree = "<group>"; };
 		506B3A3823B4539D00E31F21 /* SonicWave v2.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "SonicWave v2.xcdatamodel"; sourceTree = "<group>"; };
 		506C314D2EE6D2100011A2C3 /* SonicWave v49.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "SonicWave v49.xcdatamodel"; sourceTree = "<group>"; };
+		5F50B0010000000000000001 /* SonicWave v50.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "SonicWave v50.xcdatamodel"; sourceTree = "<group>"; };
 		5070ED2C2D46979A00EB2972 /* SonicWave v42.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "SonicWave v42.xcdatamodel"; sourceTree = "<group>"; };
 		507148AB2B767FE200557904 /* ContextQueuePrevSectionHeader.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ContextQueuePrevSectionHeader.xib; sourceTree = "<group>"; };
 		507148AC2B767FE200557904 /* ContextQueuePrevSectionHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextQueuePrevSectionHeader.swift; sourceTree = "<group>"; };
@@ -1627,6 +1630,7 @@
 			isa = PBXGroup;
 			children = (
 				502B8A522EE0D354004CA3AD /* AccountTest.swift */,
+				5F50B0010000000000000002 /* OfflineFirstSchemaV50Test.swift */,
 				50F81E9123BD29BB00EAAC3E /* PlayerDataTest.swift */,
 				50F81E8B23BB666100EAAC3E /* ArtistTest.swift */,
 				50F81E8723BB29CD00EAAC3E /* AlbumTest.swift */,
@@ -2912,6 +2916,7 @@
 				50BE5D792850F4FB00156FC6 /* SsDirectoriesExample2ParserTest.swift in Sources */,
 				50BE5D4E2850F4C900156FC6 /* PlayerDataTest.swift in Sources */,
 				502B8A532EE0D354004CA3AD /* AccountTest.swift in Sources */,
+				5F50B0010000000000000003 /* OfflineFirstSchemaV50Test.swift in Sources */,
 				50BE5D4D2850F4C900156FC6 /* ArtworkTest.swift in Sources */,
 				50BE5D932850F51E00156FC6 /* CoreDataSeeder.swift in Sources */,
 				50BE5D922850F50F00156FC6 /* PlaylistsParserTest.swift in Sources */,
@@ -3550,6 +3555,7 @@
 		500BB49521CAAA2700D367CF /* SonicWave.xcdatamodeld */ = {
 			isa = XCVersionGroup;
 			children = (
+				5F50B0010000000000000001 /* SonicWave v50.xcdatamodel */,
 				506C314D2EE6D2100011A2C3 /* SonicWave v49.xcdatamodel */,
 				5084F70C2ED9D87500D8D3DA /* SonicWave v48.xcdatamodel */,
 				507C9AD82E29905D001589F8 /* SonicWave v47.xcdatamodel */,
@@ -3600,7 +3606,7 @@
 				506B3A3823B4539D00E31F21 /* SonicWave v2.xcdatamodel */,
 				500BB49621CAAA2700D367CF /* SonicWave.xcdatamodel */,
 			);
-			currentVersion = 506C314D2EE6D2100011A2C3 /* SonicWave v49.xcdatamodel */;
+			currentVersion = 5F50B0010000000000000001 /* SonicWave v50.xcdatamodel */;
 			path = SonicWave.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;

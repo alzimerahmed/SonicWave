@@ -32,6 +32,20 @@ public enum DerivedPlayableType: Sendable {
   case radio
 }
 
+// MARK: - PlayableDownloadTier
+
+/// Two-tier storage for cached playable files (CoreDataMigrationVersion v50):
+/// - `cache`: evictable cache — the file may be removed automatically
+///   (e.g. by a storage cap / LRU trim or when auto-caching is turned off).
+/// - `pinned`: user-pinned download — the file is kept permanently and is
+///   never evicted automatically.
+/// The tier only has a meaning if a file is present (`isCached == true`);
+/// it also expresses the intent for pending/requested downloads.
+public enum PlayableDownloadTier: Int16, Sendable {
+  case cache = 0
+  case pinned = 1
+}
+
 // MARK: - AbstractPlayableInfo
 
 public struct AbstractPlayableInfo: Sendable {
@@ -278,6 +292,19 @@ public class AbstractPlayable: AbstractLibraryEntity, Downloadable {
 
   public var isCached: Bool {
     relFilePath != nil
+  }
+
+  /// evictable cache vs. user-pinned download, see `PlayableDownloadTier`
+  public var downloadTier: PlayableDownloadTier {
+    get { PlayableDownloadTier(rawValue: playableManagedObject.downloadTier) ?? .cache }
+    set {
+      if playableManagedObject.downloadTier != newValue
+        .rawValue { playableManagedObject.downloadTier = newValue.rawValue }
+    }
+  }
+
+  public var isDownloadPinned: Bool {
+    downloadTier == .pinned
   }
 
   public var relFilePath: URL? {

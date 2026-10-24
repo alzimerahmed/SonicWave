@@ -163,6 +163,14 @@ public class Account {
     managedObject.userName ?? ""
   }
 
+  /// delta-sync marker: timestamp of the last completed library sync,
+  /// used by incremental sync (e.g. delta `getAlbumList2`) to fetch only
+  /// entities changed on the server since then
+  public var lastLibrarySyncDate: Date? {
+    get { managedObject.lastLibrarySyncDate }
+    set { if managedObject.lastLibrarySyncDate != newValue { managedObject.lastLibrarySyncDate = newValue } }
+  }
+
   public var info: AccountInfo {
     AccountInfo(serverHash: serverHash, userHash: userHash, apiType: apiType)
   }

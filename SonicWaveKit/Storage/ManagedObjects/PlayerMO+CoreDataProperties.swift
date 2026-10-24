@@ -41,6 +41,12 @@ extension PlayerMO {
   @NSManaged
   public var isUserQueuePlaying: Bool
   @NSManaged
+  public var isPlayQueueDirty: Bool
+  @NSManaged
+  public var playQueueLastSyncDate: Date?
+  @NSManaged
+  public var playQueueRemoteChangeDate: Date?
+  @NSManaged
   public var repeatSetting: Int16
   @NSManaged
   public var shuffleSetting: Int16

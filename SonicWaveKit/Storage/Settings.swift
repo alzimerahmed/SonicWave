@@ -376,6 +376,15 @@ public struct AccountSetting: Sendable, Codable {
     set { _isAutoDownloadLatestSongsActive = newValue }
   }
 
+  /// auto-sync watch (G5): favorited songs are auto-downloaded.
+  /// Backed by an Optional so that decoding older persisted `AccountSetting`s
+  /// (which lack this key) does not fail and silently reset all account settings.
+  private var _isAutoDownloadFavoritesActive: Bool? = nil
+  public var isAutoDownloadFavoritesActive: Bool {
+    get { _isAutoDownloadFavoritesActive ?? false }
+    set { _isAutoDownloadFavoritesActive = newValue }
+  }
+
   private var _isScrobbleStreamedItems: Bool = false
   public var isScrobbleStreamedItems: Bool {
     get { _isScrobbleStreamedItems }

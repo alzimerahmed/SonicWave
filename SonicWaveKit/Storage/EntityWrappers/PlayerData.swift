@@ -81,6 +81,23 @@ protocol PlayerQueuesPersistent {
   func removeAllItems()
 }
 
+// MARK: - PlayerPlayQueueSyncState
+
+/// persisted markers for server play-queue synchronisation
+/// (`savePlayQueue`/`getPlayQueue`, gap G9):
+/// - `isPlayQueueDirty`: local queue changed since the last successful upload
+/// - `playQueueLastSyncDate`: timestamp of the last successful upload
+/// - `playQueueRemoteChangeDate`: `changed` timestamp reported by the server
+///   for the last fetched remote queue, used to detect remote modifications
+protocol PlayerPlayQueueSyncState {
+  var isPlayQueueDirty: Bool { get }
+  func setPlayQueueDirty(_ newValue: Bool)
+  var playQueueLastSyncDate: Date? { get }
+  func setPlayQueueLastSyncDate(_ newValue: Date?)
+  var playQueueRemoteChangeDate: Date? { get }
+  func setPlayQueueRemoteChangeDate(_ newValue: Date?)
+}
+
 // MARK: - PlayerMode
 
 public enum PlayerMode: Int16 {
@@ -530,6 +547,34 @@ extension PlayerData: PlayerQueuesPersistent {
     shuffledContextPlaylist.removeAllItems()
     userQueuePlaylistInternal.removeAllItems()
     podcastPlaylist.removeAllItems()
+    library.saveContext()
+  }
+}
+
+// MARK: PlayerPlayQueueSyncState
+
+extension PlayerData: PlayerPlayQueueSyncState {
+  var isPlayQueueDirty: Bool { managedObject.isPlayQueueDirty }
+
+  func setPlayQueueDirty(_ newValue: Bool) {
+    guard managedObject.isPlayQueueDirty != newValue else { return }
+    managedObject.isPlayQueueDirty = newValue
+    library.saveContext()
+  }
+
+  var playQueueLastSyncDate: Date? { managedObject.playQueueLastSyncDate }
+
+  func setPlayQueueLastSyncDate(_ newValue: Date?) {
+    guard managedObject.playQueueLastSyncDate != newValue else { return }
+    managedObject.playQueueLastSyncDate = newValue
+    library.saveContext()
+  }
+
+  var playQueueRemoteChangeDate: Date? { managedObject.playQueueRemoteChangeDate }
+
+  func setPlayQueueRemoteChangeDate(_ newValue: Date?) {
+    guard managedObject.playQueueRemoteChangeDate != newValue else { return }
+    managedObject.playQueueRemoteChangeDate = newValue
     library.saveContext()
   }
 }
