@@ -53,12 +53,41 @@ class AnimatedGradientLayer {
     )
   }
 
+  /// generation token for deferred location application — a newer
+  /// `setColors` call must cancel an in-flight deferred snap
+  private var locationsGeneration = 0
+
   func setColors(
     _ newColors: [CGColor],
     at newLocations: [NSNumber]? = nil,
     isAnimated: Bool
   ) {
-    gradientLayer.locations = newLocations
+    locationsGeneration += 1
+    let generation = locationsGeneration
+    let currentStopCount = (gradientLayer.locations ?? []).count
+    if isAnimated, let newLocations, newLocations.count == currentStopCount {
+      // matching stop count — interpolate the stops alongside the colors
+      let locationAnimation = CABasicAnimation(keyPath: "locations")
+      locationAnimation.fromValue = gradientLayer.locations
+      locationAnimation.toValue = newLocations
+      locationAnimation.duration = animationDuration
+      locationAnimation.isRemovedOnCompletion = false
+      locationAnimation.fillMode = CAMediaTimingFillMode.forwards
+      locationAnimation.timingFunction = CAMediaTimingFunction(name: animationStyle)
+      gradientLayer.add(locationAnimation, forKey: "locationsChangeAnimation")
+      gradientLayer.locations = newLocations
+    } else if isAnimated, newLocations != nil {
+      // a changing stop count can't interpolate — let the old stops ride
+      // out the color crossfade, then snap to the new layout
+      let duration = animationDuration
+      Task { @MainActor [weak self] in
+        try? await Task.sleep(nanoseconds: UInt64(duration * 1_000_000_000))
+        guard let self, self.locationsGeneration == generation else { return }
+        self.gradientLayer.locations = newLocations
+      }
+    } else {
+      gradientLayer.locations = newLocations
+    }
     let colorAnimation = CABasicAnimation(keyPath: "colors")
     colorAnimation.fromValue = colors
     colorAnimation.toValue = newColors

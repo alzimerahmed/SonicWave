@@ -26,7 +26,7 @@ extension PopupPlayerVC {
   static let displaStyleAnimationDuration = TimeInterval(0.2)
 
   func switchDisplayStyleOptionPersistent() {
-    appDelegate.userStatistics.usedAction(.changePlayerDisplayStyle)
+    // `setDisplayStylePersistent` already logs the action once
     var displayStyle = appDelegate.storage.settings.user.playerDisplayStyle
     displayStyle.switchToNextStyle()
     setDisplayStylePersistent(displayStyle)

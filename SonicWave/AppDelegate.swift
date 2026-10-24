@@ -391,6 +391,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         .forEach {
           if let windowScene = $0 as? UIWindowScene {
             windowScene.windows.forEach { window in
+              // `.dark` ↔ `.trueBlack` resolves to the same override —
+              // a re-assignment fires no trait change, so `sonicSystem-
+              // Background` surfaces would keep the stale color until
+              // the next layout. Resetting through `.unspecified`
+              // forces the re-resolve right now.
+              if window.overrideUserInterfaceStyle == resolvedStyle {
+                window.overrideUserInterfaceStyle = .unspecified
+              }
               window.overrideUserInterfaceStyle = resolvedStyle
               window.rootViewController?.overrideUserInterfaceStyle = resolvedStyle
               window.backgroundColor = storage.settings.user

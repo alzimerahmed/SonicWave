@@ -47,6 +47,7 @@ enum SonicMotion {
   static func animate(
     withDuration duration: TimeInterval,
     delay: TimeInterval = 0,
+    options: UIView.AnimationOptions = [],
     animations: @escaping () -> (),
     completion: ((Bool) -> ())? = nil
   ) {
@@ -58,7 +59,7 @@ enum SonicMotion {
     UIView.animate(
       withDuration: duration,
       delay: delay,
-      options: [],
+      options: options,
       animations: animations,
       completion: completion
     )
