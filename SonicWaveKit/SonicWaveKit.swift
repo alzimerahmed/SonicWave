@@ -121,6 +121,12 @@ public class AmperKit {
   private var playerRemoteCommandCenterHandler: RemoteCommandCenterHandler?
   private var playerNotificationAdapter: PlayerNotificationAdapter?
 
+  /// beat-synced haptic feedback — created lazily with the player (first
+  /// `player` access) and self-gated by `UserSettings.isMusicHapticsActive`;
+  /// nil until the player exists. `MusicHapticsService.isSupported` reports
+  /// the hardware gate for settings UI.
+  public private(set) var musicHapticsService: MusicHapticsService?
+
   /// synced-lyrics playback tracker (G4) — vendored lazily; registers
   /// itself as a `MusicPlayable` notifier on first access so the player
   /// is only instantiated when a synced-lyrics UI actually appears.
@@ -239,6 +245,13 @@ public class AmperKit {
     curPlayer.addNotifier(notifier: playerRemoteCommandCenterHandler!)
     playerNotificationAdapter = PlayerNotificationAdapter(notificationHandler: notificationHandler)
     curPlayer.addNotifier(notifier: playerNotificationAdapter!)
+
+    musicHapticsService = MusicHapticsService(
+      player: facadeImpl,
+      audioAnalyzer: backendAudioPlayer.audioAnalyzer,
+      settings: storage.settings
+    )
+    curPlayer.addNotifier(notifier: musicHapticsService!)
 
     return facadeImpl
   }

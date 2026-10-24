@@ -123,7 +123,7 @@ public final class MusicHapticsService: ObservableObject {
       } catch {
         engine = nil
         os_log(
-          "Haptic engine start failed: %s",
+          "Haptic engine start failed: %{public}@",
           log: self.log,
           type: .info,
           error.localizedDescription

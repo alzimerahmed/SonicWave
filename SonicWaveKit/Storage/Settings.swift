@@ -207,6 +207,19 @@ public struct UserSettings: Sendable, Codable {
     set { _isHapticsEnabled = newValue }
   }
 
+  /// music haptics: subtle beat-synced haptic transients during playback,
+  /// synthesized from the `AudioAnalyzer` bass band via `CHHapticEngine`
+  /// (`MusicHapticsService`). Defaults off — the analyzer tap costs CPU
+  /// and haptics are an opt-in feel feature; no-op on devices without a
+  /// haptic engine (e.g. Mac Catalyst).
+  /// Backed by an Optional so that decoding older persisted `UserSettings`s
+  /// (which lack this key) does not fail and silently reset all settings.
+  private var _isMusicHapticsActive: Bool? = nil
+  public var isMusicHapticsActive: Bool {
+    get { _isMusicHapticsActive ?? false }
+    set { _isMusicHapticsActive = newValue }
+  }
+
   private var _isEqualizerEnabled: Bool = false
   public var isEqualizerEnabled: Bool {
     get { _isEqualizerEnabled }
