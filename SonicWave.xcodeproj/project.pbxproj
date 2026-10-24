@@ -499,6 +499,7 @@
 		50C9D7142850759B007F18D0 /* Corners.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500EB36725F8B3EB00B4B998 /* Corners.swift */; };
 		50C9D7152850759B007F18D0 /* AnimatedGradientLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500EB36B25F8B42800B4B998 /* AnimatedGradientLayer.swift */; };
 		50C9D717285075E3007F18D0 /* UtilitiesExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50C9D716285075E3007F18D0 /* UtilitiesExtensions.swift */; };
+		7F20AB010000000000000112 /* AlternateIcons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F20AB010000000000000111 /* AlternateIcons.swift */; };
 		50C9D71828508005007F18D0 /* CommonString.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5029E0382235A8EC0027F96F /* CommonString.swift */; };
 		50C9D71928508803007F18D0 /* LibraryEntityImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50048FFE2671EFBD00064433 /* LibraryEntityImage.swift */; };
 		50C9D71A28508803007F18D0 /* EntityImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 504AE7B327BECFF300571BA5 /* EntityImageView.swift */; };
@@ -1088,6 +1089,7 @@
 		50C9D6EC284FADB8007F18D0 /* PlayerDisplayStyleType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerDisplayStyleType.swift; sourceTree = "<group>"; };
 		50C9D6EF28506EBC007F18D0 /* SonicWaveKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SonicWaveKit.swift; sourceTree = "<group>"; };
 		50C9D716285075E3007F18D0 /* UtilitiesExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UtilitiesExtensions.swift; sourceTree = "<group>"; };
+		7F20AB010000000000000111 /* AlternateIcons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlternateIcons.swift; sourceTree = "<group>"; };
 		50CA61222D4B658200EEF515 /* SonicWave v43.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "SonicWave v43.xcdatamodel"; sourceTree = "<group>"; };
 		50CA61232D4CE9E500EEF515 /* podcast_example_1.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = podcast_example_1.xml; sourceTree = "<group>"; };
 		50CA61252D4D191100EEF515 /* PodcastEpisodeTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastEpisodeTest.swift; sourceTree = "<group>"; };
@@ -1559,6 +1561,7 @@
 				509001B52716C7F600A8056D /* AppDelegateAlertExtensions.swift */,
 				50722746286794FC00910574 /* AppDelegateKeyboardCommands.swift */,
 				50C9D716285075E3007F18D0 /* UtilitiesExtensions.swift */,
+				7F20AB010000000000000111 /* AlternateIcons.swift */,
 				50DE29EC2B8FCFC500ABA78E /* LibraryDisplayType+Extension.swift */,
 				50BA92F421CC2C4800E5901D /* Screens */,
 				50E77DB528D2160800BDF882 /* SwiftUI */,
@@ -2647,6 +2650,7 @@
 				C0A1B0032EEE000000000003 /* MacWindowHelper.swift in Sources */,
 				505CA2112B88ECC700AA81CD /* SingleFetchedResultsTableViewController.swift in Sources */,
 				50C9D717285075E3007F18D0 /* UtilitiesExtensions.swift in Sources */,
+				7F20AB010000000000000112 /* AlternateIcons.swift in Sources */,
 				505CA2142B88ED6100AA81CD /* SingleSnapshotFetchedResultsTableViewController.swift in Sources */,
 				500DA6512F08750A005578C7 /* CarPlayCommonListExtension.swift in Sources */,
 				50791E8928D3BC4D006CE6E5 /* SwipeSettingsView.swift in Sources */,

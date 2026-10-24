@@ -27,6 +27,8 @@ import SwiftUI
 struct DisplaySettingsView: View {
   @EnvironmentObject
   private var settings: Settings
+  @State
+  private var activeIconName: String? = AppIconManager.activeIconName
 
   func setAppearanceMode(style: UIUserInterfaceStyle) {
     settings.appearanceMode = style
@@ -221,6 +223,43 @@ struct DisplaySettingsView: View {
           footer:
           "The player shuffle button is displayed but non-interactive."
         )
+
+        // hidden until alternate Icon Composer assets ship and are
+        // declared under `CFBundleAlternateIcons` — see `AppIconManager`
+        if AppIconManager.isSupported, !AppIconManager.alternateIcons.isEmpty {
+          SettingsSection(
+            content: {
+              SettingsRow(title: "App Icon") {
+                Menu(activeIconName ?? "Default") {
+                  Button {
+                    AppIconManager.setIcon(named: nil)
+                    activeIconName = nil
+                  } label: {
+                    if activeIconName == nil {
+                      Label("Default", systemImage: "checkmark")
+                    } else {
+                      Text("Default")
+                    }
+                  }
+                  ForEach(AppIconManager.alternateIcons, id: \.self) { iconName in
+                    Button {
+                      AppIconManager.setIcon(named: iconName)
+                      activeIconName = iconName
+                    } label: {
+                      if activeIconName == iconName {
+                        Label(iconName, systemImage: "checkmark")
+                      } else {
+                        Text(iconName)
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            footer:
+            "Choose an alternate Home Screen icon."
+          )
+        }
       }
     }
     .navigationTitle("Display")
