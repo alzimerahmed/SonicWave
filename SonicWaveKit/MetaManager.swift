@@ -43,6 +43,11 @@ public class MetaManager {
 
   public let account: Account
 
+  /// Per-account TLS policy (self-signed TOFU pins + mTLS client certificate)
+  /// shared by the backend API sessions, the reachability probes and both
+  /// download managers.
+  public let sessionSecurity = AccountSessionSecurity()
+
   private var settings: AmperfySettings {
     storage.settings
   }
@@ -63,7 +68,8 @@ public class MetaManager {
       eventLogger: eventLogger,
       settings: storage.settings,
       accountInfo: account.info,
-      notificationHandler: notificationHandler
+      notificationHandler: notificationHandler,
+      sessionSecurity: sessionSecurity
     )
     api.initialize()
     api.selectedApi = account.apiType
@@ -147,6 +153,7 @@ public class MetaManager {
       networkMonitor: networkMonitor,
       notificationHandler: notificationHandler,
       urlCleanser: backendApi,
+      sessionSecurity: sessionSecurity,
       limitCacheSize: true,
       isFailWithPopupError: true
     )
@@ -193,6 +200,7 @@ public class MetaManager {
       networkMonitor: networkMonitor,
       notificationHandler: notificationHandler,
       urlCleanser: backendApi,
+      sessionSecurity: sessionSecurity,
       limitCacheSize: false,
       isFailWithPopupError: false
     )

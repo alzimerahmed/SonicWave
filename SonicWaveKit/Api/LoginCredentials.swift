@@ -82,6 +82,7 @@ public struct LoginCredentials: Sendable, Codable {
     case activeBackendServerUrl
     case alternativeServerURLs
     case httpHeaders
+    case allowUntrustedServerCertificates
   }
 
   private static let log = OSLog(
@@ -106,9 +107,13 @@ public struct LoginCredentials: Sendable, Codable {
     ).ident
   }
 
-  /// Drop persisted secrets for the given account identity (logout).
+  /// Drop persisted secrets and TLS material for the given account identity
+  /// (logout): credential secrets, imported client certificate and all pinned
+  /// self-signed server certificates.
   static func deletePersistedSecrets(accountIdent: String) {
     secretsStore.delete(accountIdent: accountIdent)
+    ClientCertificateStore().delete(accountIdent: accountIdent)
+    ServerCertificatePinStore().deleteAll(accountIdent: accountIdent)
   }
 
   public var serverUrl: String
@@ -122,6 +127,16 @@ public struct LoginCredentials: Sendable, Codable {
   /// Cloudflare Access service token (CF-Access-Client-Id / CF-Access-Client-Secret) so that
   /// the connection bypasses an interactive Zero Trust policy.
   public var httpHeaders: [String: String]
+  /// Opt-in: allow server certificates that fail the default system validation
+  /// (e.g. self-signed). Not a trust-all switch — the leaf public key is pinned
+  /// on first contact (TOFU) via `ServerCertificatePinStore` and a later
+  /// mismatch rejects the connection until the user resets the pin.
+  public var allowUntrustedServerCertificates: Bool
+  /// True when a client certificate (.p12/.pfx for mTLS) is installed for this
+  /// account — read live from the Keychain so it can never go stale.
+  public var isClientCertificateInstalled: Bool {
+    ClientCertificateStore().isInstalled(accountIdent: accountIdent)
+  }
 
   public init() {
     self.serverUrl = ""
@@ -132,6 +147,7 @@ public struct LoginCredentials: Sendable, Codable {
     self.activeBackendServerUrl = ""
     self.alternativeServerURLs = []
     self.httpHeaders = [:]
+    self.allowUntrustedServerCertificates = false
   }
 
   public var displayServerUrl: String {
@@ -160,6 +176,7 @@ public struct LoginCredentials: Sendable, Codable {
     self.activeBackendServerUrl = serverUrl
     self.alternativeServerURLs = []
     self.httpHeaders = [:]
+    self.allowUntrustedServerCertificates = false
   }
 
   public init(serverUrl: String, username: String, password: String, backendApi: BackenApiType) {
@@ -181,6 +198,10 @@ public struct LoginCredentials: Sendable, Codable {
       [String].self,
       forKey: .alternativeServerURLs
     ) ?? []
+    self.allowUntrustedServerCertificates = try container.decodeIfPresent(
+      Bool.self,
+      forKey: .allowUntrustedServerCertificates
+    ) ?? false
 
     // Secrets: pre-Keychain payloads carry `password`/`httpHeaders` inline;
     // migrated payloads omit them and store them in the Keychain instead.
@@ -233,6 +254,10 @@ public struct LoginCredentials: Sendable, Codable {
     try container.encode(backendApi, forKey: .backendApi)
     try container.encode(activeBackendServerUrl, forKey: .activeBackendServerUrl)
     try container.encode(alternativeServerURLs, forKey: .alternativeServerURLs)
+    try container.encode(
+      allowUntrustedServerCertificates,
+      forKey: .allowUntrustedServerCertificates
+    )
     let secrets = LoginCredentialSecrets(password: password, httpHeaders: httpHeaders)
     if Self.secretsStore.save(secrets: secrets, accountIdent: accountIdent) {
       // Secrets live in the Keychain — keep them out of the UserDefaults JSON.

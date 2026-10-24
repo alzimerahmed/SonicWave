@@ -92,6 +92,9 @@ actor DownloadManager: NSObject, DownloadManageable {
   private let eventLogger: EventLogger
   private let settings: AmperfySettings
   private let urlCleanser: URLCleanser
+  /// per-account TLS policy — answers server-trust (self-signed TOFU pin) and
+  /// client-certificate (mTLS) challenges for this account's sessions
+  private let sessionSecurity: AccountSessionSecurity
 
   private var isRunning = false
   private var taskOperations = [DownloadRequest: DownloadOperation]()
@@ -114,6 +117,7 @@ actor DownloadManager: NSObject, DownloadManageable {
     networkMonitor: NetworkMonitorFacade,
     notificationHandler: EventNotificationHandler,
     urlCleanser: URLCleanser,
+    sessionSecurity: AccountSessionSecurity,
     limitCacheSize: Bool,
     isFailWithPopupError: Bool
   ) {
@@ -127,6 +131,7 @@ actor DownloadManager: NSObject, DownloadManageable {
     self.networkMonitor = networkMonitor
     self.notificationHandler = notificationHandler
     self.urlCleanser = urlCleanser
+    self.sessionSecurity = sessionSecurity
     self.isCacheSizeLimited = limitCacheSize
     self.isFailWithPopupError = isFailWithPopupError
     self.taskQueue = OperationQueue()

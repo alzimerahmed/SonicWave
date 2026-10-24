@@ -82,6 +82,19 @@ struct AccountSettingsView: View {
     }
   }
 
+  private func saveAllowUntrustedCertificates(_ allowUntrusted: Bool, accountInfo: AccountInfo) {
+    appDelegate.storage.settings.accounts
+      .updateSetting(accountInfo) { accountSettings in
+        accountSettings.loginCredentials?.allowUntrustedServerCertificates = allowUntrusted
+      }
+    // re-provide so the session TLS policy picks up the flag immediately
+    if let updatedCredentials = appDelegate.storage.settings.accounts
+      .getSetting(accountInfo).read.loginCredentials {
+      appDelegate.getMeta(accountInfo).backendApi
+        .provideCredentials(credentials: updatedCredentials)
+    }
+  }
+
   private func logout(accountInfo: AccountInfo) {
     appDelegate.closeAllButActiveMainTabs()
     if appDelegate.storage.settings.accounts.allAccounts.count <= 1 {
@@ -236,6 +249,16 @@ struct AccountSettingsView: View {
               saveHTTPHeaders(updated, accountInfo: activeAccountInfo)
             }) {
               Text("Custom HTTP Headers")
+            }
+            NavigationLink(destination: ConnectionSecurityView(
+              accountIdent: { activeAccountInfo.ident },
+              allowUntrusted: appDelegate.storage.settings.accounts
+                .getSetting(activeAccountInfo).read
+                .loginCredentials?.allowUntrustedServerCertificates ?? false
+            ) { newValue in
+              saveAllowUntrustedCertificates(newValue, accountInfo: activeAccountInfo)
+            }) {
+              Text("Connection Security")
             }
           }
 

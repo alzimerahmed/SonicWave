@@ -24,6 +24,36 @@ import Foundation
 import os.log
 
 extension DownloadManager: URLSessionDelegate, URLSessionDownloadDelegate {
+  /// Routes authentication challenges through the account's TLS policy
+  /// (`AccountSessionSecurity`): self-signed server certs are only trusted via
+  /// the per-account TOFU pin opt-in, client certificates (mTLS) are answered
+  /// from the Keychain; everything else falls back to default handling.
+  nonisolated private func evaluateChallenge(
+    _ challenge: URLAuthenticationChallenge
+  ) -> (URLSession.AuthChallengeDisposition, URLCredential?) {
+    sessionSecurity.evaluateChallenge(challenge)
+      ?? (.performDefaultHandling, nil)
+  }
+
+  nonisolated func urlSession(
+    _ session: URLSession,
+    didReceive challenge: URLAuthenticationChallenge,
+    completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+  ) {
+    let evaluation = evaluateChallenge(challenge)
+    completionHandler(evaluation.0, evaluation.1)
+  }
+
+  nonisolated func urlSession(
+    _ session: URLSession,
+    task: URLSessionTask,
+    didReceive challenge: URLAuthenticationChallenge,
+    completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+  ) {
+    let evaluation = evaluateChallenge(challenge)
+    completionHandler(evaluation.0, evaluation.1)
+  }
+
   func fetch(downloadTaskInfo: DownloadTaskInfo) {
     guard let urlSession else { return }
     let task: URLSessionDownloadTask

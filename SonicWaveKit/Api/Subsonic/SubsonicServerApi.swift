@@ -118,18 +118,27 @@ final class SubsonicServerApi: URLCleanser, Sendable {
   private let settings: AmperfySettings
   private let serverUnreachableMonitor: ServerUnreachableMonitor
   private let credentials = Atomic<LoginCredentials?>(wrappedValue: nil)
+  /// per-account Alamofire session — its delegate applies the account's TLS
+  /// policy (self-signed TOFU pin + mTLS client certificate) to every request.
+  /// Boxed in `Atomic`: Alamofire's `Session` predates the Sendable audit and
+  /// must not be stored bare inside this Sendable class.
+  private let alamofireSession = Atomic<Alamofire.Session?>(wrappedValue: nil)
   private let openSubsonicExtensionsSupport =
     Atomic<OpenSubsonicExtensionsSupport?>(wrappedValue: nil)
   init(
     performanceMonitor: ThreadPerformanceMonitor,
     eventLogger: EventLogger,
     settings: AmperfySettings,
-    serverUnreachableMonitor: ServerUnreachableMonitor
+    serverUnreachableMonitor: ServerUnreachableMonitor,
+    sessionSecurity: AccountSessionSecurity
   ) {
     self.performanceMonitor = performanceMonitor
     self.eventLogger = eventLogger
     self.settings = settings
     self.serverUnreachableMonitor = serverUnreachableMonitor
+    self.alamofireSession.wrappedValue = Alamofire.Session(
+      delegate: AccountSessionDelegate(security: sessionSecurity)
+    )
   }
 
   func setAuthType(newAuthType: SubsonicApiAuthType) {
@@ -1024,8 +1033,11 @@ final class SubsonicServerApi: URLCleanser, Sendable {
 
   private func requestOnce(url: URL, headers: HTTPHeaders? = nil) async throws
     -> APIDataResponse {
-    try await withUnsafeThrowingContinuation { continuation in
-      let afRequest = AF.request(url, method: .get, headers: headers)
+    // assigned in init before any request can run
+    guard let session = alamofireSession.wrappedValue
+    else { fatalError("Alamofire session used before initialization") }
+    return try await withUnsafeThrowingContinuation { continuation in
+      let afRequest = session.request(url, method: .get, headers: headers)
       afRequest.validate().responseData { response in
         if response.response?.statusCode == 404 {
           let cleanedURL = self.cleanse(url: response.request?.url)

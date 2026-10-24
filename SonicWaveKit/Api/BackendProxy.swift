@@ -201,6 +201,11 @@ public final class BackendProxy: Sendable {
   private let settings: AmperfySettings
   private let accountInfo: AccountInfo
   private let notificationHandler: EventNotificationHandler
+  /// Per-account TLS policy (self-signed TOFU pins + mTLS client certificate)
+  /// shared by all sessions that talk to this account's server.
+  private let sessionSecurity: AccountSessionSecurity
+  /// latest known credentials — kept so URL failover can re-provide them
+  private let currentCredentials = Atomic<LoginCredentials?>(wrappedValue: nil)
 
   public var selectedApi: BackenApiType {
     get {
@@ -239,7 +244,8 @@ public final class BackendProxy: Sendable {
     eventLogger: EventLogger,
     settings: AmperfySettings,
     accountInfo: AccountInfo,
-    notificationHandler: EventNotificationHandler
+    notificationHandler: EventNotificationHandler,
+    sessionSecurity: AccountSessionSecurity
   ) {
     self.networkMonitor = networkMonitor
     self.performanceMonitor = performanceMonitor
@@ -247,25 +253,37 @@ public final class BackendProxy: Sendable {
     self.settings = settings
     self.accountInfo = accountInfo
     self.notificationHandler = notificationHandler
+    self.sessionSecurity = sessionSecurity
   }
 
   @MainActor
   public func initialize() {
     // one monitor per account — shared by all API implementations so consecutive
-    // connectivity failures of any of them count toward auto-offline detection
+    // connectivity failures of any of them count toward auto-offline detection;
+    // the injected probe/failover closures drive the auto-recovery loop (G16)
     let serverUnreachableMonitor = ServerUnreachableMonitor(
       networkMonitor: networkMonitor,
       eventLogger: eventLogger,
       settings: settings,
       accountInfo: accountInfo,
-      notificationHandler: notificationHandler
+      notificationHandler: notificationHandler,
+      serverURLCandidatesProvider: { [weak self] in
+        self?.serverURLCandidates() ?? []
+      },
+      serverReachabilityProbe: { [weak self] serverURL in
+        await self?.isServerUrlReachable(serverUrl: serverURL) ?? false
+      },
+      autoRecoveryHandler: { [weak self] reachableURL in
+        await self?.handleAutoRecovery(reachableURL: reachableURL)
+      }
     )
     ampacheApi.wrappedValue = AmpacheApi(
       ampacheXmlServerApi: AmpacheXmlServerApi(
         performanceMonitor: performanceMonitor,
         eventLogger: eventLogger,
         settings: settings,
-        serverUnreachableMonitor: serverUnreachableMonitor
+        serverUnreachableMonitor: serverUnreachableMonitor,
+        sessionSecurity: sessionSecurity
       ),
       networkMonitor: networkMonitor,
       performanceMonitor: performanceMonitor,
@@ -276,7 +294,8 @@ public final class BackendProxy: Sendable {
         performanceMonitor: performanceMonitor,
         eventLogger: eventLogger,
         settings: settings,
-        serverUnreachableMonitor: serverUnreachableMonitor
+        serverUnreachableMonitor: serverUnreachableMonitor,
+        sessionSecurity: sessionSecurity
       ),
       networkMonitor: networkMonitor,
       performanceMonitor: performanceMonitor,
@@ -288,13 +307,18 @@ public final class BackendProxy: Sendable {
         performanceMonitor: performanceMonitor,
         eventLogger: eventLogger,
         settings: settings,
-        serverUnreachableMonitor: serverUnreachableMonitor
+        serverUnreachableMonitor: serverUnreachableMonitor,
+        sessionSecurity: sessionSecurity
       ),
       networkMonitor: networkMonitor,
       performanceMonitor: performanceMonitor,
       eventLogger: eventLogger
     )
     subsonicLegacyApi.wrappedValue!.setAuthType(newAuthType: .legacy)
+    // app was restarted while auto-offline -> resume reconnecting immediately
+    Task {
+      await serverUnreachableMonitor.startAutoRecoveryIfNeeded()
+    }
   }
 
   @MainActor
@@ -303,6 +327,11 @@ public final class BackendProxy: Sendable {
     credentials: LoginCredentials
   ) async throws
     -> BackenApiType {
+    // pending credentials are fed to the session policy upfront so the
+    // reachability probe and the auth probes can already present a client
+    // certificate (mTLS) or apply the self-signed TOFU pin for this account
+    sessionSecurity.provideCredentials(credentials)
+    currentCredentials.wrappedValue = credentials
     try await checkServerReachablity(credentials: credentials)
 
     if apiType == .notDetected || apiType == .ampache {
@@ -337,7 +366,14 @@ public final class BackendProxy: Sendable {
 
     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<(), Error>) in
       let sessionConfig = URLSessionConfiguration.default
-      let session = URLSession(configuration: sessionConfig)
+      // the account's session policy answers client-cert challenges (mTLS) and
+      // applies the self-signed TOFU pin — a locked-down reverse proxy must be
+      // reachable even for this very first probe
+      let session = URLSession(
+        configuration: sessionConfig,
+        delegate: AccountSessionChallengeHandler(security: sessionSecurity),
+        delegateQueue: nil
+      )
       var request = URLRequest(url: activeBackendServerUrl)
       for (field, value) in credentials.httpHeaders {
         request.setValue(value, forHTTPHeaderField: field)
@@ -368,6 +404,83 @@ public final class BackendProxy: Sendable {
     }
     os_log("Server url is reachable.", log: self.log, type: .info)
   }
+
+  // MARK: Auto recovery (G16)
+
+  /// Ordered candidates for the recovery probe — the currently active URL
+  /// first, then primary + all alternative URLs (deduplicated), so a reachable
+  /// alternative can take over when the active endpoint stays dead.
+  private func serverURLCandidates() -> [String] {
+    guard let credentials = currentCredentials.wrappedValue else { return [] }
+    var urls = [String]()
+    if !credentials.activeBackendServerUrl.isEmpty {
+      urls.append(credentials.activeBackendServerUrl)
+    }
+    for url in credentials.availableServerURLs where !urls.contains(url) {
+      urls.append(url)
+    }
+    return urls
+  }
+
+  /// Transport-level probe used by the recovery loop: a host that answers —
+  /// even with an HTTP error or an authentication failure — counts as
+  /// reachable. Only connectivity-class failures (DNS, TCP connect, timeout,
+  /// no route) keep it "unreachable". This intentionally can never retry-loop
+  /// on 401s: auth failures surface to the user once back online instead.
+  private func isServerUrlReachable(serverUrl: String) async -> Bool {
+    guard let url = URL(string: serverUrl) else { return false }
+    let sessionConfig = URLSessionConfiguration.default
+    sessionConfig.timeoutIntervalForRequest = 10
+    sessionConfig.timeoutIntervalForResource = 15
+    let session = URLSession(
+      configuration: sessionConfig,
+      delegate: AccountSessionChallengeHandler(security: sessionSecurity),
+      delegateQueue: nil
+    )
+    defer { session.invalidateAndCancel() }
+    var request = URLRequest(url: url)
+    for (field, value) in currentCredentials.wrappedValue?.httpHeaders ?? [:] {
+      request.setValue(value, forHTTPHeaderField: field)
+    }
+    do {
+      _ = try await session.data(for: request)
+      return true
+    } catch {
+      return RequestFailureKind.classify(error: error) == .nonConnectivity
+    }
+  }
+
+  /// Failover handler — runs before online mode is restored: when the probe
+  /// reached an alternative URL, it becomes the persisted active URL and the
+  /// updated credentials are re-provided to the active API + session policy.
+  /// The detected `selectedApi` is kept: alternatives must reach the same
+  /// server (documented in the server-URL management UI).
+  private func handleAutoRecovery(reachableURL: String) async {
+    guard var credentials = currentCredentials.wrappedValue
+          ?? settings.accounts.getSetting(accountInfo).read.loginCredentials
+    else { return }
+    if credentials.activeBackendServerUrl != reachableURL,
+       credentials.availableServerURLs.contains(reachableURL) {
+      credentials.activeBackendServerUrl = reachableURL
+      var mutableSettings = settings
+      mutableSettings.accounts.updateSetting(accountInfo) { accountSettings in
+        accountSettings.loginCredentials?.activeBackendServerUrl = reachableURL
+      }
+      os_log(
+        "Auto recovery: switched active server URL to a reachable alternative",
+        log: self.log,
+        type: .info
+      )
+      await eventLogger.info(
+        topic: "Connection",
+        message: "Server URL switched to a reachable alternative",
+        displayPopup: false
+      )
+    }
+    // refresh the active API + session policy with the (possibly failed-over)
+    // credentials — the first requests after returning online re-auth lazily
+    provideCredentials(credentials: credentials)
+  }
 }
 
 // MARK: BackendApi
@@ -380,6 +493,8 @@ extension BackendProxy: BackendApi {
   public var httpHeaders: [String: String] { activeApi.httpHeaders }
 
   public func provideCredentials(credentials: LoginCredentials) {
+    currentCredentials.wrappedValue = credentials
+    sessionSecurity.provideCredentials(credentials)
     activeApi.provideCredentials(credentials: credentials)
   }
 

@@ -59,6 +59,7 @@ extension UITextField {
 class LoginVC: UIViewController {
   var selectedApiType: BackenApiType = .notDetected
   var httpHeaders: [String: String] = [:]
+  var allowUntrustedServerCertificates = false
 
   #if targetEnvironment(macCatalyst)
     static let fontSize: CGFloat = 14
@@ -200,6 +201,49 @@ class LoginVC: UIViewController {
     present(hostingController, animated: true)
   }
 
+  fileprivate lazy var connectionSecurityButton: UIButton = {
+    var config = UIButton.Configuration.glass()
+    let button = UIButton(configuration: config)
+    button.setTitle("Connection Security", for: .normal)
+    button.accessibilityLabel = "Connection Security"
+    button.addTarget(
+      self,
+      action: #selector(Self.connectionSecurityPressed),
+      for: .touchUpInside
+    )
+    button.preferredBehavioralStyle = .pad
+    return button
+  }()
+
+  @IBAction
+  func connectionSecurityPressed() {
+    // pending-account mode: the client certificate is stored under the ident
+    // derived from the currently entered URL + username (identical to the
+    // account ident created at login), so a server requiring mTLS can already
+    // be reached during the very first login
+    let editor = ConnectionSecurityView(
+      accountIdent: { [weak self] in
+        guard let serverUrl = self?.serverUrlTF.text?
+          .trimmingCharacters(in: .whitespacesAndNewlines),
+          let username = self?.usernameTF.text,
+          !serverUrl.isEmpty, !username.isEmpty
+        else { return nil }
+        let pendingCredentials = LoginCredentials(
+          serverUrl: serverUrl,
+          username: username,
+          password: self?.passwordTF.text ?? ""
+        )
+        return Account.createInfo(credentials: pendingCredentials).ident
+      },
+      allowUntrusted: allowUntrustedServerCertificates
+    ) { [weak self] newValue in
+      self?.allowUntrustedServerCertificates = newValue
+    }
+    let hostingController = UIHostingController(rootView: NavigationView { editor })
+    hostingController.modalPresentationStyle = .formSheet
+    present(hostingController, animated: true)
+  }
+
   // Close button shown when presented as a sheet/modal
   fileprivate lazy var closeButton: UIButton = {
     var config = UIButton.Configuration.prominentGlass()
@@ -236,6 +280,7 @@ class LoginVC: UIViewController {
     apiLabel.translatesAutoresizingMaskIntoConstraints = false
     self.apiSelectorButton.translatesAutoresizingMaskIntoConstraints = false
     self.httpHeadersButton.translatesAutoresizingMaskIntoConstraints = false
+    self.connectionSecurityButton.translatesAutoresizingMaskIntoConstraints = false
 
     let view = UIView()
     view.addSubview(serverUrlTF)
@@ -244,6 +289,7 @@ class LoginVC: UIViewController {
     view.addSubview(apiLabel)
     view.addSubview(apiSelectorButton)
     view.addSubview(httpHeadersButton)
+    view.addSubview(connectionSecurityButton)
 
     let padding: CGFloat = 0
     let elementHeight: CGFloat = 40
@@ -326,8 +372,22 @@ class LoginVC: UIViewController {
       ),
       httpHeadersButton.heightAnchor.constraint(equalToConstant: elementHeight),
 
+      connectionSecurityButton.safeAreaLayoutGuide.topAnchor.constraint(
+        equalTo: httpHeadersButton.bottomAnchor,
+        constant: spaceInBetween
+      ),
+      connectionSecurityButton.safeAreaLayoutGuide.leadingAnchor.constraint(
+        equalTo: view.safeAreaLayoutGuide.leadingAnchor,
+        constant: padding
+      ),
+      connectionSecurityButton.safeAreaLayoutGuide.trailingAnchor.constraint(
+        equalTo: view.safeAreaLayoutGuide.trailingAnchor,
+        constant: -padding
+      ),
+      connectionSecurityButton.heightAnchor.constraint(equalToConstant: elementHeight),
+
       view.heightAnchor
-        .constraint(equalToConstant: (5 * elementHeight) + (4 * spaceInBetween) + (2 * padding)),
+        .constraint(equalToConstant: (6 * elementHeight) + (5 * spaceInBetween) + (2 * padding)),
     ])
 
     return view
@@ -427,6 +487,7 @@ class LoginVC: UIViewController {
 
     var credentials = LoginCredentials(serverUrl: serverUrl, username: username, password: password)
     credentials.httpHeaders = httpHeaders
+    credentials.allowUntrustedServerCertificates = allowUntrustedServerCertificates
     var accountInfo = Account.createInfo(credentials: credentials)
 
     guard !appDelegate.storage.settings.accounts.allAccounts.contains(where: { $0 == accountInfo })
