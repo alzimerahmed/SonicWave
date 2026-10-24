@@ -176,6 +176,14 @@ public protocol PlayerFacade {
   var duration: Double { get }
   var isShuffle: Bool { get }
   func toggleShuffle()
+  /// true while an album-shuffle session (G21, `AccountSetting
+  /// .isAlbumShuffleActive` + `playShuffled` on a multi-album context)
+  /// is running — album radio appends pending albums as the queue drains
+  var isAlbumShuffleSessionActive: Bool { get }
+  /// playthrough progress of the album currently playing inside an
+  /// album-shuffle session; nil without a session or while the current
+  /// item is not part of the active album (e.g. user-queue playback)
+  var albumPlaythrough: AlbumProgressInfo? { get }
   var playbackRate: PlaybackRate { get }
   func setPlaybackRate(_: PlaybackRate)
   var repeatMode: RepeatMode { get }
@@ -431,8 +439,22 @@ class PlayerFacadeImpl: PlayerFacade {
     playerStatus.isShuffle
   }
 
+  var isAlbumShuffleSessionActive: Bool {
+    musicPlayer.albumShuffleHandler.isSessionActive
+  }
+
+  var albumPlaythrough: AlbumProgressInfo? {
+    musicPlayer.albumShuffleHandler.progress(
+      currentlyPlaying: currentlyPlaying,
+      elapsedTime: elapsedTime
+    )
+  }
+
   func toggleShuffle() {
     playerStatus.setShuffle(!isShuffle)
+    // flipping the song-level shuffle in either direction ends an album
+    // radio session — album order in the queue is no longer guaranteed
+    musicPlayer.albumShuffleHandler.reset()
     musicPlayer.notifyShuffleUpdated()
     musicPlayer.notifyPlaylistUpdated()
   }
@@ -578,6 +600,7 @@ class PlayerFacadeImpl: PlayerFacade {
   }
 
   func clearContextQueue() {
+    musicPlayer.albumShuffleHandler.reset()
     if !queueHandler.isUserQueuePlaying {
       if queueHandler.userQueueCount == 0 {
         musicPlayer.stop()
@@ -623,9 +646,14 @@ class PlayerFacadeImpl: PlayerFacade {
     setPlayerModeForContextPlay(context.type)
     guard !context.playables.isEmpty else { return }
     if playerStatus.isShuffle { playerStatus.setShuffle(false) }
-    let shuffleContext = context.getWithShuffledIndex()
-    musicPlayer.play(context: shuffleContext)
-    playerStatus.setShuffle(true)
+    // G21: multi-album music contexts with `isAlbumShuffleActive` take
+    // the album-radio path (whole albums, lazily appended); everything
+    // else keeps the regular song shuffle
+    if !musicPlayer.playAlbumShuffledIfEnabled(context: context) {
+      let shuffleContext = context.getWithShuffledIndex()
+      musicPlayer.play(context: shuffleContext)
+      playerStatus.setShuffle(true)
+    }
     musicPlayer.notifyShuffleUpdated()
     musicPlayer.notifyPlaylistUpdated()
   }

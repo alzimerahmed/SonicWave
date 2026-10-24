@@ -428,6 +428,19 @@ public struct AccountSetting: Sendable, Codable {
     set { _isSyncedLyricsExternalLookupActive = newValue }
   }
 
+  /// album-queue shuffle (G21): when enabled, `playShuffled` on a
+  /// multi-album music context queues whole albums in shuffled order and
+  /// lazily appends the next shuffled album as the queue drains
+  /// ("album radio"), instead of shuffling individual songs.
+  /// Backed by an Optional so that decoding older persisted
+  /// `AccountSetting`s (which lack this key) does not fail and silently
+  /// reset all account settings.
+  private var _isAlbumShuffleActive: Bool? = nil
+  public var isAlbumShuffleActive: Bool {
+    get { _isAlbumShuffleActive ?? false }
+    set { _isAlbumShuffleActive = newValue }
+  }
+
   private var _isScrobbleStreamedItems: Bool = false
   public var isScrobbleStreamedItems: Bool {
     get { _isScrobbleStreamedItems }

@@ -59,6 +59,8 @@
 		7E8D2A01000000000000000E /* AmpacheLyricsParserDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E8D2A01000000000000000D /* AmpacheLyricsParserDelegate.swift */; };
 		7E8D2A010000000000000012 /* LrcParserTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E8D2A010000000000000011 /* LrcParserTest.swift */; };
 		7E8D2A010000000000000014 /* SyncedLyricsLookupTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E8D2A010000000000000013 /* SyncedLyricsLookupTest.swift */; };
+		7E8D2B010000000000000002 /* AlbumShuffleHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E8D2B010000000000000001 /* AlbumShuffleHandler.swift */; };
+		7E8D2B010000000000000008 /* AlbumShuffleTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E8D2B010000000000000007 /* AlbumShuffleTest.swift */; };
 		7E8D2A010000000000000016 /* LrclibResponseParserTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E8D2A010000000000000015 /* LrclibResponseParserTest.swift */; };
 		7E8D2A010000000000000018 /* lrc_example_1.lrc in Resources */ = {isa = PBXBuildFile; fileRef = 7E8D2A010000000000000017 /* lrc_example_1.lrc */; };
 		7E8D2A01000000000000001A /* lrc_enhanced_example_1.lrc in Resources */ = {isa = PBXBuildFile; fileRef = 7E8D2A010000000000000019 /* lrc_enhanced_example_1.lrc */; };
@@ -743,6 +745,8 @@
 		7E8D2A01000000000000000D /* AmpacheLyricsParserDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmpacheLyricsParserDelegate.swift; sourceTree = "<group>"; };
 		7E8D2A010000000000000011 /* LrcParserTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LrcParserTest.swift; sourceTree = "<group>"; };
 		7E8D2A010000000000000013 /* SyncedLyricsLookupTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncedLyricsLookupTest.swift; sourceTree = "<group>"; };
+		7E8D2B010000000000000001 /* AlbumShuffleHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumShuffleHandler.swift; sourceTree = "<group>"; };
+		7E8D2B010000000000000007 /* AlbumShuffleTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumShuffleTest.swift; sourceTree = "<group>"; };
 		7E8D2A010000000000000015 /* LrclibResponseParserTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LrclibResponseParserTest.swift; sourceTree = "<group>"; };
 		7E8D2A010000000000000017 /* lrc_example_1.lrc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = lrc_example_1.lrc; sourceTree = "<group>"; };
 		7E8D2A010000000000000019 /* lrc_enhanced_example_1.lrc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = lrc_enhanced_example_1.lrc; sourceTree = "<group>"; };
@@ -1682,6 +1686,7 @@
 				5095F98B23C8389E008B0805 /* MusicPlayerTest.swift */,
 				5011712D27453D1300B7C08D /* PlayQueueHandlerTest.swift */,
 				6AC5D101000000000000000B /* PlayQueueSyncPolicyTest.swift */,
+				7E8D2B010000000000000008 /* AlbumShuffleTest.swift */,
 			);
 			path = Player;
 			sourceTree = "<group>";
@@ -2281,6 +2286,7 @@
 				509D55E8280FDAE100E0E0B5 /* PlayerNotificationAdapter.swift */,
 				5086F8822239A2B700546F5A /* ScrobbleSyncer.swift */,
 				6AC5D1010000000000000003 /* PlayQueueSyncer.swift */,
+				7E8D2B010000000000000001 /* AlbumShuffleHandler.swift */,
 			);
 			path = Player;
 			sourceTree = "<group>";
@@ -2783,6 +2789,7 @@
 				7E8D2A01000000000000000A /* EmbeddedLyricsExtractor.swift in Sources */,
 				7E8D2A01000000000000000C /* SyncedLyricsManager.swift in Sources */,
 				7E8D2A01000000000000000E /* AmpacheLyricsParserDelegate.swift in Sources */,
+				7E8D2B010000000000000002 /* AlbumShuffleHandler.swift in Sources */,
 				50C9D6D7284FAB88007F18D0 /* PlayerNotificationAdapter.swift in Sources */,
 				50C9D663284FAA0B007F18D0 /* AuthentificationHandshake.swift in Sources */,
 				50C9D67C284FAA6C007F18D0 /* PodcastMO+CoreDataClass.swift in Sources */,
@@ -3045,6 +3052,7 @@
 				7E8D2A010000000000000012 /* LrcParserTest.swift in Sources */,
 				7E8D2A010000000000000014 /* SyncedLyricsLookupTest.swift in Sources */,
 				7E8D2A010000000000000016 /* LrclibResponseParserTest.swift in Sources */,
+				7E8D2B010000000000000008 /* AlbumShuffleTest.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

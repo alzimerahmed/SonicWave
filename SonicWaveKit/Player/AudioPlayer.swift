@@ -56,6 +56,11 @@ public class AudioPlayer: NSObject, BackendAudioPlayerNotifiable {
   var isShouldPauseAfterFinishedPlaying = false
   var autoplayCB: (@MainActor (Song) async throws -> [Song])?
 
+  /// G21 album-queue shuffle ("album radio") — holds the pending album
+  /// pool of the current `playShuffled` album session; the next shuffled
+  /// album is materialized into the context queue as it drains.
+  let albumShuffleHandler = AlbumShuffleHandler()
+
   private var playerStatus: PlayerStatusPersistent
   private var queueHandler: PlayQueueHandler
   private let backendAudioPlayer: BackendAudioPlayer
@@ -136,9 +141,11 @@ public class AudioPlayer: NSObject, BackendAudioPlayerNotifiable {
       .repeatMode == .single ||
       (
         // repeat mode all and only one song is in player -> repeat
+        // (with a pending album-shuffle pool the next album takes
+        // precedence over a single-item repeat)
         playerStatus.repeatMode == .all && queueHandler.prevQueueCount == 0 && queueHandler
           .userQueueCount == 0 && queueHandler
-          .nextQueueCount == 0
+          .nextQueueCount == 0 && !albumShuffleHandler.hasPendingAlbums
       ) {
       replayCurrentItem()
     } else if !settings.user.isPlaybackStartOnlyOnPlay {
@@ -158,6 +165,9 @@ public class AudioPlayer: NSObject, BackendAudioPlayerNotifiable {
   }
 
   public func play(context: PlayContext) {
+    // an explicit context play always ends an album-shuffle session —
+    // `playAlbumShuffledIfEnabled` re-activates the new plan afterwards
+    albumShuffleHandler.reset()
     guard let activePlayable = context.getActivePlayable() else { return }
     let topUserQueueItem = queueHandler.getUserQueueItem(at: 0)
     let wasUserQueuePlaying = queueHandler.isUserQueuePlaying
@@ -230,10 +240,51 @@ public class AudioPlayer: NSObject, BackendAudioPlayerNotifiable {
     }
   }
 
+  /// G21 album-queue shuffle: when `AccountSetting.isAlbumShuffleActive`
+  /// is enabled for the context's account and the context spans more
+  /// than one album, only the first shuffled album is queued and the
+  /// rest is kept as a lazily-appended pool. Returns false so the caller
+  /// falls back to the regular song shuffle when the mode does not apply.
+  /// The shuffle flag is set *before* loading the context so the ordered
+  /// album tracks are never re-scrambled by `PlayerData.setShuffle(true)`.
+  func playAlbumShuffledIfEnabled(context: PlayContext) -> Bool {
+    guard context.type == .music else { return false }
+    let accountInfo = context.playables.first?.account?.info ?? settings.accounts.active
+    guard settings.accounts.getSetting(accountInfo).read.isAlbumShuffleActive
+    else { return false }
+    guard let plan = AlbumShuffleHandler.planSession(context: context)
+    else { return false }
+    playerStatus.setShuffle(true)
+    play(context: plan.initialContext)
+    albumShuffleHandler.activate(plan: plan)
+    return true
+  }
+
+  /// G21 album-queue shuffle: when an album session is live and both
+  /// music queues are drained, the next shuffled album is appended to
+  /// the context queue — "album radio" until the pool is exhausted.
+  /// Materializing here (inside `nextPlayerIndex`, shared by `playNext`
+  /// and `nextPlayablePreloadCB`) lets the album boundary's first track
+  /// ride the existing gapless preload path.
+  private func materializeNextAlbumInQueue() -> Bool {
+    guard playerStatus.playerMode == .music,
+          let nextAlbum = albumShuffleHandler.dequeueNextAlbum(),
+          !nextAlbum.playables.isEmpty
+    else { return false }
+    queueHandler.appendContextQueue(playables: nextAlbum.playables)
+    queueHandler.setContextName(nextAlbum.name)
+    // route through the notifier so queue-sync dirty tracking and the
+    // auto-download-prep handler see the append like any queue mutation
+    notifyPlaylistUpdated()
+    return true
+  }
+
   private var nextPlayerIndex: PlayerIndex? {
     if queueHandler.userQueueCount > 0 {
       return PlayerIndex(queueType: .user, index: 0)
     } else if queueHandler.nextQueueCount > 0 {
+      return PlayerIndex(queueType: .next, index: 0)
+    } else if materializeNextAlbumInQueue() {
       return PlayerIndex(queueType: .next, index: 0)
     } else if playerStatus.repeatMode == .all, queueHandler.prevQueueCount > 0 {
       return PlayerIndex(queueType: .prev, index: 0)
@@ -256,11 +307,13 @@ public class AudioPlayer: NSObject, BackendAudioPlayerNotifiable {
   func stop() {
     backendAudioPlayer.stop()
     playerStatus.stop()
+    albumShuffleHandler.reset()
     notifyPlayerStopped()
   }
 
   func stopButRemainIndex() {
     backendAudioPlayer.stop()
+    albumShuffleHandler.reset()
     notifyPlayerStopped()
   }
 
