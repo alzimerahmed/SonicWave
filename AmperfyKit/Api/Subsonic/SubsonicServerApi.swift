@@ -112,20 +112,24 @@ final class SubsonicServerApi: URLCleanser, Sendable {
   }
 
   private let log = OSLog(subsystem: "Amperfy", category: "Subsonic")
+  private static let connectivityRetryPolicy = ConnectivityBackoffPolicy()
   private let performanceMonitor: ThreadPerformanceMonitor
   private let eventLogger: EventLogger
   private let settings: AmperfySettings
+  private let serverUnreachableMonitor: ServerUnreachableMonitor
   private let credentials = Atomic<LoginCredentials?>(wrappedValue: nil)
   private let openSubsonicExtensionsSupport =
     Atomic<OpenSubsonicExtensionsSupport?>(wrappedValue: nil)
   init(
     performanceMonitor: ThreadPerformanceMonitor,
     eventLogger: EventLogger,
-    settings: AmperfySettings
+    settings: AmperfySettings,
+    serverUnreachableMonitor: ServerUnreachableMonitor
   ) {
     self.performanceMonitor = performanceMonitor
     self.eventLogger = eventLogger
     self.settings = settings
+    self.serverUnreachableMonitor = serverUnreachableMonitor
   }
 
   func setAuthType(newAuthType: SubsonicApiAuthType) {
@@ -969,7 +973,53 @@ final class SubsonicServerApi: URLCleanser, Sendable {
     return try await request(url: url, headers: buildHTTPHeaders())
   }
 
+  /// Single chokepoint for all Subsonic server requests.
+  /// Retries connectivity-class failures with exponential backoff (bounded) and
+  /// feeds the ServerUnreachableMonitor with the per-request outcome — one
+  /// report per logical request regardless of inner retry count.
   private func request(url: URL, headers: HTTPHeaders? = nil) async throws -> APIDataResponse {
+    var retryAttempt = 0
+    while true {
+      do {
+        let response = try await requestOnce(url: url, headers: headers)
+        await serverUnreachableMonitor.reportServerResponded()
+        return response
+      } catch {
+        switch RequestFailureKind.classify(error: error) {
+        case .connectivity:
+          if settings.user.isOnlineMode,
+             retryAttempt < Self.connectivityRetryPolicy.maxRetries {
+            retryAttempt += 1
+            let delayInSeconds = Self.connectivityRetryPolicy
+              .delay(forRetryAttempt: retryAttempt)
+            os_log(
+              "Connectivity failure - retry %i of %i in %.2fs: %s",
+              log: self.log,
+              type: .info,
+              retryAttempt,
+              Self.connectivityRetryPolicy.maxRetries,
+              delayInSeconds,
+              url.asCleansedURL(cleanser: self).description
+            )
+            try await Task.sleep(for: .seconds(delayInSeconds))
+            continue
+          }
+          // retries exhausted (or offline mode) -> final failure of this request
+          await serverUnreachableMonitor.reportConnectivityFailure()
+          throw error
+        case .cancellation:
+          throw error
+        case .nonConnectivity:
+          // server answered (HTTP/API error) -> counts as reachable
+          await serverUnreachableMonitor.reportServerResponded()
+          throw error
+        }
+      }
+    }
+  }
+
+  private func requestOnce(url: URL, headers: HTTPHeaders? = nil) async throws
+    -> APIDataResponse {
     try await withUnsafeThrowingContinuation { continuation in
       let afRequest = AF.request(url, method: .get, headers: headers)
       afRequest.validate().responseData { response in

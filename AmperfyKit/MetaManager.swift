@@ -61,7 +61,9 @@ public class MetaManager {
       networkMonitor: networkMonitor,
       performanceMonitor: performanceMonitor,
       eventLogger: eventLogger,
-      settings: storage.settings
+      settings: storage.settings,
+      accountInfo: account.info,
+      notificationHandler: notificationHandler
     )
     api.initialize()
     api.selectedApi = account.apiType

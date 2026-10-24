@@ -199,6 +199,8 @@ public final class BackendProxy: Sendable {
   private let performanceMonitor: ThreadPerformanceMonitor
   private let eventLogger: EventLogger
   private let settings: AmperfySettings
+  private let accountInfo: AccountInfo
+  private let notificationHandler: EventNotificationHandler
 
   public var selectedApi: BackenApiType {
     get {
@@ -235,21 +237,35 @@ public final class BackendProxy: Sendable {
     networkMonitor: NetworkMonitorFacade,
     performanceMonitor: ThreadPerformanceMonitor,
     eventLogger: EventLogger,
-    settings: AmperfySettings
+    settings: AmperfySettings,
+    accountInfo: AccountInfo,
+    notificationHandler: EventNotificationHandler
   ) {
     self.networkMonitor = networkMonitor
     self.performanceMonitor = performanceMonitor
     self.eventLogger = eventLogger
     self.settings = settings
+    self.accountInfo = accountInfo
+    self.notificationHandler = notificationHandler
   }
 
   @MainActor
   public func initialize() {
+    // one monitor per account — shared by all API implementations so consecutive
+    // connectivity failures of any of them count toward auto-offline detection
+    let serverUnreachableMonitor = ServerUnreachableMonitor(
+      networkMonitor: networkMonitor,
+      eventLogger: eventLogger,
+      settings: settings,
+      accountInfo: accountInfo,
+      notificationHandler: notificationHandler
+    )
     ampacheApi.wrappedValue = AmpacheApi(
       ampacheXmlServerApi: AmpacheXmlServerApi(
         performanceMonitor: performanceMonitor,
         eventLogger: eventLogger,
-        settings: settings
+        settings: settings,
+        serverUnreachableMonitor: serverUnreachableMonitor
       ),
       networkMonitor: networkMonitor,
       performanceMonitor: performanceMonitor,
@@ -259,7 +275,8 @@ public final class BackendProxy: Sendable {
       subsonicServerApi: SubsonicServerApi(
         performanceMonitor: performanceMonitor,
         eventLogger: eventLogger,
-        settings: settings
+        settings: settings,
+        serverUnreachableMonitor: serverUnreachableMonitor
       ),
       networkMonitor: networkMonitor,
       performanceMonitor: performanceMonitor,
@@ -270,7 +287,8 @@ public final class BackendProxy: Sendable {
       subsonicServerApi: SubsonicServerApi(
         performanceMonitor: performanceMonitor,
         eventLogger: eventLogger,
-        settings: settings
+        settings: settings,
+        serverUnreachableMonitor: serverUnreachableMonitor
       ),
       networkMonitor: networkMonitor,
       performanceMonitor: performanceMonitor,
