@@ -12,6 +12,17 @@ protocol AudioAnalyzerProtocol: AnyObject {
   func stop()
 }
 
+// MARK: - AudioAnalyzerConsumer
+
+/// Owner of an `AudioAnalyzer` tap activation — the FFT tap runs while
+/// at least one consumer holds an activation, so the visualizer and
+/// `MusicHapticsService` can't cut each other's feed by writing an
+/// absolute `isActive`.
+public enum AudioAnalyzerConsumer: Hashable {
+  case visualizer
+  case haptics
+}
+
 // MARK: - AudioAnalyzer
 
 @MainActor
@@ -23,9 +34,23 @@ public final class AudioAnalyzer: ObservableObject, AudioAnalyzerProtocol {
 
   private let fftSize: Int
 
+  /// consumers holding the tap live — idempotent per consumer, so
+  /// request/release pairs may be issued unconditionally
+  private var activeConsumers = Set<AudioAnalyzerConsumer>() {
+    didSet { isActive = !activeConsumers.isEmpty }
+  }
+
+  public func requestActivation(for consumer: AudioAnalyzerConsumer) {
+    activeConsumers.insert(consumer)
+  }
+
+  public func releaseActivation(for consumer: AudioAnalyzerConsumer) {
+    activeConsumers.remove(consumer)
+  }
+
   nonisolated(unsafe) private var _isActive = false
   private let _isActiveLock = NSLock()
-  nonisolated public var isActive: Bool {
+  nonisolated public private(set) var isActive: Bool {
     get {
       _isActiveLock.withLock { _isActive }
     }

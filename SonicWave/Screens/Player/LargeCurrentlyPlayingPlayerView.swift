@@ -282,7 +282,9 @@ class LargeCurrentlyPlayingPlayerView: UIView, UIGestureRecognizerDelegate {
   }
 
   func refreshAlbumPlaythrough() {
-    let info = rootView?.currentAlbumPlaythrough()
+    // the kit caches the whole-album verdict per track/queue change —
+    // this 1s tick only folds elapsed time into `playedDurationInSeconds`
+    let info = rootView?.player.albumPlaythrough
     let tint: UIColor? = rootView?.artworkTint.intensity == .vivid
       ? rootView?.artworkTint.accent
       : nil
@@ -524,11 +526,9 @@ class LargeCurrentlyPlayingPlayerView: UIView, UIGestureRecognizerDelegate {
 
   public func hideVisualizer() {
     visualizerHostingView?.hostingController?.view.isHidden = true
-    // the analyzer tap is shared with `MusicHapticsService` — while the
-    // service is engaged it owns the tap, so hiding the visualizer pane
-    // must not cut the haptics feed (kit-side service self-gates)
-    guard !(AmperKit.shared.musicHapticsService?.isEngaged ?? false) else { return }
-    appDelegate.player.audioAnalyzer.isActive = false
+    // the tap is refcounted per consumer — releasing only drops the
+    // visualizer's claim; `MusicHapticsService` keeps its own
+    appDelegate.player.audioAnalyzer.releaseActivation(for: .visualizer)
   }
 
   public func showVisualizer() {
@@ -536,8 +536,9 @@ class LargeCurrentlyPlayingPlayerView: UIView, UIGestureRecognizerDelegate {
       appDelegate.storage.settings.user.selectedVisualizerType
     )
     visualizerHostingView?.hostingController?.view.isHidden = false
-    appDelegate.player.audioAnalyzer
-      .isActive = (appDelegate.storage.settings.user.playerDisplayStyle == .large)
+    if appDelegate.storage.settings.user.playerDisplayStyle == .large {
+      appDelegate.player.audioAnalyzer.requestActivation(for: .visualizer)
+    }
   }
 
   private func hideLyrics() {

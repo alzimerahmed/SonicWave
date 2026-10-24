@@ -71,9 +71,10 @@ public final class MusicHapticsService: ObservableObject {
   private let audioAnalyzer: AudioAnalyzer
   private let settings: AmperfySettings
   private var magnitudesCancellable: AnyCancellable?
-  /// the analyzer tap is owned by the visualizer UI — only flip it back
-  /// off on disengage when this service turned it on
-  private var didActivateAnalyzerTap = false
+  /// backoff after a failed engine create/start — a persistent failure
+  /// must not retry (and re-log) on every 1s tick
+  private static let engineRetryBackoffInSec: TimeInterval = 30
+  private var nextEngineRetryUptime: TimeInterval = 0
 
   // bass-onset detector state
   /// slow exponential baseline of the bass band — onsets are short
@@ -117,10 +118,16 @@ public final class MusicHapticsService: ObservableObject {
   private func engage() {
     guard Self.isSupported else { return }
     #if canImport(CoreHaptics)
-      if engine == nil, !createEngine() { return }
+      let now = ProcessInfo.processInfo.systemUptime
+      guard now >= nextEngineRetryUptime else { return }
+      if engine == nil, !createEngine() {
+        nextEngineRetryUptime = now + Self.engineRetryBackoffInSec
+        return
+      }
       do {
         try engine?.start()
       } catch {
+        nextEngineRetryUptime = now + Self.engineRetryBackoffInSec
         engine = nil
         os_log(
           "Haptic engine start failed: %{public}@",
@@ -130,14 +137,14 @@ public final class MusicHapticsService: ObservableObject {
         )
         return
       }
+      nextEngineRetryUptime = 0
     #endif
     isEngaged = true
     bassBaseline = 0
     lastOnsetUptime = 0
-    if !audioAnalyzer.isActive {
-      audioAnalyzer.isActive = true
-      didActivateAnalyzerTap = true
-    }
+    // the tap is refcounted per consumer — engaging never steals the
+    // visualizer's activation and disengaging never cuts it
+    audioAnalyzer.requestActivation(for: .haptics)
     magnitudesCancellable = audioAnalyzer.$magnitudes.sink { [weak self] magnitudes in
       Task { @MainActor in
         self?.processMagnitudes(magnitudes)
@@ -148,10 +155,7 @@ public final class MusicHapticsService: ObservableObject {
   private func disengage() {
     magnitudesCancellable?.cancel()
     magnitudesCancellable = nil
-    if didActivateAnalyzerTap {
-      audioAnalyzer.isActive = false
-      didActivateAnalyzerTap = false
-    }
+    audioAnalyzer.releaseActivation(for: .haptics)
     isEngaged = false
     #if canImport(CoreHaptics)
       try? engine?.stop()
