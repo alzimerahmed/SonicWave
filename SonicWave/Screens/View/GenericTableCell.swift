@@ -212,7 +212,7 @@ class GenericTableCell: BasicTableCell {
       infoLabelWidthConstraint.constant = 140
     }
     accessoryType = .disclosureIndicator
-    backgroundColor = .systemBackground
+    backgroundColor = .sonicSystemBackground
 
     // the hairline rides the play indicator's notification cadence —
     // registered only while the row shows an album so playback events

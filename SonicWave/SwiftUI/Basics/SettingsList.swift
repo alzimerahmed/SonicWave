@@ -33,6 +33,7 @@ struct SettingsList<Content: View>: View {
     List {
       content()
     }
-    .background(Color.clear)
+    .scrollContentBackground(.hidden)
+    .background(Color.sonicSystemGroupedBackground)
   }
 }

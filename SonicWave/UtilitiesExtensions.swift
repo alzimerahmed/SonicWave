@@ -90,6 +90,33 @@ extension UIColor {
     let appDelegate = UIApplication.shared.delegate as! AppDelegate
     return appDelegate.isTrueBlackActive(in: traits) ? .black : .systemGroupedBackground
   }
+
+  /// §2.3 — dynamic `systemBackground` counterpart for assignment points
+  /// (cell and view backgrounds): resolves per trait change like the
+  /// semantic colors, so light↔dark swaps keep working. The
+  /// `.dark`→`.trueBlack` hop does not change `userInterfaceStyle`, so
+  /// it only recolors once the surface re-renders — same opt-in caveat
+  /// as the `in traits:` tokens.
+  static var sonicSystemBackground: UIColor {
+    UIColor(dynamicProvider: { traits in
+      guard Thread.isMainThread else { return .systemBackground }
+      return MainActor.assumeIsolated {
+        let appDelegate = UIApplication.shared.delegate as! AppDelegate
+        return appDelegate.isTrueBlackActive(in: traits) ? .black : .systemBackground
+      }
+    })
+  }
+
+  /// §2.3 — grouped-background counterpart of `sonicSystemBackground`
+  static var sonicSystemGroupedBackground: UIColor {
+    UIColor(dynamicProvider: { traits in
+      guard Thread.isMainThread else { return .systemGroupedBackground }
+      return MainActor.assumeIsolated {
+        let appDelegate = UIApplication.shared.delegate as! AppDelegate
+        return appDelegate.isTrueBlackActive(in: traits) ? .black : .systemGroupedBackground
+      }
+    })
+  }
 }
 
 extension Color {
@@ -111,6 +138,15 @@ extension Color {
 
   static func sonicAccentContrast(for theme: ThemePreference) -> Color {
     Color(theme.contrastColor)
+  }
+
+  /// §2.3 — SwiftUI faces of the dynamic true-black tokens
+  static var sonicSystemBackground: Color {
+    Color(UIColor.sonicSystemBackground)
+  }
+
+  static var sonicSystemGroupedBackground: Color {
+    Color(UIColor.sonicSystemGroupedBackground)
   }
 }
 
