@@ -298,6 +298,39 @@ actor DownloadManager: NSObject, DownloadManageable {
     }
   }
 
+  @MainActor
+  func removeDownload(for object: Downloadable) {
+    Task {
+      await requestManager.removeDownload(for: object.uniqueID)
+    }
+  }
+
+  @MainActor
+  func cancelDownload(for object: Downloadable) {
+    let uniqueID = object.uniqueID
+    Task {
+      await _cancelDownload(uniqueID: uniqueID)
+    }
+  }
+
+  /// per-item cancel for the downloads queue UI (G6): the CoreData flag
+  /// goes first — an in-flight task completion re-reads the entry, sees
+  /// `isCanceled`, and skips error reporting + the failed-download
+  /// delegate, leaving the row in the canceled state.
+  private func _cancelDownload(uniqueID: String) async {
+    await requestManager.cancelDownload(for: uniqueID)
+    if let (task, _) = tasks.first(where: { $0.value.request.id == uniqueID }) {
+      // keep the task in `tasks` — didCompleteWithError routes through
+      // finishDownload which cleans up tasks/taskOperations itself
+      task.cancel()
+    } else if let taskOperation = taskOperations
+      .first(where: { $0.key.id == uniqueID }) {
+      // still queued — cancel before a URLSessionTask is ever created
+      taskOperation.value.cancel()
+      taskOperations.removeValue(forKey: taskOperation.key)
+    }
+  }
+
   nonisolated func start() {
     Task {
       await _start()
@@ -535,6 +568,23 @@ actor DownloadManager: NSObject, DownloadManageable {
     fileURL: URL,
     fileMimeType: String?
   ) async {
+    // mid-flight cancel race: the entry was flagged canceled while the
+    // operation was between queueing and task completion — honor the
+    // cancel, drop the fetched temp file, and route through the normal
+    // finish path instead of completing the download
+    let isCanceled = try? await storage.performAndGet { asyncCompanion in
+      let download = Download(
+        managedObject: asyncCompanion.context
+          .object(with: downloadRequest.objectID) as! DownloadMO
+      )
+      return download.isCanceled
+    }
+    if isCanceled == true {
+      try? FileManager.default.removeItem(at: fileURL)
+      await finishDownload(downloadRequest: downloadRequest, task: task, error: .canceled)
+      return
+    }
+
     let responseError = await getDownloadDelegateCB().validateDownloadedData(
       fileURL: fileURL,
       downloadURL: task.originalRequest?.url

@@ -336,6 +336,36 @@ final class DownloadRequestManager: Sendable {
     }
   }
 
+  /// Cancels one unfinished download (queued or in-flight): stamps
+  /// `error = .canceled` so the FRC-driven queue UI reflects the state
+  /// immediately and the entry becomes removable. The in-flight
+  /// URLSession task is cancelled separately by `DownloadManager`.
+  func cancelDownload(for uniqueID: String) async {
+    try? await storage.perform { asyncCompanion in
+      let account = asyncCompanion.library.getAccount(managedObjectId: self.accountObjectId)
+      guard let download = asyncCompanion.library.getDownload(account: account, id: uniqueID),
+            download.finishDate == nil, download.errorDate == nil
+      else { return }
+      download.isCanceled = true
+      asyncCompanion.saveContext()
+    }
+  }
+
+  /// Deletes a single download entry unless it is still running —
+  /// finished, failed, and canceled entries are removed; queued-but-
+  /// not-started entries are left to `cancelDownload` instead.
+  func removeDownload(for uniqueID: String) async {
+    try? await storage.perform { asyncCompanion in
+      let account = asyncCompanion.library.getAccount(managedObjectId: self.accountObjectId)
+      guard let download = asyncCompanion.library.getDownload(account: account, id: uniqueID),
+            !download.isDownloading, download.startDate != nil || download.errorDate != nil ||
+            download.finishDate != nil
+      else { return }
+      asyncCompanion.library.deleteDownload(download)
+      asyncCompanion.saveContext()
+    }
+  }
+
   func cancelDownloads() async {
     let downloadPredicateFormat = await getDownloadDelegateCB().requestPredicate.predicateFormat
     try? await storage.perform { asyncCompanion in

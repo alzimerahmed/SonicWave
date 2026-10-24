@@ -38,6 +38,20 @@ class DownloadsVC: SingleFetchedResultsTableViewController<DownloadMO> {
     fatalError("init(coder:) has not been implemented")
   }
 
+  private lazy var emptyContentConfig: UIContentUnavailableConfiguration = {
+    var config = UIContentUnavailableConfiguration.empty()
+    config.image = .download
+    config.text = "No Downloads"
+    config.secondaryText = "Queued, active, and finished downloads will appear here."
+    return config
+  }()
+
+  func updateContentUnavailable() {
+    contentUnavailableConfiguration =
+      (fetchedResultsController.fetchedObjects?.count ?? 0) == 0
+      ? emptyContentConfig : nil
+  }
+
   override func viewDidLoad() {
     super.viewDidLoad()
     appDelegate.userStatistics.visited(.downloads)
@@ -57,6 +71,10 @@ class DownloadsVC: SingleFetchedResultsTableViewController<DownloadMO> {
     tableView.sectionHeaderHeight = 0.0
     tableView.estimatedSectionHeaderHeight = 0.0
     tableView.backgroundColor = .backgroundColor
+
+    resultUpdateHandler?.changesDidEnd = { [weak self] in
+      self?.updateContentUnavailable()
+    }
 
     optionsButton = UIBarButtonItem.createOptionsBarButton()
     optionsButton.menu = createActionButtonMenu()
@@ -102,6 +120,42 @@ class DownloadsVC: SingleFetchedResultsTableViewController<DownloadMO> {
     extendSafeAreaToAccountForMiniPlayer()
     fetchedResultsController.fetch()
     tableView.reloadData()
+    updateContentUnavailable()
+  }
+
+  /// per-row queue control (G6): queued/in-flight entries can be
+  /// canceled; finished, failed, and canceled entries can be removed.
+  /// The FRC observer updates the row state automatically.
+  override func tableView(
+    _ tableView: UITableView,
+    trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath
+  )
+    -> UISwipeActionsConfiguration? {
+    let download = fetchedResultsController.getWrappedEntity(at: indexPath)
+    guard let playable = download.element as? AbstractPlayable
+    else { return UISwipeActionsConfiguration() }
+
+    if download.isFinishedSuccessfully || download.errorDate != nil {
+      let removeAction = UIContextualAction(
+        style: .destructive,
+        title: "Remove"
+      ) { _, _, completionHandler in
+        self.downloadManager.removeDownload(for: playable)
+        completionHandler(true)
+      }
+      removeAction.image = .trash
+      return UISwipeActionsConfiguration(actions: [removeAction])
+    } else {
+      let cancelAction = UIContextualAction(
+        style: .destructive,
+        title: "Cancel"
+      ) { _, _, completionHandler in
+        self.downloadManager.cancelDownload(for: playable)
+        completionHandler(true)
+      }
+      cancelAction.image = .cancleDownloads
+      return UISwipeActionsConfiguration(actions: [cancelAction])
+    }
   }
 
   override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {

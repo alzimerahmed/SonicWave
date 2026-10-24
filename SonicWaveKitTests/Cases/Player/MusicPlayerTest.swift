@@ -128,8 +128,10 @@ class MOCK_SongDownloader: DownloadManageable {
 
   func removeFinishedDownload(for object: Downloadable) {}
   func removeFinishedDownload(for objects: [Downloadable]) {}
+  func removeDownload(for object: Downloadable) {}
   func clearFinishedDownloads() {}
   func resetFailedDownloads() {}
+  func cancelDownload(for object: Downloadable) {}
   func cancelDownloads() {}
   func trimCacheToLimit() async -> Int { 0 }
   func start() {}

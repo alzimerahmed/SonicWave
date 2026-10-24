@@ -52,8 +52,17 @@ public protocol DownloadManageable {
   func removeFinishedDownload(for object: Downloadable)
   @MainActor
   func removeFinishedDownload(for objects: [Downloadable])
+  /// Removes a single download entry from the queue list — finished,
+  /// failed, and canceled entries are deleted; a currently running
+  /// download is left untouched (cancel it first).
+  @MainActor
+  func removeDownload(for object: Downloadable)
   func clearFinishedDownloads()
   func resetFailedDownloads()
+  /// Cancels a single queued or in-flight download. The entry stays in
+  /// the list marked as canceled until the user removes it.
+  @MainActor
+  func cancelDownload(for object: Downloadable)
   func cancelDownloads()
   /// LRU-trims the evictable `.cache` tier to the account's configured
   /// cache size limit (`AccountSetting.cacheSizeLimitBytes`). No-op for
