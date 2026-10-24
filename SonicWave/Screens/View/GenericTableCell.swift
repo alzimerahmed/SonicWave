@@ -43,6 +43,143 @@ class GenericTableCell: BasicTableCell {
   private var container: PlayableContainable?
   private var rootView: UITableViewController?
 
+  // G21 — playthrough hairline under the album title; only laid out while
+  // this album is the one currently playing
+  private var playthroughTrack: UIView?
+  private var playthroughFill: UIView?
+  private var playthroughFillWidthConstraint: NSLayoutConstraint?
+  private var isPlaythroughRegistered = false
+
+  override func prepareForReuse() {
+    super.prepareForReuse()
+    unregisterPlaythrough()
+    playthroughTrack?.isHidden = true
+  }
+
+  /// hairline bar lazily pinned under the title — same visual language
+  /// as `AlbumPlaythroughView` (hairline, `secondarySystemFill` track,
+  /// accent fill) minus the `Track X of Y` caption, which does not fit
+  /// a table row
+  private func ensurePlaythroughTrack() -> UIView {
+    if let playthroughTrack { return playthroughTrack }
+    let track = UIView()
+    track.backgroundColor = .secondarySystemFill
+    track.layer.cornerRadius = 1.5
+    track.clipsToBounds = true
+    track.translatesAutoresizingMaskIntoConstraints = false
+    track.isAccessibilityElement = true
+    contentView.addSubview(track)
+
+    let fill = UIView()
+    fill.layer.cornerRadius = 1.5
+    fill.clipsToBounds = true
+    fill.translatesAutoresizingMaskIntoConstraints = false
+    track.addSubview(fill)
+    playthroughFill = fill
+
+    let fillWidth = fill.widthAnchor.constraint(equalTo: track.widthAnchor, multiplier: 0)
+    playthroughFillWidthConstraint = fillWidth
+    NSLayoutConstraint.activate([
+      track.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
+      track.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor),
+      track.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -3),
+      track.heightAnchor.constraint(equalToConstant: 3),
+      fill.leadingAnchor.constraint(equalTo: track.leadingAnchor),
+      fill.topAnchor.constraint(equalTo: track.topAnchor),
+      fill.bottomAnchor.constraint(equalTo: track.bottomAnchor),
+      fillWidth,
+    ])
+    playthroughTrack = track
+    return track
+  }
+
+  /// Playthrough progress while `album` is the album in play — prefers
+  /// the kit's album-shuffle session info; falls back to a contiguous
+  /// same-album run in the context queue, mirroring
+  /// `PopupPlayerVC.currentAlbumPlaythrough`.
+  private func albumPlaythroughInfo(for album: Album) -> AlbumProgressInfo? {
+    let player = appDelegate.player
+    if let info = player.albumPlaythrough,
+       player.currentlyPlaying?.asSong?.album?.id == album.id {
+      return info
+    }
+    guard let current = player.currentlyPlaying?.asSong,
+          current.album?.id == album.id
+    else { return nil }
+    let prev = player.getAllPrevQueueItems()
+    let next = player.getAllNextQueueItems()
+    let albumRun = prev + [current] + next
+    guard albumRun.count > 1,
+          albumRun.allSatisfy({ $0.asSong?.album?.id == album.id })
+    else { return nil }
+    return AlbumProgressInfo(
+      albumName: album.name,
+      totalTrackCount: albumRun.count,
+      playedTrackCount: prev.count,
+      totalDurationInSeconds: albumRun.reduce(0) { $0 + $1.duration },
+      playedDurationInSeconds: Double(prev.reduce(0) { $0 + $1.duration }) + player.elapsedTime,
+      queuedAlbumCount: 0,
+      nextAlbumName: nil
+    )
+  }
+
+  private func registerPlaythrough() {
+    guard !isPlaythroughRegistered else { return }
+    appDelegate.notificationHandler.register(
+      self,
+      selector: #selector(playerStateChanged(notification:)),
+      name: .playerPlay,
+      object: nil
+    )
+    appDelegate.notificationHandler.register(
+      self,
+      selector: #selector(playerStateChanged(notification:)),
+      name: .playerPause,
+      object: nil
+    )
+    appDelegate.notificationHandler.register(
+      self,
+      selector: #selector(playerStateChanged(notification:)),
+      name: .playerStop,
+      object: nil
+    )
+    isPlaythroughRegistered = true
+  }
+
+  private func unregisterPlaythrough() {
+    guard isPlaythroughRegistered else { return }
+    appDelegate.notificationHandler.remove(self, name: .playerPlay, object: nil)
+    appDelegate.notificationHandler.remove(self, name: .playerPause, object: nil)
+    appDelegate.notificationHandler.remove(self, name: .playerStop, object: nil)
+    isPlaythroughRegistered = false
+  }
+
+  @objc
+  private func playerStateChanged(notification: Notification) {
+    refreshPlaythrough()
+  }
+
+  private func refreshPlaythrough() {
+    guard let album = container as? Album,
+          let info = albumPlaythroughInfo(for: album) else {
+      playthroughTrack?.isHidden = true
+      return
+    }
+    let track = ensurePlaythroughTrack()
+    track.isHidden = false
+    playthroughFill?.backgroundColor = appDelegate.storage.settings.accounts
+      .getSetting(album.account?.info).read.themePreference.asColor
+    playthroughFillWidthConstraint?.isActive = false
+    if let fill = playthroughFill {
+      let constraint = fill.widthAnchor
+        .constraint(equalTo: track.widthAnchor, multiplier: CGFloat(info.progressRatio))
+      constraint.isActive = true
+      playthroughFillWidthConstraint = constraint
+    }
+    let trackNumber = min(info.playedTrackCount + 1, info.totalTrackCount)
+    track.accessibilityLabel = "Album progress: track \(trackNumber) of \(info.totalTrackCount)"
+  }
+
   func display(container: PlayableContainable, rootView: UITableViewController) {
     self.container = container
     self.rootView = rootView
@@ -76,5 +213,13 @@ class GenericTableCell: BasicTableCell {
     }
     accessoryType = .disclosureIndicator
     backgroundColor = .systemBackground
+
+    // the hairline rides the play indicator's notification cadence —
+    // registered only while the row shows an album so playback events
+    // can flip it on without a table reload
+    if container is Album {
+      registerPlaythrough()
+    }
+    refreshPlaythrough()
   }
 }
