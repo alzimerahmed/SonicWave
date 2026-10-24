@@ -59,10 +59,9 @@ extension SubsonicVersion {
   }
 
   static func > (lhs: SubsonicVersion, rhs: SubsonicVersion) -> Bool {
-    if lhs.major > rhs.major { return true }
-    if lhs.minor > rhs.minor { return true }
-    if lhs.patch > rhs.patch { return true }
-    return false
+    if lhs.major != rhs.major { return lhs.major > rhs.major }
+    if lhs.minor != rhs.minor { return lhs.minor > rhs.minor }
+    return lhs.patch > rhs.patch
   }
 
   static func >= (lhs: SubsonicVersion, rhs: SubsonicVersion) -> Bool {
