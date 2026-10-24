@@ -30,6 +30,8 @@ class AnimatedGradientLayer {
   var colors: [CGColor] = [UIColor.white.cgColor, UIColor.white.cgColor]
   var startCorner: Corners = .topLeft
   var endCorner: Corners = .bottomRight
+  /// optional stop positions (0...1); nil = evenly spread
+  var locations: [NSNumber]?
 
   var animationDuration: TimeInterval = 2
   var animationStyle: CAMediaTimingFunctionName = .linear
@@ -51,7 +53,12 @@ class AnimatedGradientLayer {
     )
   }
 
-  func setColors(_ newColors: [CGColor], isAnimated: Bool) {
+  func setColors(
+    _ newColors: [CGColor],
+    at newLocations: [NSNumber]? = nil,
+    isAnimated: Bool
+  ) {
+    gradientLayer.locations = newLocations
     let colorAnimation = CABasicAnimation(keyPath: "colors")
     colorAnimation.fromValue = colors
     colorAnimation.toValue = newColors
@@ -61,6 +68,7 @@ class AnimatedGradientLayer {
     colorAnimation.timingFunction = CAMediaTimingFunction(name: animationStyle)
     gradientLayer.add(colorAnimation, forKey: "colorsChangeAnimation")
     colors = newColors
+    locations = newLocations
   }
 
   func setCorners(

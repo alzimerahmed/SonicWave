@@ -372,17 +372,41 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
   }
 
   func setAppAppearanceMode(style: UIUserInterfaceStyle) {
+    // BlackModePreference (design-system §2.3) rides alongside
+    // `appearanceMode`: `.dark` and `.trueBlack` both force the dark
+    // interface, `.trueBlack` additionally swaps background surfaces to
+    // true black. `systemBackground`/`systemGroupedBackground` can't be
+    // re-mapped app-wide without swizzling, so the swap is applied via
+    // the `sonicSystemBackground` token where surfaces opt in (player
+    // surface first) plus the window backdrop for sheet edges and gaps.
+    var resolvedStyle = style
+    switch storage.settings.user.blackModePreference {
+    case .system:
+      break
+    case .dark, .trueBlack:
+      resolvedStyle = .dark
+    }
     if #available(iOS 13.0, *) {
       UIApplication.shared.connectedScenes
         .forEach {
           if let windowScene = $0 as? UIWindowScene {
             windowScene.windows.forEach { window in
-              window.overrideUserInterfaceStyle = style
-              window.rootViewController?.overrideUserInterfaceStyle = style
+              window.overrideUserInterfaceStyle = resolvedStyle
+              window.rootViewController?.overrideUserInterfaceStyle = resolvedStyle
+              window.backgroundColor = storage.settings.user
+                .blackModePreference == .trueBlack ? .black : nil
             }
           }
         }
     }
+  }
+
+  /// §2.3 — true-black is active only while the dark interface is in
+  /// effect; with `.trueBlack` forcing the dark override above, a dark
+  /// resolved trait means "on".
+  func isTrueBlackActive(in traits: UITraitCollection) -> Bool {
+    storage.settings.user.blackModePreference == .trueBlack &&
+      traits.userInterfaceStyle == .dark
   }
 
   func applicationWillResignActive(_ application: UIApplication) {

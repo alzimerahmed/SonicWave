@@ -51,6 +51,209 @@ extension UIColor {
   static let hardLabelColor = UIColor(named: "hardLabelColor")
 }
 
+// MARK: - SonicWave design tokens (docs/design/design-system.md §2.2)
+
+extension UIColor {
+  /// §2.2 — scrim under controls overlaid on artwork
+  static var sonicScrim: UIColor {
+    UIColor(named: "ImageOverlayBackground") ?? .systemBackground.withAlphaComponent(0.6)
+  }
+
+  /// §2.2 — text/icons stamped over artwork where `.label` must stay maximal
+  static var sonicHardLabel: UIColor {
+    .hardLabelColor ?? .label
+  }
+
+  /// §2.2 — star rating gold
+  static var sonicGold: UIColor {
+    .gold
+  }
+
+  /// §2.1/§2.2 — per-account theme accent; read via the entity's account
+  static func sonicAccent(for theme: ThemePreference) -> UIColor {
+    theme.asColor
+  }
+
+  /// §2.3 — true-black palette: `.black` in dark mode while
+  /// `BlackModePreference == .trueBlack`, `systemBackground` otherwise.
+  /// Player-surface scope for now — the swap is applied where the token is
+  /// consumed, not globally (no swizzling).
+  @MainActor
+  static func sonicSystemBackground(in traits: UITraitCollection) -> UIColor {
+    let appDelegate = UIApplication.shared.delegate as! AppDelegate
+    return appDelegate.isTrueBlackActive(in: traits) ? .black : .systemBackground
+  }
+
+  /// §2.3 — grouped-background counterpart of `sonicSystemBackground(in:)`
+  @MainActor
+  static func sonicSystemGroupedBackground(in traits: UITraitCollection) -> UIColor {
+    let appDelegate = UIApplication.shared.delegate as! AppDelegate
+    return appDelegate.isTrueBlackActive(in: traits) ? .black : .systemGroupedBackground
+  }
+}
+
+extension Color {
+  static var sonicScrim: Color {
+    Color("ImageOverlayBackground")
+  }
+
+  static var sonicHardLabel: Color {
+    Color("hardLabelColor")
+  }
+
+  static var sonicGold: Color {
+    Color(UIColor.gold)
+  }
+
+  static func sonicAccent(for theme: ThemePreference) -> Color {
+    theme.asSwiftUIColor
+  }
+
+  static func sonicAccentContrast(for theme: ThemePreference) -> Color {
+    Color(theme.contrastColor)
+  }
+}
+
+// MARK: - WCAG contrast helpers (design-system §2.4, §8.3)
+
+extension UIColor {
+  /// WCAG 2.x relative luminance of this color (sRGB channel linearization)
+  var sonicLuminance: CGFloat {
+    var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+    guard getRed(&red, green: &green, blue: &blue, alpha: &alpha) else { return 0 }
+    func linear(_ channel: CGFloat) -> CGFloat {
+      channel <= 0.03928 ? channel / 12.92 : pow((channel + 0.055) / 1.055, 2.4)
+    }
+    return 0.2126 * linear(red) + 0.7152 * linear(green) + 0.0722 * linear(blue)
+  }
+
+  /// WCAG contrast ratio `self : other` — 1...21
+  func sonicContrastRatio(to other: UIColor) -> CGFloat {
+    let l1 = sonicLuminance
+    let l2 = other.sonicLuminance
+    return (max(l1, l2) + 0.05) / (min(l1, l2) + 0.05)
+  }
+
+  /// §2.4 `sonicArtworkContrast` rule — pure black/white, whichever reaches
+  /// the 4.5:1 metadata floor against `self`; `sonicHardLabel` fallback when
+  /// neither does (it resolves to pure black/white per appearance anyway)
+  var sonicContrastColor: UIColor {
+    let blackRatio = UIColor.black.sonicContrastRatio(to: self)
+    let whiteRatio = UIColor.white.sonicContrastRatio(to: self)
+    let best = blackRatio >= whiteRatio ? UIColor.black : UIColor.white
+    return max(blackRatio, whiteRatio) >= 4.5 ? best : .sonicHardLabel
+  }
+
+  /// HSL saturation/lightness accessor pair (via the kit's HSL `getHue`)
+  var sonicSaturationLightness: (saturation: CGFloat, lightness: CGFloat) {
+    var hue: CGFloat = 0, saturation: CGFloat = 0, lightness: CGFloat = 0, alpha: CGFloat = 0
+    _ = getHue(&hue, saturation: &saturation, lightness: &lightness, alpha: &alpha)
+    return (saturation, lightness)
+  }
+
+  /// §2.4 accent clamp — same hue/saturation, lightness forced into `range`
+  func sonicWithLightnessClamped(to range: ClosedRange<CGFloat>) -> UIColor {
+    let sl = sonicSaturationLightness
+    return getWithLightness(of: min(max(sl.lightness, range.lowerBound), range.upperBound))
+  }
+}
+
+// MARK: - Typography tokens (design-system §3.1)
+
+extension UIFont {
+  /// All tokens are `UIFontMetrics`-scaled; `regularWidthScale` preserves
+  /// the widthClass-dependent size bump the player xibs encoded by hand
+  /// (compact size × multiplier when the trait collection is regular width).
+  private static func sonicScaled(
+    _ style: UIFont.TextStyle,
+    size: CGFloat,
+    weight: UIFont.Weight = .regular,
+    regularWidthScale: CGFloat = 1.0,
+    traits: UITraitCollection? = nil
+  )
+    -> UIFont {
+    var resolvedSize = size
+    if let traits, traits.horizontalSizeClass == .regular {
+      resolvedSize *= regularWidthScale
+    }
+    let base = UIFont.systemFont(ofSize: resolvedSize, weight: weight)
+    if let traits {
+      return UIFontMetrics(forTextStyle: style).scaledFont(
+        for: base,
+        compatibleWith: traits
+      )
+    }
+    return UIFontMetrics(forTextStyle: style).scaledFont(for: base)
+  }
+
+  /// Now Playing song title — title2 bold, xib bump 17 → 19 regular width
+  static func sonicHeroTitle(compatibleWith traits: UITraitCollection? = nil) -> UIFont {
+    sonicScaled(.title2, size: 17, weight: .bold, regularWidthScale: 19.0 / 17.0, traits: traits)
+  }
+
+  /// Now Playing album line — callout, xib bump 16 → 17 regular width
+  static func sonicHeroSecondary(compatibleWith traits: UITraitCollection? = nil) -> UIFont {
+    sonicScaled(.callout, size: 16, regularWidthScale: 17.0 / 16.0, traits: traits)
+  }
+
+  /// Now Playing artist line — body, 17pt
+  static func sonicHeroArtist(compatibleWith traits: UITraitCollection? = nil) -> UIFont {
+    sonicScaled(.body, size: 17, traits: traits)
+  }
+
+  /// Cell primary label — body
+  static func sonicRowTitle(compatibleWith traits: UITraitCollection? = nil) -> UIFont {
+    sonicScaled(.body, size: 17, traits: traits)
+  }
+
+  /// Cell secondary label — subheadline
+  static func sonicRowSubtitle(compatibleWith traits: UITraitCollection? = nil) -> UIFont {
+    sonicScaled(.subheadline, size: 15, traits: traits)
+  }
+
+  /// Mini-player title — caption1 semibold
+  static func sonicMiniTitle(compatibleWith traits: UITraitCollection? = nil) -> UIFont {
+    sonicScaled(.caption1, size: 11, weight: .semibold, traits: traits)
+  }
+
+  /// Mini-player subtitle — caption1
+  static func sonicMiniSubtitle(compatibleWith traits: UITraitCollection? = nil) -> UIFont {
+    sonicScaled(.caption1, size: 13, traits: traits)
+  }
+
+  /// Elapsed/remaining times — caption1, always tabular digits;
+  /// xib bump 12 → 15 regular width
+  static func sonicTime(compatibleWith traits: UITraitCollection? = nil) -> UIFont {
+    var resolvedSize: CGFloat = 12
+    if let traits, traits.horizontalSizeClass == .regular {
+      resolvedSize = 15
+    }
+    let base = UIFont.monospacedDigitSystemFont(ofSize: resolvedSize, weight: .regular)
+    if let traits {
+      return UIFontMetrics(forTextStyle: .caption1).scaledFont(
+        for: base,
+        compatibleWith: traits
+      )
+    }
+    return UIFontMetrics(forTextStyle: .caption1).scaledFont(for: base)
+  }
+
+  /// Codec/bitrate chip text — caption1, xib bump 12 → 15 regular width
+  static func sonicAudioInfo(compatibleWith traits: UITraitCollection? = nil) -> UIFont {
+    sonicScaled(.caption1, size: 12, regularWidthScale: 15.0 / 12.0, traits: traits)
+  }
+
+  /// Section headers ("Previous", "Next from Queue") — subheadline semibold
+  static func sonicSectionHeader(compatibleWith traits: UITraitCollection? = nil) -> UIFont {
+    sonicScaled(.subheadline, size: 15, weight: .semibold, traits: traits)
+  }
+
+  /// InfoBannerView / NotificationBanner — subheadline semibold
+  static func sonicBanner(compatibleWith traits: UITraitCollection? = nil) -> UIFont {
+    sonicScaled(.subheadline, size: 15, weight: .semibold, traits: traits)
+  }
+}
+
 extension Color {
   static let error = Color.red
   static let success = Color.green
