@@ -361,6 +361,55 @@ public enum CacheTranscodingFormatPreference: Int, CaseIterable, Sendable, Codab
   }
 }
 
+// MARK: - ArtworkTintIntensity
+
+/// How strongly the Now Playing surface absorbs the current artwork's
+/// dominant colors (design-system §2.4): `off` keeps a pure semantic
+/// background, `subtle` is the classic two-stop dominant-color gradient,
+/// `vivid` expands to a four-stop gradient plus accent-tinted controls.
+public enum ArtworkTintIntensity: Int, CaseIterable, Sendable, Codable {
+  case off = 0
+  case subtle = 1
+  case vivid = 2
+
+  public static let defaultValue: ArtworkTintIntensity = .subtle
+
+  public var description: String {
+    switch self {
+    case .off:
+      return "Off"
+    case .subtle:
+      return "Subtle"
+    case .vivid:
+      return "Vivid"
+    }
+  }
+}
+
+// MARK: - BlackModePreference
+
+/// OLED black-level preference (design-system §2.3): `system` follows
+/// `UserSettings.appearanceMode`, `dark` forces the dark interface,
+/// `trueBlack` forces dark *and* swaps background surfaces to true black.
+public enum BlackModePreference: Int, CaseIterable, Sendable, Codable {
+  case system = 0
+  case dark = 1
+  case trueBlack = 2
+
+  public static let defaultValue: BlackModePreference = .system
+
+  public var description: String {
+    switch self {
+    case .system:
+      return "System"
+    case .dark:
+      return "Dark"
+    case .trueBlack:
+      return "True Black (OLED)"
+    }
+  }
+}
+
 // MARK: - VisualizerType
 
 public enum VisualizerType: String, CaseIterable, Sendable, Codable {

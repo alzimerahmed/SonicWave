@@ -267,6 +267,18 @@ public struct UserSettings: Sendable, Codable {
     set { _appearanceMode = newValue }
   }
 
+  /// OLED black level (design-system §2.3): `.system` follows
+  /// `appearanceMode`, `.dark` forces the dark interface, `.trueBlack`
+  /// additionally swaps background surfaces to true black. Applied by
+  /// `AppDelegate.setAppAppearanceMode` next to `appearanceMode`.
+  /// Backed by an Optional so that decoding older persisted `UserSettings`s
+  /// (which lack this key) does not fail and silently reset all settings.
+  private var _blackModePreference: BlackModePreference? = nil
+  public var blackModePreference: BlackModePreference {
+    get { _blackModePreference ?? .system }
+    set { _blackModePreference = newValue }
+  }
+
   private var _screenLockPreventionPreference: ScreenLockPreventionPreference = .defaultValue
   public var screenLockPreventionPreference: ScreenLockPreventionPreference {
     get { _screenLockPreventionPreference }
@@ -476,6 +488,19 @@ public struct AccountSetting: Sendable, Codable {
   public var themePreference: ThemePreference {
     get { _themePreference }
     set { _themePreference = newValue }
+  }
+
+  /// artwork-adaptive theming (G24, design-system §2.4): how strongly the
+  /// Now Playing surface absorbs the current artwork's dominant colors —
+  /// `.off` = pure semantic background, `.subtle` = two-stop gradient
+  /// (default), `.vivid` = four-stop gradient + accent-tinted controls.
+  /// Backed by an Optional so that decoding older persisted
+  /// `AccountSetting`s (which lack this key) does not fail and silently
+  /// reset all account settings.
+  private var _artworkTintIntensity: ArtworkTintIntensity? = nil
+  public var artworkTintIntensity: ArtworkTintIntensity {
+    get { _artworkTintIntensity ?? .defaultValue }
+    set { _artworkTintIntensity = newValue }
   }
 }
 
