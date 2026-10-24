@@ -29,7 +29,7 @@ import Foundation
 /// `.nsp` fields SonicWave cannot evaluate locally (e.g. `bpm`, `mbz_*`,
 /// album/artist-level aggregates) — they are preserved on import, marked
 /// unsupported, and skipped by the local evaluator.
-public enum SmartPlaylistField: Sendable {
+public enum SmartPlaylistField: Sendable, Equatable {
   case rating
   case playCount
   case lastPlayed
