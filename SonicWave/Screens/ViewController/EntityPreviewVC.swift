@@ -427,6 +427,7 @@ class EntityPreviewActionBuilder {
     isPodcastQueue = false
     isShowAlbum = false
     isShowArtist = false
+    isAlbumShuffle = isShuffle
     isAddToPlaylist = appDelegate.storage.settings.user.isOnlineMode && !entityContainer.playables
       .isEmpty
     isDeleteOnServer = false
@@ -465,11 +466,13 @@ class EntityPreviewActionBuilder {
     }
   }
 
-  /// G21 — "album radio" entry point: activates the account-level album
+  /// G21 — "album radio" entry point: toggles the account-level album
   /// shuffle mode, then starts a shuffled context play (the kit keeps
   /// whole albums back-to-back and lazily appends the next album as the
   /// queue drains; single-album contexts fall back to song shuffle).
-  /// The checkmark mirrors the persisted mode or a live session.
+  /// The checkmark mirrors the persisted mode or a live session, and the
+  /// action is a real toggle — off disables album shuffle so the play
+  /// below takes the regular song-shuffle path.
   private func createPlayAlbumShuffledAction() -> UIAction {
     let isActive = appDelegate.player.isAlbumShuffleSessionActive ||
       (
@@ -489,7 +492,7 @@ class EntityPreviewActionBuilder {
       if let account = self.entityContainer.account {
         self.appDelegate.storage.settings.accounts
           .updateSetting(account.info) { accountSettings in
-            accountSettings.isAlbumShuffleActive = true
+            accountSettings.isAlbumShuffleActive = !isActive
           }
       }
       if let context = self.playContextCb?() {
