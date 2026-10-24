@@ -165,6 +165,7 @@ enum RequestFailureKind: Sendable {
     .serverCertificateNotYetValid,
     .clientCertificateRejected,
     .clientCertificateRequired,
+    .secureConnectionFailed,
   ]
 
   static func classify(error: Error) -> RequestFailureKind {
