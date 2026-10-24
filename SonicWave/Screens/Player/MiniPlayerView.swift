@@ -655,6 +655,7 @@ class MiniPlayerView: UIView {
     for direction in [UISwipeGestureRecognizer.Direction.left, .right] {
       let swipeGesture = UISwipeGestureRecognizer(target: self, action: #selector(miniPlayerSwiped(_:)))
       swipeGesture.direction = direction
+      swipeGesture.delegate = self
       addGestureRecognizer(swipeGesture)
     }
 
@@ -1014,6 +1015,19 @@ extension MiniPlayerView: MusicPlayable {
   }
 
   func didPlaybackRateChange() {}
+}
+
+// MARK: UIGestureRecognizerDelegate
+
+extension MiniPlayerView: UIGestureRecognizerDelegate {
+  /// track-skip swipes must not hijack seeks that start on `timeSlider`
+  /// — same control-surface exclusion the lyrics tap uses over its rows
+  func gestureRecognizer(
+    _ gestureRecognizer: UIGestureRecognizer,
+    shouldReceive touch: UITouch
+  ) -> Bool {
+    !(touch.view is UISlider)
+  }
 }
 
 // MARK: UIContextMenuInteractionDelegate

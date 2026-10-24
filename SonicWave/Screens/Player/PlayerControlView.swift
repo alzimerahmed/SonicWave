@@ -56,7 +56,7 @@ class InsetLabel: UILabel {
 
 // MARK: - PlayerControlView
 
-class PlayerControlView: UIView {
+class PlayerControlView: UIView, UIGestureRecognizerDelegate {
   static let frameHeight: CGFloat = 175
   static private let margin = UIEdgeInsets(
     top: 0,
@@ -151,6 +151,7 @@ class PlayerControlView: UIView {
     registerForTraitChanges(
       [UITraitUserInterfaceStyle.self, UITraitHorizontalSizeClass.self],
       handler: { (self: Self, previousTraitCollection: UITraitCollection) in
+        self.applySonicStyling()
         self.playerHandler?.refreshTimeInfo(
           timeSlider: self.timeSlider,
           elapsedTimeLabel: self.elapsedTimeLabel,
@@ -165,7 +166,9 @@ class PlayerControlView: UIView {
 
   /// §3.1 tokens + the codec chip: `sonicTime` (tabular) for the time
   /// labels, `sonicAudioInfo` on a secondary-fill chip with the
-  /// `verySmall` radius. Re-applied on trait change in `refreshPlayer`.
+  /// `verySmall` radius. Re-applied on trait change (the
+  /// `registerForTraitChanges` handler above) so the Dynamic-Type-scaled
+  /// fonts re-resolve.
   private func applySonicStyling() {
     let traits = traitCollection
     elapsedTimeLabel.font = .sonicTime(compatibleWith: traits)
@@ -189,13 +192,25 @@ class PlayerControlView: UIView {
   private func addPaneSwipeGestures() {
     let swipeUp = UISwipeGestureRecognizer(target: self, action: #selector(handlePaneSwipe(_:)))
     swipeUp.direction = .up
+    swipeUp.delegate = self
     let swipeLeft = UISwipeGestureRecognizer(target: self, action: #selector(handlePaneSwipe(_:)))
     swipeLeft.direction = .left
+    swipeLeft.delegate = self
     let swipeRight = UISwipeGestureRecognizer(target: self, action: #selector(handlePaneSwipe(_:)))
     swipeRight.direction = .right
+    swipeRight.delegate = self
     addGestureRecognizer(swipeUp)
     addGestureRecognizer(swipeLeft)
     addGestureRecognizer(swipeRight)
+  }
+
+  /// pane swipes must not hijack scrubs that start on `timeSlider` —
+  /// same control-surface exclusion the lyrics tap uses over its rows
+  func gestureRecognizer(
+    _ gestureRecognizer: UIGestureRecognizer,
+    shouldReceive touch: UITouch
+  ) -> Bool {
+    !(touch.view is UISlider)
   }
 
   @objc
@@ -231,7 +246,12 @@ class PlayerControlView: UIView {
         displayPlaylistButton.configuration = config
       }
     } else {
-      timeSlider.tintColor = .label
+      // nil inherits the window tint (theme accent) — `.label` would
+      // kill it and bypass the palette's contrast rule
+      timeSlider.tintColor = nil
+      // a vivid accent applied by an earlier palette must come back
+      // off — rebuild the default selected/unselected config
+      playerHandler?.refreshDisplayPlaylistButton(displayPlaylistButton: displayPlaylistButton)
     }
   }
 
