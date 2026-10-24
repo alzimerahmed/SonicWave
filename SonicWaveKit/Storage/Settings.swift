@@ -339,6 +339,9 @@ public struct UserSettings: Sendable, Codable {
 // MARK: - AccountSetting
 
 public struct AccountSetting: Sendable, Codable {
+  /// default cap for the evictable `.cache` download tier (2 GB per account)
+  public static let defaultCacheSizeLimitMB = 2_048
+
   private var _artworkDisplayPreference: ArtworkDisplayPreference = .defaultValue
   public var artworkDisplayPreference: ArtworkDisplayPreference {
     get { _artworkDisplayPreference }
@@ -383,6 +386,22 @@ public struct AccountSetting: Sendable, Codable {
   public var isAutoDownloadFavoritesActive: Bool {
     get { _isAutoDownloadFavoritesActive ?? false }
     set { _isAutoDownloadFavoritesActive = newValue }
+  }
+
+  /// two-tier storage (G6): maximum size of the evictable `.cache` download
+  /// tier in megabytes — user-pinned `.pinned` downloads never count against
+  /// it and are never evicted by it. `0` disables the limit (unbounded cache).
+  /// Backed by an Optional so that decoding older persisted `AccountSetting`s
+  /// (which lack this key) does not fail and silently reset all account settings.
+  private var _cacheSizeLimitMB: Int? = nil
+  public var cacheSizeLimitMB: Int {
+    get { _cacheSizeLimitMB ?? AccountSetting.defaultCacheSizeLimitMB }
+    set { _cacheSizeLimitMB = newValue }
+  }
+
+  /// the configured `.cache` tier cap in bytes (0 = unlimited)
+  public var cacheSizeLimitBytes: Int64 {
+    Int64(max(0, cacheSizeLimitMB)) * 1_048_576
   }
 
   private var _isScrobbleStreamedItems: Bool = false

@@ -36,27 +36,54 @@ typealias GetDownloadManagerDelegateCB = @MainActor () -> DownloadManagerDelegat
 // MARK: - DownloadRequestManager
 
 final class DownloadRequestManager: Sendable {
-  private let accountObjectId: NSManagedObjectID
+  let accountObjectId: NSManagedObjectID
+  let accountInfo: AccountInfo
   private let storage: AsyncCoreDataAccessWrapper
   private let getDownloadDelegateCB: GetDownloadManagerDelegateCB
 
   init(
     accountObjectId: NSManagedObjectID,
+    accountInfo: AccountInfo,
     storage: AsyncCoreDataAccessWrapper,
     getDownloadDelegateCB: @escaping GetDownloadManagerDelegateCB
   ) {
     self.accountObjectId = accountObjectId
+    self.accountInfo = accountInfo
     self.storage = storage
     self.getDownloadDelegateCB = getDownloadDelegateCB
   }
 
-  func add(downloadInfo: DownloadElementInfo) async -> DownloadRequest? {
+  /// Marks the requested `downloadTier` on the playable at request time.
+  /// Promotion-only semantics (G6): a `.pinned` request upgrades a `.cache`d
+  /// item; a `.cache` request never demotes a user-pinned download.
+  /// Returns true when the tier actually changed.
+  nonisolated private func markRequestedDownloadTier(
+    on object: Downloadable,
+    tier: PlayableDownloadTier
+  ) -> Bool {
+    guard let playable = object as? AbstractPlayable,
+          playable.downloadTier != tier
+    else { return false }
+    // never silently demote a pinned download to evictable cache
+    guard tier == .pinned || playable.downloadTier != .pinned else { return false }
+    playable.downloadTier = tier
+    return true
+  }
+
+  func add(
+    downloadInfo: DownloadElementInfo,
+    tier: PlayableDownloadTier = .pinned
+  ) async -> DownloadRequest? {
     let request = try? await storage.performAndGet { asyncCompanion -> DownloadRequest? in
       let asyncObject = Download.createDownloadableObject(
         inContext: asyncCompanion.context,
         info: downloadInfo
       )
-      let download = self.addLowPrio(object: asyncObject, library: asyncCompanion.library)
+      let download = self.addLowPrio(
+        object: asyncObject,
+        tier: tier,
+        library: asyncCompanion.library
+      )
       guard let download else { return nil }
       return DownloadRequest(
         objectID: download.managedObject.objectID,
@@ -68,7 +95,10 @@ final class DownloadRequestManager: Sendable {
     return request
   }
 
-  func add(downloadInfos: [DownloadElementInfo]) async -> [DownloadRequest] {
+  func add(
+    downloadInfos: [DownloadElementInfo],
+    tier: PlayableDownloadTier = .pinned
+  ) async -> [DownloadRequest] {
     guard !downloadInfos.isEmpty else { return [] }
     return try! await storage.performAndGet { asyncCompanion in
       var asyncRequests = [DownloadRequest]()
@@ -80,7 +110,11 @@ final class DownloadRequestManager: Sendable {
         )
         objects.append(($0, downloadable))
       }
-      let asyncDownloads = self.addLowPrio(objects: objects, library: asyncCompanion.library)
+      let asyncDownloads = self.addLowPrio(
+        objects: objects,
+        tier: tier,
+        library: asyncCompanion.library
+      )
       asyncDownloads.forEach {
         asyncRequests.append(DownloadRequest(
           objectID: $0.2.managedObject.objectID,
@@ -93,6 +127,7 @@ final class DownloadRequestManager: Sendable {
 
   nonisolated private func addLowPrio(
     objects: [(DownloadElementInfo, Downloadable)],
+    tier: PlayableDownloadTier,
     library: LibraryStorage
   )
     -> [(DownloadElementInfo, Downloadable, Download)] {
@@ -103,6 +138,9 @@ final class DownloadRequestManager: Sendable {
 
     var downloadMapping = [(DownloadElementInfo, Downloadable, Download)]()
     for (info, object) in objects {
+      if markRequestedDownloadTier(on: object, tier: tier) {
+        hasCoreDataChanges = true
+      }
       if let existingDownload = existingDownloadsDict[object.uniqueID] {
         if existingDownload.errorDate != nil || !object.isCached {
           existingDownload.reset()
@@ -125,8 +163,15 @@ final class DownloadRequestManager: Sendable {
     return downloadMapping
   }
 
-  nonisolated private func addLowPrio(object: Downloadable, library: LibraryStorage) -> Download? {
+  nonisolated private func addLowPrio(
+    object: Downloadable,
+    tier: PlayableDownloadTier,
+    library: LibraryStorage
+  ) -> Download? {
     let account = library.getAccount(managedObjectId: accountObjectId)
+    // tier intent is persisted even when no new request is created —
+    // the surrounding performAndGet saves the context on return
+    _ = markRequestedDownloadTier(on: object, tier: tier)
     if let existingDownload = library.getDownload(account: account, id: object.uniqueID) {
       // reset and return existing downloads only for playables
       // existing artworks are ignored -> nil
@@ -144,6 +189,34 @@ final class DownloadRequestManager: Sendable {
     newDownload.element = object
     library.saveContext()
     return newDownload
+  }
+
+  /// Promotion path (G6): marks the tier on already-cached playables
+  /// WITHOUT creating a download request — used when an explicit user
+  /// download targets an item whose file is already on disk
+  /// (auto-cached `.cache` -> `.pinned`). Demotion is impossible:
+  /// `markRequestedDownloadTier` refuses `.pinned` -> `.cache`.
+  func markTier(downloadInfo: DownloadElementInfo, tier: PlayableDownloadTier) async {
+    try? await storage.perform { asyncCompanion in
+      let object = Download.createDownloadableObject(
+        inContext: asyncCompanion.context,
+        info: downloadInfo
+      )
+      _ = self.markRequestedDownloadTier(on: object, tier: tier)
+    }
+  }
+
+  func markTier(downloadInfos: [DownloadElementInfo], tier: PlayableDownloadTier) async {
+    guard !downloadInfos.isEmpty else { return }
+    try? await storage.perform { asyncCompanion in
+      for downloadInfo in downloadInfos {
+        let object = Download.createDownloadableObject(
+          inContext: asyncCompanion.context,
+          info: downloadInfo
+        )
+        _ = self.markRequestedDownloadTier(on: object, tier: tier)
+      }
+    }
   }
 
   func removeFinishedDownload(for uniqueID: String) async {

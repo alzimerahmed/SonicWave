@@ -107,6 +107,18 @@ actor DownloadManager: NSObject, DownloadManageable {
   private var isCacheSizeLimited: Bool
   @MainActor
   private var _urlSessionIdentifier: String?
+  /// two-tier storage (G6): LRU-trims the evictable `.cache` tier to the
+  /// account's configured cap — only used by cache-limited managers
+  /// (playables); `AmperfySettings` reads through to UserDefaults so the
+  /// provider always sees the current setting value
+  private lazy var cacheEvictionHandler = CacheEvictionHandler(
+    storage: storage,
+    accountObjectId: requestManager.accountObjectId,
+    accountInfo: requestManager.accountInfo,
+    cacheSizeLimitBytesProvider: { [settings] accountInfo in
+      settings.accounts.getSetting(accountInfo).read.cacheSizeLimitBytes
+    }
+  )
 
   init(
     name: String,
@@ -205,10 +217,19 @@ actor DownloadManager: NSObject, DownloadManageable {
   }
 
   @MainActor
-  func download(object: Downloadable) {
-    guard !isCheckForCachedNeeded || !object.isCached,
-          let downloadInfo = object.threadSafeInfo
-    else { return }
+  func download(object: Downloadable, asTier tier: PlayableDownloadTier) {
+    guard let downloadInfo = object.threadSafeInfo else { return }
+    if isCheckForCachedNeeded, object.isCached {
+      // promotion (G6): an explicit user download of an auto-cached item
+      // upgrades it .cache -> .pinned; the file is already on disk so no
+      // fetch is needed — only the tier intent is persisted
+      if tier == .pinned {
+        Task.detached {
+          await self.requestManager.markTier(downloadInfo: downloadInfo, tier: .pinned)
+        }
+      }
+      return
+    }
 
     Task.detached {
       let isStorageExceeded = await self.storageExceedsCacheLimit()
@@ -221,16 +242,27 @@ actor DownloadManager: NSObject, DownloadManageable {
         guard !validDls.isEmpty else { return }
       }
 
-      guard let request = await self.requestManager.add(downloadInfo: downloadInfo) else { return }
+      guard let request = await self.requestManager
+        .add(downloadInfo: downloadInfo, tier: tier)
+      else { return }
       guard await self.isAllowedToTriggerDownload else { return }
       await self.addDownloadTaskOperation(downloadRequest: request)
     }
   }
 
   @MainActor
-  func download(objects: [Downloadable]) {
+  func download(objects: [Downloadable], asTier tier: PlayableDownloadTier) {
     let downloadObjects = objects.filter { !isCheckForCachedNeeded || !$0.isCached }
       .compactMap { $0.threadSafeInfo }
+    if isCheckForCachedNeeded, tier == .pinned {
+      // promotion (G6): explicitly re-downloaded cached items become .pinned
+      let cachedInfos = objects.filter { $0.isCached }.compactMap { $0.threadSafeInfo }
+      if !cachedInfos.isEmpty {
+        Task.detached {
+          await self.requestManager.markTier(downloadInfos: cachedInfos, tier: .pinned)
+        }
+      }
+    }
     guard !downloadObjects.isEmpty else { return }
 
     Task.detached {
@@ -244,7 +276,7 @@ actor DownloadManager: NSObject, DownloadManageable {
       }
 
       guard !validDls.isEmpty else { return }
-      let requests = await self.requestManager.add(downloadInfos: validDls)
+      let requests = await self.requestManager.add(downloadInfos: validDls, tier: tier)
       guard await self.isAllowedToTriggerDownload else { return }
       for request in requests {
         await self.addDownloadTaskOperation(downloadRequest: request)
@@ -274,6 +306,11 @@ actor DownloadManager: NSObject, DownloadManageable {
 
   func _start() async {
     isRunning = true
+    if isCacheSizeLimited {
+      // two-tier (G6): launch sweep — the .cache tier may have grown past
+      // the cap while the app was closed (or the cap was lowered)
+      await trimCacheToLimit()
+    }
     await setupDownloadQueue()
   }
 
@@ -342,6 +379,18 @@ actor DownloadManager: NSObject, DownloadManageable {
 
   private func _clearFinishedDownloads() async {
     await requestManager.clearFinishedDownloads()
+  }
+
+  /// two-tier storage (G6): LRU-trims the evictable `.cache` tier to the
+  /// account's configured cap (`AccountSetting.cacheSizeLimitBytes`).
+  /// Called after each completed download, once on `start()` (launch sweep)
+  /// and by the storage settings UI when the cap changes.
+  /// `.pinned` downloads are never touched. No-op for managers without
+  /// cache limiting (e.g. artwork).
+  @discardableResult
+  nonisolated func trimCacheToLimit() async -> Int {
+    guard await isCacheSizeLimited else { return 0 }
+    return await cacheEvictionHandler.trimToLimit()
   }
 
   nonisolated func resetFailedDownloads() {
@@ -425,25 +474,35 @@ actor DownloadManager: NSObject, DownloadManageable {
     task: URLSessionTask?,
     error: DownloadError
   ) async {
+    // connectivity loss is not a failure — the request is deferred (no
+    // error/finish date) so the networkStatusChanged / offlineModeChanged
+    // sweep re-queues it on recovery instead of leaving a permanent
+    // download error behind (G16 auto-offline)
+    let isDeferred = error == .noConnectivity
     let isCanceled = try? await storage.performAndGet { asyncCompanion in
       let download = Download(
         managedObject: asyncCompanion.context
           .object(with: downloadRequest.objectID) as! DownloadMO
       )
-      if !download.isCanceled {
-        download.error = error
+      if isDeferred {
+        download.suspend()
+      } else {
+        if !download.isCanceled {
+          download.error = error
+        }
+        download.isDownloading = false
       }
-      download.isDownloading = false
       asyncCompanion.library.saveContext()
       return download.isCanceled
     }
-    if let isCanceled, !isCanceled {
+    if let isCanceled, !isCanceled, !isDeferred {
       await getDownloadDelegateCB().failedDownload(
         downloadInfo: downloadRequest.info,
         storage: storage
       )
     }
-    if let isCanceled, !isCanceled, error != .apiErrorResponse, error != .alreadyDownloaded {
+    if let isCanceled, !isCanceled, !isDeferred, error != .apiErrorResponse,
+       error != .alreadyDownloaded {
       os_log(
         "Fetching %s FAILED: %s",
         log: self.log,
@@ -530,8 +589,15 @@ actor DownloadManager: NSObject, DownloadManageable {
         userInfo: DownloadNotification(id: downloadElementUniqueId).asNotificationUserInfo
       )
     }
-    if isCacheSizeLimited, storageExceedsCacheLimit() {
-      await requestManager.cancelDownloads()
+    if isCacheSizeLimited {
+      // two-tier (G6): LRU-trim the evictable .cache tier after each
+      // completed download — cheap no-op while under the account cap;
+      // trimming first keeps the legacy global cache limit from
+      // cancelling pending downloads when only evictable items overflow
+      await trimCacheToLimit()
+      if storageExceedsCacheLimit() {
+        await requestManager.cancelDownloads()
+      }
     }
     tasks.removeValue(forKey: task)
     taskOperations[downloadRequest]?.complete()

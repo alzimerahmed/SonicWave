@@ -87,7 +87,8 @@ public class AutoDownloadLibrarySyncer {
       for album in newNewestAlbums {
         newestSongs.append(contentsOf: album.songs)
       }
-      playableDownloadManager.download(objects: newestSongs)
+      // auto-downloaded latest songs land in the evictable .cache tier (G6)
+      playableDownloadManager.download(objects: newestSongs, asTier: .cache)
     }
   }
 
@@ -105,7 +106,8 @@ public class AutoDownloadLibrarySyncer {
     if !oldNewestEpisodes.isEmpty, !newAddedNewestEpisodes.isEmpty,
        storage.settings.accounts.getSetting(account.info).read
        .isAutoDownloadLatestPodcastEpisodesActive {
-      playableDownloadManager.download(objects: Array(newAddedNewestEpisodes))
+      // auto-downloaded latest episodes land in the evictable .cache tier (G6)
+      playableDownloadManager.download(objects: Array(newAddedNewestEpisodes), asTier: .cache)
     }
     if !oldNewestEpisodes.isEmpty {
       return Array(newAddedNewestEpisodes)

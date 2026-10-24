@@ -46,6 +46,41 @@ public enum PlayableDownloadTier: Int16, Sendable {
   case pinned = 1
 }
 
+// MARK: - PlayableStorageUsage
+
+/// Two-tier storage (G6): per-tier on-disk usage of one account's playable
+/// files — produced by `LibraryStorage.getPlayableStorageUsage(for:)` and
+/// consumed by the storage settings UI.
+public struct PlayableStorageUsage: Sendable, Equatable {
+  /// bytes occupied by evictable `.cache`-tier files
+  public let cacheTierByteCount: Int64
+  /// bytes occupied by user-pinned `.pinned`-tier files (permanent)
+  public let pinnedTierByteCount: Int64
+  public let cacheTierItemCount: Int
+  public let pinnedTierItemCount: Int
+
+  public init(
+    cacheTierByteCount: Int64,
+    pinnedTierByteCount: Int64,
+    cacheTierItemCount: Int,
+    pinnedTierItemCount: Int
+  ) {
+    self.cacheTierByteCount = cacheTierByteCount
+    self.pinnedTierByteCount = pinnedTierByteCount
+    self.cacheTierItemCount = cacheTierItemCount
+    self.pinnedTierItemCount = pinnedTierItemCount
+  }
+
+  public var totalByteCount: Int64 {
+    cacheTierByteCount + pinnedTierByteCount
+  }
+
+  /// the share an LRU trim (`DownloadManageable.trimCacheToLimit`) may reclaim
+  public var evictionEligibleByteCount: Int64 {
+    cacheTierByteCount
+  }
+}
+
 // MARK: - AbstractPlayableInfo
 
 public struct AbstractPlayableInfo: Sendable {

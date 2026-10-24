@@ -53,7 +53,9 @@ public class PlayerDownloadPreparationHandler {
       for i in 0 ... userQueueRangeEnd - 1 {
         let playable = queueHandler.getUserQueueItem(at: i)!
         if !playable.isCached, !playable.isRadio, let accountInfo = playable.account?.info {
-          getPlayableDownloaderCB(accountInfo).download(object: playable)
+          // playback pre-caching is evictable (G6) — only explicit user
+          // downloads are .pinned
+          getPlayableDownloaderCB(accountInfo).download(object: playable, asTier: .cache)
         }
       }
     }
@@ -65,7 +67,7 @@ public class PlayerDownloadPreparationHandler {
       for i in 0 ... nextQueueRangeEnd - 1 {
         let playable = queueHandler.getNextQueueItem(at: i)!
         if !playable.isCached, !playable.isRadio, let accountInfo = playable.account?.info {
-          getPlayableDownloaderCB(accountInfo).download(object: playable)
+          getPlayableDownloaderCB(accountInfo).download(object: playable, asTier: .cache)
         }
       }
     }

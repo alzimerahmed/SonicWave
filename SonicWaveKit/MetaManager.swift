@@ -150,6 +150,7 @@ public class MetaManager {
     }
     let requestManager = DownloadRequestManager(
       accountObjectId: account.managedObject.objectID,
+      accountInfo: account.info,
       storage: storage.async,
       getDownloadDelegateCB: getDownloadDelegateCB
     )
@@ -196,6 +197,7 @@ public class MetaManager {
     }
     let requestManager = DownloadRequestManager(
       accountObjectId: account.managedObject.objectID,
+      accountInfo: account.info,
       storage: storage.async,
       getDownloadDelegateCB: getDownloadDelegateCB
     )

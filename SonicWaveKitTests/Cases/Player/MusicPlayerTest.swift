@@ -109,19 +109,29 @@ class MOCK_SongDownloader: DownloadManageable {
   }
 
   var downloadables = [Downloadable]()
+  var requestedTiers = [PlayableDownloadTier]()
   func isNoDownloadRequested() -> Bool {
     downloadables.isEmpty
   }
 
   func getBackgroundFetchCompletionHandler() async -> SonicWaveKit.CompleteHandlerBlock? { nil }
   func setBackgroundFetchCompletionHandler(_ newValue: SonicWaveKit.CompleteHandlerBlock?) {}
-  func download(object: Downloadable) { downloadables.append(object) }
-  func download(objects: [Downloadable]) { downloadables.append(contentsOf: objects) }
+  func download(object: Downloadable, asTier tier: PlayableDownloadTier) {
+    downloadables.append(object)
+    requestedTiers.append(tier)
+  }
+
+  func download(objects: [Downloadable], asTier tier: PlayableDownloadTier) {
+    downloadables.append(contentsOf: objects)
+    requestedTiers.append(contentsOf: objects.map { _ in tier })
+  }
+
   func removeFinishedDownload(for object: Downloadable) {}
   func removeFinishedDownload(for objects: [Downloadable]) {}
   func clearFinishedDownloads() {}
   func resetFailedDownloads() {}
   func cancelDownloads() {}
+  func trimCacheToLimit() async -> Int { 0 }
   func start() {}
   func stop() {}
 }
@@ -691,6 +701,8 @@ class MusicPlayerTest: XCTestCase {
       (songDownloader.downloadables.first! as! AbstractPlayable).asSong!,
       songToDownload
     )
+    // played-items auto-cache is evictable — never .pinned (G6)
+    XCTAssertEqual(songDownloader.requestedTiers, [.cache])
   }
 
   func testPlaySong_Cached() {

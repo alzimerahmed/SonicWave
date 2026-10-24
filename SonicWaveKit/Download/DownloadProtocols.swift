@@ -40,10 +40,14 @@ public protocol DownloadManageable {
   var urlSessionIdentifier: String? { get }
   func getBackgroundFetchCompletionHandler() async -> CompleteHandlerBlock?
   func setBackgroundFetchCompletionHandler(_ newValue: CompleteHandlerBlock?)
+  /// Downloads a single item and marks it with the given `downloadTier`
+  /// (see `PlayableDownloadTier`). The tier expresses download intent:
+  /// `.cache` = evictable playback cache, `.pinned` = permanent download.
+  /// Use `download(object:)` for explicit user-initiated downloads (.pinned).
   @MainActor
-  func download(object: Downloadable)
+  func download(object: Downloadable, asTier tier: PlayableDownloadTier)
   @MainActor
-  func download(objects: [Downloadable])
+  func download(objects: [Downloadable], asTier tier: PlayableDownloadTier)
   @MainActor
   func removeFinishedDownload(for object: Downloadable)
   @MainActor
@@ -51,8 +55,30 @@ public protocol DownloadManageable {
   func clearFinishedDownloads()
   func resetFailedDownloads()
   func cancelDownloads()
+  /// LRU-trims the evictable `.cache` tier to the account's configured
+  /// cache size limit (`AccountSetting.cacheSizeLimitBytes`). No-op for
+  /// download managers without cache limiting (e.g. artwork).
+  /// Returns the number of evicted items.
+  @discardableResult
+  func trimCacheToLimit() async -> Int
   func start()
   func stop()
+}
+
+public extension DownloadManageable {
+  /// Explicit user-initiated download — marks the item `.pinned`
+  /// (never evicted automatically).
+  @MainActor
+  func download(object: Downloadable) {
+    download(object: object, asTier: .pinned)
+  }
+
+  /// Explicit user-initiated downloads — marks the items `.pinned`
+  /// (never evicted automatically).
+  @MainActor
+  func download(objects: [Downloadable]) {
+    download(objects: objects, asTier: .pinned)
+  }
 }
 
 // MARK: - DownloadManagerDelegate

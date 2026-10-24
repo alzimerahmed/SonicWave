@@ -866,6 +866,25 @@ final public class CacheFileManager: Sendable {
     return Int64(intSize)
   }
 
+  nonisolated public func getFileSize(relFilePath: URL) -> Int64? {
+    guard let absFilePath = getAbsoluteAmperfyPath(relFilePath: relFilePath)
+    else { return nil }
+    return getFileSize(url: absFilePath)
+  }
+
+  /// file modification date — for cached playables this doubles as the
+  /// download date and feeds the LRU ordering in `CacheEvictionHandler`
+  nonisolated public func getFileModificationDate(url: URL) -> Date? {
+    let values = try? url.resourceValues(forKeys: [.contentModificationDateKey])
+    return values?.contentModificationDate
+  }
+
+  nonisolated public func getFileModificationDate(relFilePath: URL) -> Date? {
+    guard let absFilePath = getAbsoluteAmperfyPath(relFilePath: relFilePath)
+    else { return nil }
+    return getFileModificationDate(url: absFilePath)
+  }
+
   /// maximum file size that is allowed to load directly into memory to avoid memory overflow
   public static let maxFileSizeToHandleDataInMemory = 50_000_000
 

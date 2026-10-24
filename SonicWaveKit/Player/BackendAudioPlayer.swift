@@ -265,7 +265,8 @@ class BackendAudioPlayer: NSObject {
               try await insertStreamPlayable(playable: nextPreloadedPlayable, queueType: .queue)
               if self.isAutoCachePlayedItems, nextPreloadedPlayable.isDownloadAvailable,
                  let accountInfo = nextPreloadedPlayable.account?.info {
-                self.getPlayableDownloaderCB(accountInfo).download(object: nextPreloadedPlayable)
+                self.getPlayableDownloaderCB(accountInfo)
+                  .download(object: nextPreloadedPlayable, asTier: .cache)
               }
             } catch {
               self.nextPreloadedPlayable = nil
@@ -466,7 +467,7 @@ class BackendAudioPlayer: NSObject {
           isPlaying = shouldPlaybackStart
           if self.isAutoCachePlayedItems, !playable.isRadio,
              let accountInfo = playable.account?.info {
-            self.getPlayableDownloaderCB(accountInfo).download(object: playable)
+            self.getPlayableDownloaderCB(accountInfo).download(object: playable, asTier: .cache)
           }
           self.responder?.notifyItemPreparationFinished()
         } catch {

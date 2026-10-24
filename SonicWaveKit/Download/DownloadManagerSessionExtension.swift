@@ -125,10 +125,25 @@ extension DownloadManager: URLSessionDelegate, URLSessionDownloadDelegate {
     task: URLSessionTask,
     didCompleteWithError error: Error?
   ) {
-    guard error != nil else { return }
+    guard let error else { return }
     Task {
       guard let taskInfo = await tasks[task] else { return }
-      await self.finishDownload(downloadRequest: taskInfo.request, task: task, error: .fetchFailed)
+      // a dropped connection defers the request (no error date) instead of
+      // failing it — the networkStatusChanged / offlineModeChanged sweep
+      // re-queues it on recovery (G16)
+      let nsError = error as NSError
+      let downloadError: DownloadError =
+        nsError.domain == NSURLErrorDomain &&
+          (nsError.code == NSURLErrorNotConnectedToInternet ||
+           nsError.code == NSURLErrorNetworkConnectionLost ||
+           nsError.code == NSURLErrorDataNotAllowed)
+        ? .noConnectivity
+        : .fetchFailed
+      await self.finishDownload(
+        downloadRequest: taskInfo.request,
+        task: task,
+        error: downloadError
+      )
     }
   }
 

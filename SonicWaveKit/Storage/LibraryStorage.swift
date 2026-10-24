@@ -690,6 +690,9 @@ public class LibraryStorage: PlayableFileCachable {
   private func deleteCacheFinalStep(playable: AbstractPlayable) {
     playable.contentTypeTranscoded = nil
     playable.relFilePath = nil
+    // the tier expresses intent for a present file only — with the file gone
+    // the pin resets so a later auto-cache can't inherit a stale `.pinned`
+    playable.downloadTier = .cache
     playable.deleteCache()
   }
 
@@ -1742,6 +1745,28 @@ public class LibraryStorage: PlayableFileCachable {
       .compactMap { PodcastEpisode(managedObject: $0) as AbstractPlayable } ?? []
 
     return playables
+  }
+
+  /// two-tier storage (G6): on-disk byte usage of the account's playable
+  /// files split by download tier — consumed by the storage settings UI.
+  /// `.cache` bytes are the eviction-eligible share; `.pinned` bytes are
+  /// permanent user downloads.
+  public func getPlayableStorageUsage(for account: Account) -> PlayableStorageUsage {
+    func byteCount(of playables: [AbstractPlayable]) -> Int64 {
+      playables.reduce(Int64(0)) { size, playable in
+        guard let relFilePath = playable.relFilePath
+        else { return size }
+        return size + (fileManager.getFileSize(relFilePath: relFilePath) ?? 0)
+      }
+    }
+    let cacheTierItems = getCachedPlayables(for: account, downloadTier: .cache)
+    let pinnedTierItems = getCachedPlayables(for: account, downloadTier: .pinned)
+    return PlayableStorageUsage(
+      cacheTierByteCount: byteCount(of: cacheTierItems),
+      pinnedTierByteCount: byteCount(of: pinnedTierItems),
+      cacheTierItemCount: cacheTierItems.count,
+      pinnedTierItemCount: pinnedTierItems.count
+    )
   }
 
   // MARK: Radios

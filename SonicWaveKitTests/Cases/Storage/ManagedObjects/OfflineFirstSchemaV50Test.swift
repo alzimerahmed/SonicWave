@@ -157,4 +157,34 @@ class OfflineFirstSchemaV50Test: XCTestCase {
     XCTAssertFalse(decoded.isAutoDownloadFavoritesActive)
     XCTAssertTrue(decoded.isAutoDownloadLatestSongsActive)
   }
+
+  // MARK: Settings cache cap (G6)
+
+  func testCacheSizeLimitSetting() throws {
+    var setting = AccountSetting()
+    XCTAssertEqual(setting.cacheSizeLimitMB, AccountSetting.defaultCacheSizeLimitMB)
+    XCTAssertEqual(
+      setting.cacheSizeLimitBytes,
+      Int64(AccountSetting.defaultCacheSizeLimitMB) * 1_048_576
+    )
+
+    setting.cacheSizeLimitMB = 512
+    XCTAssertEqual(setting.cacheSizeLimitBytes, Int64(512) * 1_048_576)
+    // 0 disables the limit (unbounded .cache tier)
+    setting.cacheSizeLimitMB = 0
+    XCTAssertEqual(setting.cacheSizeLimitBytes, 0)
+    // negative values clamp to unlimited
+    setting.cacheSizeLimitMB = -100
+    XCTAssertEqual(setting.cacheSizeLimitBytes, 0)
+
+    // older persisted settings lack the key (nil optionals are omitted by
+    // JSONEncoder) -> decoding must still succeed and default to the
+    // built-in cap
+    var legacy = AccountSetting()
+    legacy.isAutoDownloadLatestSongsActive = true
+    let legacyData = try JSONEncoder().encode(legacy)
+    let decoded = try JSONDecoder().decode(AccountSetting.self, from: legacyData)
+    XCTAssertEqual(decoded.cacheSizeLimitMB, AccountSetting.defaultCacheSizeLimitMB)
+    XCTAssertTrue(decoded.isAutoDownloadLatestSongsActive)
+  }
 }
