@@ -424,6 +424,8 @@ public struct AccountSettings: Sendable, Codable {
 
   public mutating func logout(_ accountInfo: AccountInfo) {
     _accounts[accountInfo] = nil
+    // drop the Keychain-held secrets (password + httpHeaders) as well
+    LoginCredentials.deletePersistedSecrets(accountIdent: accountInfo.ident)
     if _activeAccount == accountInfo {
       _activeAccount = _accounts.first?.key
     }

@@ -251,6 +251,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     storage.applyMultiAccountSettingsUpdateIfNeeded()
+    storage.applyCredentialsKeychainMigrationIfNeeded()
     libraryUpdater.performAccountCleanUpIfNeccessaryInBackground()
 
     configureDefaultNavigationBarStyle()

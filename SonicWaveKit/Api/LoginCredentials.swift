@@ -20,6 +20,58 @@
 //
 
 import Foundation
+import os.log
+
+// MARK: - LoginCredentialSecrets
+
+/// Secret material of `LoginCredentials` that must never land inside the
+/// UserDefaults-backed settings JSON: the account password and the custom
+/// HTTP headers (they can carry e.g. Cloudflare Access service tokens).
+struct LoginCredentialSecrets: Sendable, Codable {
+  var password: String = ""
+  var httpHeaders: [String: String] = [:]
+}
+
+// MARK: - CredentialSecretsStoring
+
+/// Persistence boundary for `LoginCredentialSecrets`. Injectable in tests via
+/// `LoginCredentials.secretsStore`.
+protocol CredentialSecretsStoring: Sendable {
+  /// Returns true when the secrets were durably stored.
+  @discardableResult
+  func save(secrets: LoginCredentialSecrets, accountIdent: String) -> Bool
+  func read(accountIdent: String) -> LoginCredentialSecrets?
+  func delete(accountIdent: String)
+}
+
+// MARK: - KeychainCredentialSecretsStore
+
+/// Keychain-backed secrets store — one generic-password item per account,
+/// value = JSON-encoded `LoginCredentialSecrets`.
+struct KeychainCredentialSecretsStore: CredentialSecretsStoring {
+  static let service = "com.alzimerahmed.SonicWave.credentials"
+  private let keychain = KeychainHelper(service: Self.service)
+
+  private static let encoder = JSONEncoder()
+  private static let decoder = JSONDecoder()
+
+  @discardableResult
+  func save(secrets: LoginCredentialSecrets, accountIdent: String) -> Bool {
+    guard let data = try? Self.encoder.encode(secrets) else { return false }
+    return keychain.save(data: data, account: accountIdent) == errSecSuccess
+  }
+
+  func read(accountIdent: String) -> LoginCredentialSecrets? {
+    guard let data = keychain.read(account: accountIdent) else { return nil }
+    return try? Self.decoder.decode(LoginCredentialSecrets.self, from: data)
+  }
+
+  func delete(accountIdent: String) {
+    keychain.delete(account: accountIdent)
+  }
+}
+
+// MARK: - LoginCredentials
 
 public struct LoginCredentials: Sendable, Codable {
   private enum CodingKeys: String, CodingKey {
@@ -30,6 +82,33 @@ public struct LoginCredentials: Sendable, Codable {
     case activeBackendServerUrl
     case alternativeServerURLs
     case httpHeaders
+  }
+
+  private static let log = OSLog(
+    subsystem: "com.alzimerahmed.SonicWave",
+    category: "LoginCredentials"
+  )
+
+  /// Persistence for the credential secrets (`password` + `httpHeaders`).
+  /// `nonisolated(unsafe)` so tests can inject a stub store — production code
+  /// always uses the Keychain-backed default.
+  nonisolated(unsafe) static var secretsStore: CredentialSecretsStoring =
+    KeychainCredentialSecretsStore()
+
+  /// Stable Keychain account key — identical to the `AccountInfo` identity
+  /// derived from serverUrl + username, so `AccountSettings.logout` can drop
+  /// the secrets via the same key.
+  var accountIdent: String {
+    Account.createInfo(
+      serverUrl: serverUrl,
+      userName: username,
+      apiType: backendApi
+    ).ident
+  }
+
+  /// Drop persisted secrets for the given account identity (logout).
+  static func deletePersistedSecrets(accountIdent: String) {
+    secretsStore.delete(accountIdent: accountIdent)
   }
 
   public var serverUrl: String
@@ -92,7 +171,6 @@ public struct LoginCredentials: Sendable, Codable {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     self.serverUrl = try container.decode(String.self, forKey: .serverUrl)
     self.username = try container.decode(String.self, forKey: .username)
-    self.password = try container.decode(String.self, forKey: .password)
     self.backendApi = try container
       .decodeIfPresent(BackenApiType.self, forKey: .backendApi) ?? .notDetected
     self.activeBackendServerUrl = try container.decodeIfPresent(
@@ -103,10 +181,48 @@ public struct LoginCredentials: Sendable, Codable {
       [String].self,
       forKey: .alternativeServerURLs
     ) ?? []
-    self.httpHeaders = try container.decodeIfPresent(
-      [String: String].self,
-      forKey: .httpHeaders
-    ) ?? [:]
+
+    // Secrets: pre-Keychain payloads carry `password`/`httpHeaders` inline;
+    // migrated payloads omit them and store them in the Keychain instead.
+    // NOTE: computed from the decoded fields directly — `accountIdent` (a
+    // computed property on self) can't run until `passwordHash` is set below.
+    let decodedAccountIdent = Account.createInfo(
+      serverUrl: serverUrl,
+      userName: username,
+      apiType: backendApi
+    ).ident
+    if container.contains(.password) || container.contains(.httpHeaders) {
+      let inlineSecrets = LoginCredentialSecrets(
+        password: try container.decodeIfPresent(String.self, forKey: .password) ?? "",
+        httpHeaders: try container.decodeIfPresent([String: String].self, forKey: .httpHeaders)
+          ?? [:]
+      )
+      self.password = inlineSecrets.password
+      self.httpHeaders = inlineSecrets.httpHeaders
+      // Lazily re-home the secrets — the next encode then drops them from JSON.
+      if !Self.secretsStore.save(secrets: inlineSecrets, accountIdent: decodedAccountIdent) {
+        os_log(
+          "Could not move credential secrets of account %s to the Keychain yet — will retry",
+          log: Self.log,
+          type: .error,
+          decodedAccountIdent
+        )
+      }
+    } else if let storedSecrets = Self.secretsStore.read(accountIdent: decodedAccountIdent) {
+      self.password = storedSecrets.password
+      self.httpHeaders = storedSecrets.httpHeaders
+    } else {
+      // The account stays logged in structurally but cannot authenticate; the
+      // user has to re-enter the password. Never trap here.
+      self.password = ""
+      self.httpHeaders = [:]
+      os_log(
+        "No credential secrets found in the Keychain for account %s",
+        log: Self.log,
+        type: .error,
+        decodedAccountIdent
+      )
+    }
     self.passwordHash = StringHasher.sha256(dataString: password)
   }
 
@@ -114,11 +230,24 @@ public struct LoginCredentials: Sendable, Codable {
     var container = encoder.container(keyedBy: CodingKeys.self)
     try container.encode(serverUrl, forKey: .serverUrl)
     try container.encode(username, forKey: .username)
-    try container.encode(password, forKey: .password)
     try container.encode(backendApi, forKey: .backendApi)
     try container.encode(activeBackendServerUrl, forKey: .activeBackendServerUrl)
     try container.encode(alternativeServerURLs, forKey: .alternativeServerURLs)
-    try container.encode(httpHeaders, forKey: .httpHeaders)
+    let secrets = LoginCredentialSecrets(password: password, httpHeaders: httpHeaders)
+    if Self.secretsStore.save(secrets: secrets, accountIdent: accountIdent) {
+      // Secrets live in the Keychain — keep them out of the UserDefaults JSON.
+    } else {
+      // Fallback: keep the legacy plaintext keys so the credentials stay
+      // readable; the next encode / the launch migrator retries the move.
+      os_log(
+        "Could not persist credential secrets of account %s in the Keychain — keeping plaintext fallback",
+        log: Self.log,
+        type: .error,
+        accountIdent
+      )
+      try container.encode(password, forKey: .password)
+      try container.encode(httpHeaders, forKey: .httpHeaders)
+    }
   }
 
   public mutating func changePasswordAndHash(password newPassword: String) {
