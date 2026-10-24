@@ -55,6 +55,18 @@ class CommonLibrarySyncer {
     self.eventLogger = eventLogger
   }
 
+  /// Stamps `Account.lastLibrarySyncDate` — the marker consumed by the
+  /// delta sync path (`getAlbumList2 type=newest` window) to fetch only
+  /// albums added since the last completed library sync. Must only be
+  /// called after a sync finished successfully; a failed sync leaves the
+  /// old date so the next run retries the same window.
+  func markLibrarySyncFinished() {
+    storage.main.perform { companion in
+      let accountMain = companion.library.getAccount(managedObjectId: self.accountObjectId)
+      accountMain.lastLibrarySyncDate = Date()
+    }
+  }
+
   func createCachedItemRepresentationsInCoreData(statusNotifyier: SyncCallbacks?) async throws {
     let accountInfo = account.info
     try await storage.async.perform { asyncCompanion in

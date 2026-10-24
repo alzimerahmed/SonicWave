@@ -28,6 +28,10 @@ class SsAlbumParserDelegate: SsXmlLibWithArtworkParser {
   var guessedArtist: Artist?
   var guessedGenre: Genre?
   var parsedAlbums = [Album]()
+  /// transient `created` timestamps per album id — not persisted (no
+  /// AlbumMO field); used by the delta sync to bound the `type=newest`
+  /// fetch window against `Account.lastLibrarySyncDate`
+  var albumCreatedDates = [String: Date]()
   private var albumBuffer: Album?
 
   override func parser(
@@ -78,6 +82,9 @@ class SsAlbumParserDelegate: SsXmlLibWithArtworkParser {
       }
       if let attributeDuration = attributeDict["duration"], let duration = Int(attributeDuration) {
         albumBuffer?.remoteDuration = duration
+      }
+      if let createdDate = SubsonicDateParser.parse(attributeDict["created"]) {
+        albumCreatedDates[albumId] = createdDate
       }
 
       if let artistId = attributeDict["artistId"] {

@@ -180,6 +180,8 @@ class AmpacheLibrarySyncer: CommonLibrarySyncer, LibrarySyncer {
       )
     }
 
+    markLibrarySyncFinished()
+
     let isSupported = try await ampacheXmlServerApi.requestServerPodcastSupport()
     guard isSupported else { return }
     statusNotifyier?.notifySyncStarted(ofType: .podcast, totalCount: auth.podcastCount)
@@ -1250,6 +1252,21 @@ class AmpacheLibrarySyncer: CommonLibrarySyncer, LibrarySyncer {
         $0.remoteStatus = .deleted
       }
     }
+  }
+
+  /// G9 degrade: Ampache's `localplay` API controls transient playback
+  /// sessions only — there is no persisted server-side play queue with a
+  /// `changed` marker, so upload degrades to a no-op.
+  @MainActor
+  func syncUpload(playQueue: PlayQueueSnapshot) async throws {
+    // no server play queue on Ampache — intentionally empty
+  }
+
+  /// G9 degrade: no persisted server-side play queue on Ampache — always
+  /// `nil`, which keeps `PlayQueueSyncer` in push-or-noop mode.
+  @MainActor
+  func syncDownRemotePlayQueue() async throws -> RemotePlayQueue? {
+    nil
   }
 
   /// Ampache has no equivalend to Subsonic's NowPlaying

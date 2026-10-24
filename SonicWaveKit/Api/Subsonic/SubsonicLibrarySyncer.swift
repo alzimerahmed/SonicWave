@@ -27,6 +27,9 @@ class SubsonicLibrarySyncer: CommonLibrarySyncer, LibrarySyncer {
   private let subsonicServerApi: SubsonicServerApi
 
   private static let maxItemCountToPollAtOnce: Int = 500
+  /// cap for the delta resync window — beyond it a full sync is cheaper
+  /// and guaranteed complete
+  private static let maxDeltaAlbumFetchCount: Int = 2_000
 
   init(
     subsonicServerApi: SubsonicServerApi,
@@ -109,88 +112,97 @@ class SubsonicLibrarySyncer: CommonLibrarySyncer, LibrarySyncer {
       )
     }
 
-    var pollCountArtist = 0
-    storage.main.perform { companion in
-      let accountAsync = companion.library.getAccount(managedObjectId: self.accountObjectId)
-      let artists = companion.library.getArtists(for: accountAsync).filter { !$0.id.isEmpty }
-      let albumCount = artists.reduce(0) { $0 + $1.remoteAlbumCount }
-      pollCountArtist = max(
-        1,
-        Int(ceil(Double(albumCount) / Double(Self.maxItemCountToPollAtOnce)))
-      )
+    // Album table: on resync (`lastLibrarySyncDate` set) fetch only the
+    // delta window via `getAlbumList2 type=newest` merged by server id —
+    // falls back to a full paged sync when the window cannot be bounded
+    var runFullAlbumSync = true
+    if let lastSyncDate = account.lastLibrarySyncDate {
+      statusNotifyier?.notifySyncStarted(ofType: .album, totalCount: 0)
+      runFullAlbumSync = !(try await self.syncAlbumsDelta(
+        lastSyncDate: lastSyncDate,
+        statusNotifyier: statusNotifyier
+      ))
     }
-    statusNotifyier?.notifySyncStarted(ofType: .album, totalCount: pollCountArtist)
-    try await withThrowingTaskGroup(of: Void.self) { taskGroup in
-      for index in Array(0 ... pollCountArtist) {
-        taskGroup.addTask { @MainActor @Sendable in
-          let albumsResponse = try await self.subsonicServerApi.requestAlbums(
-            offset: index * Self.maxItemCountToPollAtOnce,
-            count: Self.maxItemCountToPollAtOnce
-          )
-          try await self.storage.async.perform { asyncCompanion in
-            let accountAsync = Account(
-              managedObject: asyncCompanion.context
-                .object(with: self.accountObjectId) as! AccountMO
-            )
-            let idParserDelegate = SsIDsParserDelegate(performanceMonitor: self.performanceMonitor)
-            try self.parse(
-              response: albumsResponse,
-              delegate: idParserDelegate,
-              isThrowingErrorsAllowed: false
-            )
-            let prefetch = asyncCompanion.library
-              .getElements(account: accountAsync, prefetchIDs: idParserDelegate.prefetchIDs)
-
-            let parserDelegate = SsAlbumParserDelegate(
-              performanceMonitor: self.performanceMonitor, prefetch: prefetch,
-              account: accountAsync,
-              library: asyncCompanion.library,
-              parseNotifier: statusNotifyier
-            )
-            parserDelegate.prefetch = prefetch
-            try self.parse(
-              response: albumsResponse,
-              delegate: parserDelegate,
-              isThrowingErrorsAllowed: false
-            )
-          }
-          statusNotifyier?.notifyParsedObject(ofType: .album)
-        }
+    if runFullAlbumSync {
+      var pollCountArtist = 0
+      storage.main.perform { companion in
+        let accountAsync = companion.library.getAccount(managedObjectId: self.accountObjectId)
+        let artists = companion.library.getArtists(for: accountAsync).filter { !$0.id.isEmpty }
+        let albumCount = artists.reduce(0) { $0 + $1.remoteAlbumCount }
+        pollCountArtist = max(
+          1,
+          Int(ceil(Double(albumCount) / Double(Self.maxItemCountToPollAtOnce)))
+        )
       }
-      try await taskGroup.waitForAll()
+      statusNotifyier?.notifySyncStarted(ofType: .album, totalCount: pollCountArtist)
+      try await withThrowingTaskGroup(of: Void.self) { taskGroup in
+        for index in Array(0 ... pollCountArtist) {
+          taskGroup.addTask { @MainActor @Sendable in
+            let albumsResponse = try await self.subsonicServerApi.requestAlbums(
+              offset: index * Self.maxItemCountToPollAtOnce,
+              count: Self.maxItemCountToPollAtOnce
+            )
+            try await self.storage.async.perform { asyncCompanion in
+              let accountAsync = Account(
+                managedObject: asyncCompanion.context
+                  .object(with: self.accountObjectId) as! AccountMO
+              )
+              let idParserDelegate = SsIDsParserDelegate(performanceMonitor: self.performanceMonitor)
+              try self.parse(
+                response: albumsResponse,
+                delegate: idParserDelegate,
+                isThrowingErrorsAllowed: false
+              )
+              let prefetch = asyncCompanion.library
+                .getElements(account: accountAsync, prefetchIDs: idParserDelegate.prefetchIDs)
+
+              let parserDelegate = SsAlbumParserDelegate(
+                performanceMonitor: self.performanceMonitor, prefetch: prefetch,
+                account: accountAsync,
+                library: asyncCompanion.library,
+                parseNotifier: statusNotifyier
+              )
+              parserDelegate.prefetch = prefetch
+              try self.parse(
+                response: albumsResponse,
+                delegate: parserDelegate,
+                isThrowingErrorsAllowed: false
+              )
+            }
+            statusNotifyier?.notifyParsedObject(ofType: .album)
+          }
+        }
+        try await taskGroup.waitForAll()
+      }
     }
 
+    // Dedupe by server id: page parses run on concurrent background
+    // contexts (`AsyncCoreDataAccessWrapper` allocates a fresh context per
+    // call) whose prefetches cannot see sibling inserts, so identical
+    // server ids can be committed twice. Resolving must reparent songs —
+    // deleting a duplicate album without `passOwnership` orphaned its
+    // songs, which then spawned stub albums on later syncs (the visible
+    // "duplicate albums after resync" defect).
     try await storage.async.perform { asyncCompanion in
       let accountAsync = asyncCompanion.library.getAccount(managedObjectId: self.accountObjectId)
-      // Delete duplicated artists due to concurrence
-      let allArtists = asyncCompanion.library.getArtists(for: accountAsync)
-      var uniqueArtists: [String: Artist] = [:]
-      for artist in allArtists {
-        if uniqueArtists[artist.id] != nil {
-          let artistAlbums = artist.albums
-          artistAlbums.forEach { $0.artist = uniqueArtists[artist.id] }
-          os_log(
-            "Delete multiple Artist <%s> with id %s",
-            log: self.log,
-            type: .info,
-            artist.name,
-            artist.id
-          )
-          asyncCompanion.library.deleteArtist(artist: artist)
-        } else {
-          uniqueArtists[artist.id] = artist
-        }
-      }
-      // Delete duplicated albums due to concurrence
-      let albums = asyncCompanion.library.getAlbums(for: accountAsync)
-      var uniqueAlbums: [String: Album] = [:]
-      for album in albums {
-        if uniqueAlbums[album.id] != nil {
-          asyncCompanion.library.deleteAlbum(album: album)
-        } else {
-          uniqueAlbums[album.id] = album
-        }
-      }
+      let artistDuplicates = asyncCompanion.library.findDuplicates(
+        for: Artist.typeName,
+        keyPathString: #keyPath(ArtistMO.id),
+        account: accountAsync
+      )
+      asyncCompanion.library.resolveArtistsDuplicates(
+        account: accountAsync,
+        duplicates: artistDuplicates
+      )
+      let albumDuplicates = asyncCompanion.library.findDuplicates(
+        for: Album.typeName,
+        keyPathString: #keyPath(AlbumMO.id),
+        account: accountAsync
+      )
+      asyncCompanion.library.resolveAlbumsDuplicates(
+        account: accountAsync,
+        duplicates: albumDuplicates
+      )
     }
 
     statusNotifyier?.notifySyncStarted(ofType: .playlist, totalCount: 0)
@@ -210,6 +222,8 @@ class SubsonicLibrarySyncer: CommonLibrarySyncer, LibrarySyncer {
         isThrowingErrorsAllowed: false
       )
     }
+
+    markLibrarySyncFinished()
 
     let isSupported = try await subsonicServerApi.requestServerPodcastSupport()
     guard isSupported else { return }
@@ -243,6 +257,87 @@ class SubsonicLibrarySyncer: CommonLibrarySyncer, LibrarySyncer {
       )
       parserDelegate.performPostParseOperations()
     }
+  }
+
+  /// Delta album resync (fix: "duplicate albums after resync").
+  /// `getAlbumList2` has no `since` parameter — `type=newest` is the best
+  /// windowed approximation: pages are fetched serially until the oldest
+  /// album `created` timestamp falls at/below `lastSyncDate`. Each page is
+  /// merged by server id via the prefetch pass, so re-parsed albums update
+  /// the existing managed objects instead of spawning duplicates.
+  /// Pages are parsed serially on purpose: `AsyncCoreDataAccessWrapper`
+  /// allocates a fresh background context per `perform`, so concurrent
+  /// page parsing cannot see sibling inserts and can commit the same
+  /// server id twice.
+  /// Returns `false` when the delta window cannot be bounded (server does
+  /// not emit `created`, or more than `maxDeltaAlbumFetchCount` albums
+  /// changed) — the caller must then run the full sync.
+  @MainActor
+  private func syncAlbumsDelta(
+    lastSyncDate: Date,
+    statusNotifyier: SyncCallbacks?
+  ) async throws
+    -> Bool {
+    enum PageBoundary {
+      case reachedSyncBoundary
+      case continueFetching
+      case cannotBoundWindow
+    }
+
+    var offset = 0
+    while offset < Self.maxDeltaAlbumFetchCount {
+      let albumsResponse = try await subsonicServerApi.requestNewestAlbums(
+        offset: offset,
+        count: Self.maxItemCountToPollAtOnce
+      )
+      let boundary = try await storage.async.performAndGet { asyncCompanion in
+        let accountAsync = Account(
+          managedObject: asyncCompanion.context
+            .object(with: self.accountObjectId) as! AccountMO
+        )
+        let idParserDelegate = SsIDsParserDelegate(performanceMonitor: self.performanceMonitor)
+        try self.parse(
+          response: albumsResponse,
+          delegate: idParserDelegate,
+          isThrowingErrorsAllowed: false
+        )
+        let prefetch = asyncCompanion.library
+          .getElements(account: accountAsync, prefetchIDs: idParserDelegate.prefetchIDs)
+
+        let parserDelegate = SsAlbumParserDelegate(
+          performanceMonitor: self.performanceMonitor, prefetch: prefetch,
+          account: accountAsync,
+          library: asyncCompanion.library,
+          parseNotifier: statusNotifyier
+        )
+        try self.parse(
+          response: albumsResponse,
+          delegate: parserDelegate,
+          isThrowingErrorsAllowed: false
+        )
+        guard !parserDelegate.parsedAlbums.isEmpty else {
+          return PageBoundary.reachedSyncBoundary // empty page -> list exhausted
+        }
+        let createdDates = parserDelegate.parsedAlbums
+          .compactMap { parserDelegate.albumCreatedDates[$0.id] }
+        guard !createdDates.isEmpty else {
+          // server does not emit `created` -> window cannot be bounded
+          return PageBoundary.cannotBoundWindow
+        }
+        return (createdDates.min() ?? Date()) <= lastSyncDate
+          ? .reachedSyncBoundary : .continueFetching
+      }
+
+      switch boundary {
+      case .reachedSyncBoundary:
+        return true
+      case .continueFetching:
+        offset += Self.maxItemCountToPollAtOnce
+      case .cannotBoundWindow:
+        return false
+      }
+    }
+    return false
   }
 
   @MainActor
@@ -1080,6 +1175,39 @@ class SubsonicLibrarySyncer: CommonLibrarySyncer, LibrarySyncer {
     os_log("Upload Delete playlist \"%s\"", log: log, type: .info, id)
     let response = try await subsonicServerApi.requestPlaylistDelete(id: id)
     try parseForError(response: response)
+  }
+
+  /// G9: push the local play queue snapshot to the server
+  /// (`savePlayQueue`). Only song ids are mirrored; podcast/radio items
+  /// have no server representation and are skipped upstream.
+  @MainActor
+  func syncUpload(playQueue: PlayQueueSnapshot) async throws {
+    guard isSyncAllowed else { return }
+    os_log(
+      "Save play queue on server: %i songs",
+      log: self.log,
+      type: .info,
+      playQueue.songIds.count
+    )
+    let response = try await subsonicServerApi.requestSavePlayQueue(
+      songIds: playQueue.songIds,
+      currentSongId: playQueue.currentSongId,
+      positionInMilliseconds: playQueue.positionInMilliseconds
+    )
+    try parseForError(response: response)
+  }
+
+  /// G9: fetch the server-side play queue (`getPlayQueue`). Entries are
+  /// returned as ordered server song ids — resolution to local Song
+  /// entities happens in `PlayQueueSyncer` (unknown ids are skipped,
+  /// never stub-inserted).
+  @MainActor
+  func syncDownRemotePlayQueue() async throws -> RemotePlayQueue? {
+    guard isSyncAllowed else { return nil }
+    let response = try await subsonicServerApi.requestPlayQueue()
+    let parserDelegate = SsPlayQueueParserDelegate(performanceMonitor: performanceMonitor)
+    try parse(response: response, delegate: parserDelegate)
+    return parserDelegate.remotePlayQueue
   }
 
   @MainActor
