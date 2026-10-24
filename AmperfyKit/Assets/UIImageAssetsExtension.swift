@@ -406,20 +406,6 @@ extension UIImage {
   public static let volumeMin = UIImage.create(systemName: AmperfyImage.volumeMin.systemName)
   public static let xmark = UIImage.create(systemName: AmperfyImage.xmark.systemName)
 
-  /// Asset symbol generation is enabled by default for both new and old projects but can be disabled by setting the build setting "Generate Asset Symbols" (ASSETCATALOG_COMPILER_GENERATE_ASSET_SYMBOLS) to NO.
-  #if false
-    public static let podcast = UIImage.create("podcast").withTintColor(.defaultBlue)
-    public static let albumNewest = UIImage.create("album_newest")
-    public static let albumRecent = UIImage.create("album_recent")
-    public static let userQueueInsert = UIImage
-      .create("user_queue_insert") // SF-Symbols 5 Regular: custom.text.line.first.and.arrowtriangle.forward.badge.person.crop
-    public static let userQueueAppend = UIImage
-      .create("user_queue_append") // SF-Symbols 5 Regular: custom.text.line.last.and.arrowtriangle.forward.badge.person.crop
-    public static let contextQueueInsert = UIImage
-      .create("context_queue_insert") // SF-Symbols 5 Regular: custom.text.line.first.and.arrowtriangle.forward
-    public static let contextQueueAppend = UIImage
-      .create("context_queue_append") // SF-Symbols 5 Regular: custom.text.line.last.and.arrowtriangle.forward
-  #endif
   public static let podcastEpisode: UIImage = podcast
   public static let podcastQueueInsert = contextQueueInsert
   public static let podcastQueueAppend = contextQueueAppend

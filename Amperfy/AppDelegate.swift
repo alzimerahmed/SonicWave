@@ -232,19 +232,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     player.stop()
   }
 
-  // deprecated
-  func restartByUser() {
-    Task {
-      await localNotificationManager.notifyDebugAndWait(
-        title: "Amperfy Restart",
-        body: "Tap to reopen Amperfy"
-      )
-      stopForInit()
-      // close Amperfy
-      exit(0)
-    }
-  }
-
   var isNormalInteraction: Bool {
     storage.settings.accounts.active != nil && !libraryUpdater
       .isVisualUpadateNeeded

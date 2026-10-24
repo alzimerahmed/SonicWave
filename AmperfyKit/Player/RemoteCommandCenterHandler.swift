@@ -147,27 +147,6 @@ public class RemoteCommandCenterHandler {
       return .success
     })
 
-    #if false // Deactivated => How to test rating change on simulater/real device?
-      remoteCommandCenter.ratingCommand.isEnabled = true
-      remoteCommandCenter.ratingCommand.minimumRating = 0.0
-      remoteCommandCenter.ratingCommand.maximumRating = 5.0
-      remoteCommandCenter.ratingCommand.addTarget(handler: { event in
-        guard let command = event as? MPRatingCommandEvent,
-              let currentItem = self.musicPlayer.currentlyPlaying,
-              currentItem.isRateable,
-              let song = currentItem.asSong
-        else { return .noSuchContent }
-
-        let rating = Int(command.rating)
-        firstly {
-          self.librarySyncer.setRating(song: song, rating: rating)
-        }.catch { error in
-          self.eventLogger.report(topic: "Song Rating Sync", error: error)
-        }
-        return .success
-      })
-    #endif
-
     remoteCommandCenter.likeCommand.isEnabled = true
     remoteCommandCenter.likeCommand.localizedTitle = NSLocalizedString(
       "Favorite",
