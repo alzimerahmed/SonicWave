@@ -1,85 +1,233 @@
-# ![Logo](.github/Icon-40.png) Amperfy
+# SonicWave — a self-hosted music player for iOS, iPadOS, and macOS
 
-## Basics
+<div align="center">
 
-Amperfy is an iOS/iPadOS/macOS app written in Swift to interact with an [Ampache](http://ampache.github.io) or [Subsonic](http://www.subsonic.org) server.
+  <img src=".github/Icon-40.png" alt="SonicWave icon" />
 
-### iOS
+  <br/>
 
-<a href="https://apps.apple.com/app/amperfy-music/id1530145038#?platform=iphone">
-  <img src=".github/AppStore/Download_on_the_App_Store_Badge_US-UK_RGB_blk_092917.svg" height="45" />
-</a>
+  [![Platform](https://img.shields.io/badge/platform-iOS%2026%2B%20%7C%20iPadOS%20%7C%20macOS-blue?logo=apple&logoColor=white)](https://github.com/alzimerahmed/SonicWave)
+  [![Swift](https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white)](https://swift.org)
+  [![License: GPLv3](https://img.shields.io/badge/license-GPLv3-blue?logo=gnu&logoColor=white)](LICENSE)
 
-<img src=".github/Screenshots/Player.jpg" width="250" alt="Screenshot of the Amperfy player" /> &nbsp;
-<img src=".github/Screenshots/AlbumDetail.jpg" width="250" alt="Screenshot of the Amperfy artist detail view" /> &nbsp;
-<img src=".github/Screenshots/Library.jpg" width="250" alt="Screenshot of the Amperfy library view" />
+  **Stream your own music. Any Ampache or Subsonic API server, one polished native app.**
 
-### macOS
+  [Features](#features) ·
+  [Screenshots](#screenshots) ·
+  [Tech Stack](#tech-stack) ·
+  [Building](#building) ·
+  [Usage](#usage) ·
+  [Roadmap](#roadmap) ·
+  [License](#attribution--license) ·
+  [Contributing](#contributing)
 
-<a href="https://apps.apple.com/app/amperfy-music/id1530145038#?platform=mac">
-  <img src=".github/AppStore/Download_on_the_Mac_App_Store_Badge_US-UK_RGB_blk_092917.svg" height="45" />
-</a>
+</div>
 
-<img src=".github/Screenshots/macOS-Playlist.png" width="750" alt="Screenshot of the Amperfy playlist view in macOS" />
+SonicWave is a GPLv3 music streaming client for self-hosted servers, forked from
+[Amperfy](https://github.com/BLeeEZ/amperfy). It speaks the **Ampache API** and the
+**Subsonic/OpenSubsonic API**, so it works out of the box with Ampache, Navidrome,
+Gonic, Airsonic, Funkwhale, Nextcloud Music, and most other Subsonic-compatible servers.
+
+> **Naming note:** SonicWave is in the middle of a rebrand from its upstream name.
+> The Xcode project, build targets, schemes, and the `amperfy://` URL scheme are still
+> named `Amperfy` — this is intentional and tracked on the [roadmap](#roadmap).
 
 ## Features
 
-- Multi account
-- Offline mode
-- CarPlay
-- Gapless playback for appropriate media file formats
-- Music, Podcast and Radio support
-- Siri play media command, Siri Shortcuts and App Intents
-- Equalizer
+**Servers & library**
+- Ampache API and Subsonic/OpenSubsonic API support
+- Multiple accounts — switch between servers without re-syncing
+- Music, podcasts, and internet radio in one library
+- Server-side scrobbling, 5-star ratings, and favorites synced back to the server
+- Lyrics via OpenSubsonic (`getLyricsBySongId` + structured lyrics extension)
+- Custom HTTP headers per account (e.g. Cloudflare Access service tokens)
+- Configurable Home tab sections
+
+**Playback**
+- Gapless playback for supported formats
+- 10-band parametric equalizer (32 Hz – 16 kHz, ±6 dB) with presets, custom curves, and automatic gain compensation
 - Replay gain
 - Sleep timer
-- 5 star song rating
-- Favorite song
-- Sleep Timer
-- Scrobbling
+- Audio visualizers: spectrum bars, waveform, and generative art
+- Player colors adapt to album artwork
 
-## Requirements
+**Offline**
+- Download songs, albums, playlists, and podcast episodes for offline playback
+- Dedicated offline mode — cached-only browsing when you're off the grid
 
-* Xcode 26, Swift 6
+**Platform integration**
+- CarPlay
+- Siri media commands, Siri Shortcuts, and App Intents
+- `x-callback-url` automation (`amperfy://`)
+- iOS, iPadOS, and macOS (Mac Catalyst) from a single codebase
+- Six tint themes (blue, green, red, yellow, orange, purple) with light/dark variants
 
-## Getting Started
+## Screenshots
 
-1. Check out the latest version of the project:
-  ```
-  git clone https://github.com/BLeeEZ/amperfy.git
-  cd amperfy
-  ```
+> Screenshots currently show the upstream Amperfy UI; SonicWave-branded captures land with the visual rebrand.
 
-3. Open the `Amperfy.xcodeproj` file.
+### iOS
 
-4. Build and run the "Amperfy" scheme
+<img src=".github/Screenshots/Player.jpg" width="250" alt="Player view" /> &nbsp;
+<img src=".github/Screenshots/AlbumDetail.jpg" width="250" alt="Album detail view" /> &nbsp;
+<img src=".github/Screenshots/Library.jpg" width="250" alt="Library view" />
 
-  >Real device testing: Amperfy has Apple CarPlay and Siri support. To test it on a real device a developer certificate with granted access to `com.apple.developer.playable-content` and `com.apple.developer.siri` is required. To test Amperfy without Apple CarPlay and Siri clear all entries in `Amperfy/Amperfy.entitlements`.
+### macOS (Catalyst)
 
-## Beta test releases
+<img src=".github/Screenshots/macOS-Playlist.png" width="750" alt="Playlist view on macOS" />
 
-For more information, and to participate in the public beta releases, please visit [Amperfy Beta](https://github.com/BLeeEZ/amperfy/issues/25).
+## Tech Stack
 
-## Contribution
+| Layer | Technology |
+|---|---|
+| Language | Swift 6 (strict concurrency complete) |
+| UI | UIKit (storyboards/XIBs) + SwiftUI (settings) |
+| Audio engine | [AudioStreaming](https://github.com/dimitris-c/AudioStreaming) + AVFoundation; parametric EQ, replay gain, FFT visualizers |
+| Networking | [Alamofire](https://github.com/Alamofire/Alamofire); Ampache XML + Subsonic/OpenSubsonic API clients |
+| Persistence | Core Data — 49-version staged migration chain |
+| Layout | [SnapKit](https://github.com/SnapKit/SnapKit) + Interface Builder |
+| Platform | iOS 26+, iPadOS, macOS via Catalyst; CarPlay + Siri/App Intents entitlements |
+| Dependencies | Swift Package Manager (pinned in `Package.resolved`) |
+| Tooling | Xcode 26+, [SwiftFormat](https://github.com/nicklockwood/SwiftFormat) (Google Swift style) |
+| Tests | XCTest — `AmperfyKitTests` |
 
-Pull requests are always welcome. Please execute `AmperfyKitTests` to ensure code quality. Running tests will trigger [SwiftFormat](https://github.com/nicklockwood/SwiftFormat) to apply the [Google Swift Style Guide](https://google.github.io/swift), as configured by [Google-SwiftFormat-Config](https://github.com/NoemiRozpara/Google-SwiftFormat-Config). You can also apply the code style manually by executing `./BuildTools/applyFormat.sh`.
+### Project structure
 
-## Attributions
+```
+SonicWave/
+├── Amperfy.xcodeproj/    # Xcode project — targets: Amperfy, AmperfyKit, AmperfyKitTests
+├── Amperfy/              # App shell: UIKit screens, SwiftUI settings, CarPlay, App Intents
+│   ├── Intents/          #   App Intents, x-callback-url registration, Siri handling
+│   ├── CarPlay/          #   CarPlay scene + tab templates
+│   └── SwiftUI/          #   Settings UI
+├── AmperfyKit/           # Core framework — all logic lives here
+│   ├── Api/              #   Ampache + Subsonic/OpenSubsonic clients, parsers, syncers
+│   ├── Player/           #   Audio engine, EQ, replay gain, scrobbler, visualizers
+│   ├── Storage/          #   Core Data stack + settings (49-version staged migrations)
+│   ├── Download/         #   Background download manager
+│   └── Assets/           #   Icons, theme artwork, custom SF Symbols
+├── AmperfyKitTests/      # Unit tests: API parsers, player, storage
+├── BuildTools/           # SwiftFormat tooling (applyFormat.sh)
+└── Helper/               # License-header scripts
+```
 
-- [AudioStreaming](https://github.com/dimitris-c/AudioStreaming) by [Dimitris C.](https://github.com/dimitris-c) is licensed under [MIT License](https://github.com/dimitris-c/AudioStreaming/blob/main/LICENSE)
-- [MarqueeLabel](https://github.com/cbpowell/MarqueeLabel) by [Charles Powell](https://github.com/cbpowell) is licensed under [MIT License](https://github.com/cbpowell/MarqueeLabel/blob/master/LICENSE)
-- [NotificationBanner](https://github.com/Daltron/NotificationBanner) by [Dalton Hinterscher](https://github.com/Daltron) is licensed under [MIT License](https://github.com/Daltron/NotificationBanner/blob/master/LICENSE)
-- [ID3TagEditor](https://github.com/chicio/ID3TagEditor) by [Fabrizio Duroni](https://github.com/chicio) is licensed under [MIT License](https://github.com/chicio/ID3TagEditor/blob/master/LICENSE.md)
-- [CoreDataMigrationRevised-Example](https://github.com/wibosco/CoreDataMigrationRevised-Example) by [William Boles](https://github.com/wibosco) is licensed under [MIT License](https://github.com/wibosco/CoreDataMigrationRevised-Example/blob/master/LICENSE)
-- [VYPlayIndicator](https://github.com/obrhoff/VYPlayIndicator) by [Dennis Oberhoff](https://github.com/obrhoff) is licensed under [MIT License](https://github.com/obrhoff/VYPlayIndicator/blob/master/LICENSE)
-- [CallbackURLKit](https://github.com/phimage/CallbackURLKit) by [Eric Marchand](https://github.com/phimage) is licensed under [MIT License](https://github.com/phimage/CallbackURLKit/blob/master/LICENSE)
-- [DominantColors](https://github.com/DenDmitriev/DominantColors) by [Den Dmitriev](https://github.com/DenDmitriev) is licensed under [MIT License](https://github.com/DenDmitriev/DominantColors/blob/main/LICENSE)
-- [AudioVisualizerKit](https://github.com/Kyome22/AudioVisualizerKit) by [Takuto NAKAMURA (Kyome)](https://github.com/Kyome22) is licensed under [MIT License](https://github.com/Kyome22/AudioVisualizerKit/blob/main/LICENSE)
-- [Alamofire](https://github.com/Alamofire/Alamofire) by [Alamofire](https://github.com/Alamofire) is licensed under [MIT License](https://github.com/Alamofire/Alamofire/blob/master/LICENSE)
-- [Ifrit](https://github.com/ukushu/Ifrit) by [Andrii Vynnychenko](https://github.com/ukushu) is licensed under [MIT License](https://github.com/ukushu/Ifrit/blob/main/LICENSE.md)
-- [swift-collections](https://github.com/apple/swift-collections) by [Apple](https://github.com/apple) is licensed under [Apache License 2.0](https://github.com/apple/swift-collections/blob/main/LICENSE.txt)
-- [iOS-swiftUI-spotify-equalizer](https://github.com/urvi-k/iOS-swiftUI-spotify-equalizer) by [urvi koladiya](https://github.com/urvi-k) is licensed under [MIT License](https://github.com/urvi-k/iOS-swiftUI-spotify-equalizer/blob/main/LICENSE)
+## Building
 
-**Amperfy license:** [GPLv3](https://github.com/BLeeEZ/Amperfy/blob/master/LICENSE)
+Requirements: **Xcode 26+** (iOS 26 SDK), macOS. SPM dependencies resolve automatically.
+
+1. Clone the repository:
+   ```sh
+   git clone https://github.com/alzimerahmed/SonicWave.git
+   cd SonicWave
+   ```
+2. Open `Amperfy.xcodeproj` in Xcode.
+3. Select the **Amperfy** scheme and build & run (⌘R).
+
+<details>
+<summary><strong>CarPlay & Siri entitlements on physical devices</strong></summary>
+
+`Amperfy/Amperfy.entitlements` contains `com.apple.developer.carplay-audio` and
+`com.apple.developer.siri`, which require Apple-approved provisioning profiles.
+The simulator works as-is. To build on a device without those entitlements,
+clear the entries in `Amperfy/Amperfy.entitlements` — the app runs fine without
+CarPlay and Siri.
+
+</details>
+
+<details>
+<summary><strong>Running the tests</strong></summary>
+
+In Xcode: select the **Amperfy** scheme and press ⌘U.
+
+From the command line:
+
+```sh
+xcodebuild -scheme Amperfy \
+  -destination 'platform=iOS Simulator' \
+  test -only-testing:AmperfyKitTests
+```
+
+Running tests also applies the project's [SwiftFormat](https://github.com/nicklockwood/SwiftFormat)
+style ([Google Swift Style Guide](https://google.github.io/swift), configured in `.swiftformat`).
+To format manually: `./BuildTools/applyFormat.sh`.
+
+</details>
+
+## Usage
+
+**Connect to a server** (Navidrome used as an example — the flow is identical for
+Ampache or any Subsonic-compatible server):
+
+1. Open **Settings → Accounts → +** and choose **Subsonic**.
+2. Enter your server URL (`https://music.example.com`), username, and password.
+3. SonicWave verifies the connection, then syncs your library in the background.
+   Downloads, ratings, and scrobbling are per-account — add a second server any time.
+
+**Automate playback via `x-callback-url`:**
+
+```
+amperfy://x-callback-url/searchAndPlay?searchTerm=Awesome&searchCategory=playlist
+```
+
+Registered actions include `searchAndPlay`, `playID`, `playRandomSongs`, `play`,
+`pause`, `togglePlayPause`, `playNext`, `playPreviousOrReplay`, `setShuffle`,
+`setRepeat`, `setOfflineMode`, `rateCurrentlyPlayingSong`, and
+`favoriteCurrentlyPlayingSong`. The full action list with parameters is browsable
+in-app under **Settings → x-callback URLs**, and defined in
+`Amperfy/Intents/IntentManager.swift`.
+
+## Roadmap
+
+Planned, in no strict order — contributions welcome:
+
+- [ ] Rebrand to the SonicWave identity (project/target names, bundle ID, icon, URL scheme)
+- [ ] Time-synced lyrics view (OpenSubsonic structured lyrics)
+- [ ] Automatic download sync (keep favorites and playlists offline without manual action)
+- [ ] Discovery surface: smart mixes and recommendations on the Home tab
+- [ ] Home Screen widgets and Live Activities
+- [ ] watchOS companion app
+- [ ] Smart playlists (rule-based local playlists)
+
+## Attribution & License
+
+SonicWave is a fork of **[Amperfy](https://github.com/BLeeEZ/amperfy)** by
+**Maximilian Bauer** ([@BLeeEZ](https://github.com/BLeeEZ)). All upstream copyright
+and attribution are preserved as required by the license. SonicWave is maintained
+by **Alzimer Ahmed**.
+
+SonicWave is licensed under the
+**[GNU General Public License v3](LICENSE)** — the same license as upstream Amperfy.
+If you distribute modified versions, you must keep the upstream attribution and
+license your changes under GPLv3.
+
+### Third-party dependencies
+
+| Dependency | Purpose | License |
+|---|---|---|
+| [AudioStreaming](https://github.com/dimitris-c/AudioStreaming) | Streaming audio engine | MIT |
+| [Alamofire](https://github.com/Alamofire/Alamofire) | HTTP networking | MIT |
+| [SnapKit](https://github.com/SnapKit/SnapKit) | Auto Layout DSL | MIT |
+| [MarqueeLabel](https://github.com/cbpowell/MarqueeLabel) | Scrolling labels | MIT |
+| [NotificationBanner](https://github.com/Daltron/NotificationBanner) | In-app banners | MIT |
+| [ID3TagEditor](https://github.com/chicio/ID3TagEditor) | ID3 tag parsing | MIT |
+| [CallbackURLKit](https://github.com/phimage/CallbackURLKit) | x-callback-url handling | MIT |
+| [Ifrit](https://github.com/ukushu/Ifrit) | Fuzzy search | MIT |
+| [VYPlayIndicator](https://github.com/obrhoff/VYPlayIndicator) | Now-playing indicator | MIT |
+| [DominantColors](https://github.com/DenDmitriev/DominantColors) | Artwork-adaptive colors | MIT |
+| [AudioVisualizerKit](https://github.com/Kyome22/AudioVisualizerKit) | FFT audio analysis (vendored) | MIT |
+| [iOS-swiftUI-spotify-equalizer](https://github.com/urvi-k/iOS-swiftUI-spotify-equalizer) | Visualizer reference (vendored) | MIT |
+| [swift-collections](https://github.com/apple/swift-collections) | Data structures | Apache-2.0 |
+| [ogg-binary-xcframework](https://github.com/sbooth/ogg-binary-xcframework) / [vorbis-binary-xcframework](https://github.com/sbooth/vorbis-binary-xcframework) | Ogg/Vorbis playback | BSD |
+| [CoreDataMigrationRevised-Example](https://github.com/wibosco/CoreDataMigrationRevised-Example) | Staged-migration technique reference | MIT |
 
 **Special thanks:** [Dirk Hildebrand](https://apps.apple.com/us/developer/dirk-hildebrand/id654444924)
+
+## Contributing
+
+Pull requests are welcome.
+
+- `AmperfyKitTests` must pass before merging.
+- Code style is enforced by SwiftFormat ([Google Swift Style Guide](https://google.github.io/swift)); run `./BuildTools/applyFormat.sh` or just run the tests.
+- Commit messages follow [Conventional Commits](https://www.conventionalcommits.org).
+- Do not rename `Amperfy` build artifacts, targets, or the URL scheme ad hoc — the SonicWave rebrand is a planned phase and must land atomically.
+- GPLv3: contributions are licensed under GPLv3, and upstream Amperfy attribution must be preserved.
