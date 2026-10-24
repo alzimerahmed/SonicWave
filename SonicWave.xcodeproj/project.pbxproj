@@ -48,6 +48,13 @@
 		502B8A4D2EE0CE40004CA3AD /* AudioStreaming in Frameworks */ = {isa = PBXBuildFile; productRef = 502B8A4C2EE0CE40004CA3AD /* AudioStreaming */; };
 		502B8A532EE0D354004CA3AD /* AccountTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 502B8A522EE0D354004CA3AD /* AccountTest.swift */; };
 		5F50B0010000000000000003 /* OfflineFirstSchemaV50Test.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F50B0010000000000000002 /* OfflineFirstSchemaV50Test.swift */; };
+		6AC5D1010000000000000002 /* SsPlayQueueParserDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AC5D1010000000000000001 /* SsPlayQueueParserDelegate.swift */; };
+		6AC5D1010000000000000004 /* PlayQueueSyncer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AC5D1010000000000000003 /* PlayQueueSyncer.swift */; };
+		6AC5D1010000000000000006 /* SsPlayQueueParserTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AC5D1010000000000000005 /* SsPlayQueueParserTest.swift */; };
+		6AC5D1010000000000000008 /* SsSavePlayQueueRequestTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AC5D1010000000000000007 /* SsSavePlayQueueRequestTest.swift */; };
+		6AC5D101000000000000000A /* AlbumDeduplicationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AC5D1010000000000000009 /* AlbumDeduplicationTest.swift */; };
+		6AC5D101000000000000000C /* PlayQueueSyncPolicyTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AC5D101000000000000000B /* PlayQueueSyncPolicyTest.swift */; };
+		6AC5D101000000000000000E /* playqueue_example_1.xml in Resources */ = {isa = PBXBuildFile; fileRef = 6AC5D101000000000000000D /* playqueue_example_1.xml */; };
 		8B2E4F100000000000000001 /* CacheEvictionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B2E4F100000000000000002 /* CacheEvictionHandler.swift */; };
 		8B2E4F100000000000000003 /* CacheEvictionHandlerTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B2E4F100000000000000004 /* CacheEvictionHandlerTest.swift */; };
 		502B98ED2D03A02D000FE187 /* PlaylistEditVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 502B98EC2D03A02D000FE187 /* PlaylistEditVC.swift */; };
@@ -713,6 +720,13 @@
 		5029E0382235A8EC0027F96F /* CommonString.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommonString.swift; sourceTree = "<group>"; };
 		502B8A522EE0D354004CA3AD /* AccountTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountTest.swift; sourceTree = "<group>"; };
 		5F50B0010000000000000002 /* OfflineFirstSchemaV50Test.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineFirstSchemaV50Test.swift; sourceTree = "<group>"; };
+		6AC5D1010000000000000001 /* SsPlayQueueParserDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SsPlayQueueParserDelegate.swift; sourceTree = "<group>"; };
+		6AC5D1010000000000000003 /* PlayQueueSyncer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayQueueSyncer.swift; sourceTree = "<group>"; };
+		6AC5D1010000000000000005 /* SsPlayQueueParserTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SsPlayQueueParserTest.swift; sourceTree = "<group>"; };
+		6AC5D1010000000000000007 /* SsSavePlayQueueRequestTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SsSavePlayQueueRequestTest.swift; sourceTree = "<group>"; };
+		6AC5D1010000000000000009 /* AlbumDeduplicationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumDeduplicationTest.swift; sourceTree = "<group>"; };
+		6AC5D101000000000000000B /* PlayQueueSyncPolicyTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayQueueSyncPolicyTest.swift; sourceTree = "<group>"; };
+		6AC5D101000000000000000D /* playqueue_example_1.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = playqueue_example_1.xml; sourceTree = "<group>"; };
 		8B2E4F100000000000000002 /* CacheEvictionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CacheEvictionHandler.swift; sourceTree = "<group>"; };
 		8B2E4F100000000000000004 /* CacheEvictionHandlerTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CacheEvictionHandlerTest.swift; sourceTree = "<group>"; };
 		502B98EC2D03A02D000FE187 /* PlaylistEditVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistEditVC.swift; sourceTree = "<group>"; };
@@ -1555,6 +1569,7 @@
 				50A85EEC2689C5DB00FB3E31 /* SsSongParserDelegate.swift */,
 				50A7388222451ED200D3F2D4 /* SsPlaylistParserDelegate.swift */,
 				50A7388422452C1900D3F2D4 /* SsPlaylistSongsParserDelegate.swift */,
+				6AC5D1010000000000000001 /* SsPlayQueueParserDelegate.swift */,
 				50DEEDFF265D46CB0073FF20 /* SsMusicFolderParserDelegate.swift */,
 				50DEEE01265D4AB30073FF20 /* SsDirectoryParserDelegate.swift */,
 				501A7D402680B0710055A51B /* SsPodcastParserDelegate.swift */,
@@ -1621,6 +1636,7 @@
 			children = (
 				5095F98B23C8389E008B0805 /* MusicPlayerTest.swift */,
 				5011712D27453D1300B7C08D /* PlayQueueHandlerTest.swift */,
+				6AC5D101000000000000000B /* PlayQueueSyncPolicyTest.swift */,
 			);
 			path = Player;
 			sourceTree = "<group>";
@@ -1631,6 +1647,7 @@
 				5095F98F23CA94BC008B0805 /* ManagedObjects */,
 				5EC0DE010000000000000006 /* KeychainCredentialsTests.swift */,
 				8B2E4F100000000000000004 /* CacheEvictionHandlerTest.swift */,
+				6AC5D1010000000000000009 /* AlbumDeduplicationTest.swift */,
 			);
 			path = Storage;
 			sourceTree = "<group>";
@@ -2069,6 +2086,8 @@
 				50AE79B52C1F65850085CBB3 /* SsLyricsBySongId1ParserTest.swift */,
 				50AE79BB2C1F6ADE0085CBB3 /* SsOpenSubsonicExtensionsParserTest.swift */,
 				50AE79B72C1F68080085CBB3 /* SsLyricsBySongId2ParserTest.swift */,
+				6AC5D1010000000000000005 /* SsPlayQueueParserTest.swift */,
+				6AC5D1010000000000000007 /* SsSavePlayQueueRequestTest.swift */,
 			);
 			path = Subsonic;
 			sourceTree = "<group>";
@@ -2098,6 +2117,7 @@
 				50AE79B32C1F64F50085CBB3 /* getLyricsBySongId_example_2.xml */,
 				50F3A1C3308A1B8A00A1B2C3 /* similarSongs2_example_1.xml */,
 				50CEC6392D1EDB0000D0E696 /* internetRadioStations_example_1.xml */,
+				6AC5D101000000000000000D /* playqueue_example_1.xml */,
 			);
 			path = Samples;
 			sourceTree = "<group>";
@@ -2200,6 +2220,7 @@
 				50048F962759186A0087EDFB /* EmbeddedArtworkExtractor.swift */,
 				509D55E8280FDAE100E0E0B5 /* PlayerNotificationAdapter.swift */,
 				5086F8822239A2B700546F5A /* ScrobbleSyncer.swift */,
+				6AC5D1010000000000000003 /* PlayQueueSyncer.swift */,
 			);
 			path = Player;
 			sourceTree = "<group>";
@@ -2421,6 +2442,7 @@
 				50CA61242D4CE9E500EEF515 /* podcast_example_1.xml in Resources */,
 				50BE5D642850F4F600156FC6 /* genres_example_1.xml in Resources */,
 				50BE5D612850F4F600156FC6 /* playlists_example_1.xml in Resources */,
+				6AC5D101000000000000000E /* playqueue_example_1.xml in Resources */,
 				50BE5D802850F50700156FC6 /* songs.xml in Resources */,
 				50BE5D7B2850F50700156FC6 /* artists.xml in Resources */,
 				50BE5D5C2850F4F600156FC6 /* podcasts_example_1.xml in Resources */,
@@ -2690,6 +2712,8 @@
 				50CEC6452D1F399700D0E696 /* SsRadioParserDelegate.swift in Sources */,
 				50C9D649284FAA02007F18D0 /* SubsonicVersion.swift in Sources */,
 				50C9D640284FA9C7007F18D0 /* AutoDownloadLibrarySyncer.swift in Sources */,
+				6AC5D1010000000000000002 /* SsPlayQueueParserDelegate.swift in Sources */,
+				6AC5D1010000000000000004 /* PlayQueueSyncer.swift in Sources */,
 				50C9D6D7284FAB88007F18D0 /* PlayerNotificationAdapter.swift in Sources */,
 				50C9D663284FAA0B007F18D0 /* AuthentificationHandshake.swift in Sources */,
 				50C9D67C284FAA6C007F18D0 /* PodcastMO+CoreDataClass.swift in Sources */,
@@ -2928,6 +2952,10 @@
 				50BE5D4E2850F4C900156FC6 /* PlayerDataTest.swift in Sources */,
 				502B8A532EE0D354004CA3AD /* AccountTest.swift in Sources */,
 				5F50B0010000000000000003 /* OfflineFirstSchemaV50Test.swift in Sources */,
+				6AC5D1010000000000000006 /* SsPlayQueueParserTest.swift in Sources */,
+				6AC5D1010000000000000008 /* SsSavePlayQueueRequestTest.swift in Sources */,
+				6AC5D101000000000000000A /* AlbumDeduplicationTest.swift in Sources */,
+				6AC5D101000000000000000C /* PlayQueueSyncPolicyTest.swift in Sources */,
 				8B2E4F100000000000000003 /* CacheEvictionHandlerTest.swift in Sources */,
 				50BE5D4D2850F4C900156FC6 /* ArtworkTest.swift in Sources */,
 				50BE5D932850F51E00156FC6 /* CoreDataSeeder.swift in Sources */,

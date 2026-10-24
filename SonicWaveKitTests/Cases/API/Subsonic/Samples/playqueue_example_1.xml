@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<subsonic-response xmlns="http://subsonic.org/restapi" status="ok" version="1.16.1">
+    <playQueue current="748" position="63000" changed="2024-05-17T10:15:30.000Z" changedBy="sonicwave-ios">
+        <entry id="657" parent="655" title="Making Me Nervous" album="I Don&apos;t Know What I&apos;m Doing"
+               artist="Brad Sucks" isDir="false" coverArt="655" created="2008-04-10T07:10:32" duration="159"
+               bitRate="202" track="1" year="2003" size="4060113" suffix="mp3" contentType="audio/mpeg" isVideo="false"
+               path="Brad Sucks/I Don&apos;t Know What I&apos;m Doing/01 - Making Me Nervous.mp3" albumId="58"
+               artistId="45" type="music" userRating="2"/>
+        <entry id="748" parent="746" title="Stories from Emona II" album="Between two worlds" artist="Maya Filipi&#269;"
+               isDir="false" coverArt="746" created="2008-07-30T22:05:40" duration="335" bitRate="176" track="2"
+               year="2008" genre="Classical" size="7458214" suffix="mp3" contentType="audio/mpeg" isVideo="false"
+               path="Maya Filipic/Between two worlds/02 - Stories from Emona II.mp3" albumId="68" artistId="51"
+               type="music"/>
+        <entry id="884" parent="874" title="Isolation" album="Kosmonaut" artist="Ugress" isDir="false" coverArt="874"
+               created="2009-01-14T21:34:49" duration="320" bitRate="160" track="4" year="2006" genre="Electronic"
+               size="6412176" suffix="mp3" contentType="audio/mpeg" isVideo="false"
+               path="Ugress/Kosmonaut/Ugress-KosmonautEP-04-Isolation.mp3" albumId="81" artistId="57" type="music"/>
+        <entry id="999" parent="874" title="Queue Folder" isDir="true" created="2009-01-14T21:34:49" type="music"/>
+        <entry id="805" parent="783" title="Bajo siete lunas (intro)" album="Broken Dreams" artist="PeerGynt Lobogris"
+               isDir="false" coverArt="783" created="2008-12-19T14:13:58" duration="117" bitRate="225" track="1"
+               year="2008" genre="Blues" size="3363271" suffix="mp3" contentType="audio/mpeg" isVideo="false"
+               path="PeerGynt Lobogris/Broken Dreams/01 - Bajo siete lunas (intro).mp3" albumId="74" artistId="54"
+               type="music" userRating="1"/>
+    </playQueue>
+</subsonic-response>
