@@ -92,6 +92,79 @@ public class AutoDownloadLibrarySyncer {
     }
   }
 
+  /// G5 auto-sync watches — runs after a library sync pass:
+  /// - **favorites** (`AccountSetting.isAutoDownloadFavoritesActive`):
+  ///   favorite songs plus all songs of favorite albums stay offline
+  /// - **watched playlists** (`Playlist.isWatchedForAutoDownload`):
+  ///   each playlist is re-synced and its full content downloaded, so
+  ///   server-side additions arrive automatically
+  ///
+  /// Tier policy: watched content is user-requested permanent
+  /// availability -> `.pinned` (unlike newest/played items which land in
+  /// the evictable `.cache` tier). Removal policy: un-watching a
+  /// playlist or disabling the favorites watch only stops future
+  /// downloads — already pinned files are kept (minimal safe choice).
+  @MainActor
+  public func syncWatchedElements() async throws {
+    try await syncFavoritesWatch()
+    try await syncWatchedPlaylists()
+  }
+
+  @MainActor
+  private func syncFavoritesWatch() async throws {
+    guard storage.settings.accounts.getSetting(account.info).read
+      .isAutoDownloadFavoritesActive else { return }
+    try await librarySyncer.syncFavoriteLibraryElements()
+
+    let favoriteSongs = storage.main.library.getFavoriteSongs(for: account)
+    let favoriteAlbums = storage.main.library.getFavoriteAlbums(for: account)
+
+    // expand favorite albums whose song list was never fetched
+    let albumsToExpand = favoriteAlbums.filter { !$0.isSongsMetaDataSynced }
+    try await withThrowingTaskGroup(of: Void.self) { taskGroup in
+      for album in albumsToExpand {
+        taskGroup.addTask { @MainActor @Sendable in
+          try await self.librarySyncer.sync(album: album)
+        }
+      }
+      try await taskGroup.waitForAll()
+    }
+
+    var favoritesPlayables = [AbstractPlayable]()
+    favoritesPlayables.append(contentsOf: favoriteSongs)
+    for album in favoriteAlbums {
+      favoritesPlayables.append(contentsOf: album.songs)
+    }
+    guard !favoritesPlayables.isEmpty else { return }
+    os_log(
+      "Auto-download %i favorite items (pinned)",
+      log: self.log,
+      type: .info,
+      favoritesPlayables.count
+    )
+    playableDownloadManager.download(objects: favoritesPlayables, asTier: .pinned)
+  }
+
+  @MainActor
+  private func syncWatchedPlaylists() async throws {
+    let watchedPlaylists = storage.main.library.getWatchedPlaylists(for: account)
+    guard !watchedPlaylists.isEmpty else { return }
+    for playlist in watchedPlaylists {
+      os_log(
+        "Sync watched playlist \"%s\" for auto-download",
+        log: self.log,
+        type: .info,
+        playlist.name
+      )
+      // serial per playlist: item order matters and parallel inserts on
+      // sibling background contexts could race
+      try await librarySyncer.syncDown(playlist: playlist)
+      let playables = playlist.playables
+      guard !playables.isEmpty else { continue }
+      playableDownloadManager.download(objects: playables, asTier: .pinned)
+    }
+  }
+
   /// return: new synced podcast episodes if an initial sync already occued. If this is the initial sync no episods are returned
   @MainActor
   public func syncNewestPodcastEpisodes() async throws -> [PodcastEpisode] {

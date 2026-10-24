@@ -203,13 +203,25 @@ public class Playlist: Identifyable {
   }
 
   /// auto-sync watch (G5): new songs added to this playlist are auto-downloaded
+  /// (`.pinned` tier). Persists immediately like `name`/`id` — the watch flag is
+  /// local-only and intentionally does not touch `changeDate` (it is not a
+  /// server-visible content mutation). UI observes the change via the regular
+  /// fetched-results-controller refresh.
   public var isWatchedForAutoDownload: Bool {
     get { managedObject.isWatchedForAutoDownload }
     set {
       if managedObject.isWatchedForAutoDownload != newValue {
         managedObject.isWatchedForAutoDownload = newValue
+        library.saveContext()
       }
     }
+  }
+
+  /// mutation point for the P6-D watch toggle UI — returns the new value
+  @discardableResult
+  public func toggleWatchedForAutoDownload() -> Bool {
+    isWatchedForAutoDownload = !isWatchedForAutoDownload
+    return isWatchedForAutoDownload
   }
 
   public var duration: Int { Int(managedObject.duration) }

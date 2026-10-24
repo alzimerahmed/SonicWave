@@ -117,6 +117,20 @@ public final class BackgroundLibrarySyncer: AbstractBackgroundLibrarySyncer, Sen
         }
       }
 
+      if self.isRunning.wrappedValue, self.settings.user.isOnlineMode,
+         self.networkMonitor.isConnectedToNetwork {
+        do {
+          // G5: favorites watch + watched playlists auto-download
+          try await autoDownloadLibrarySyncer.syncWatchedElements()
+        } catch {
+          await self.eventLogger.report(
+            topic: "Watched Elements Background Sync",
+            error: error,
+            displayPopup: false
+          )
+        }
+      }
+
       try? await storage.perform { asyncCompanion in
         let albumsToSync = asyncCompanion.library.getAlbumWithoutSyncedSongs()
 
