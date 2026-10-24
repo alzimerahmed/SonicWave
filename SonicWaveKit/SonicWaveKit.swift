@@ -121,6 +121,26 @@ public class AmperKit {
   private var playerRemoteCommandCenterHandler: RemoteCommandCenterHandler?
   private var playerNotificationAdapter: PlayerNotificationAdapter?
 
+  /// synced-lyrics playback tracker (G4) — vendored lazily; registers
+  /// itself as a `MusicPlayable` notifier on first access so the player
+  /// is only instantiated when a synced-lyrics UI actually appears.
+  @MainActor
+  public lazy var syncedLyricsTracker: SyncedLyricsTracker = {
+    let tracker = SyncedLyricsTracker(
+      currentlyPlayingCB: { [weak self] in self?.player.currentlyPlaying },
+      elapsedTimeCB: { [weak self] in self?.player.elapsedTime ?? 0 },
+      lyricsProvider: { [weak self] playable in
+        guard let self, let accountInfo = playable.account?.info
+        else { return .none }
+        return await self.getMeta(accountInfo).syncedLyricsManager
+          .lyrics(for: playable)
+      },
+      notificationHandler: notificationHandler
+    )
+    player.addNotifier(notifier: tracker)
+    return tracker
+  }()
+
   @MainActor
   private func createPlayer() -> PlayerFacade {
     playerAudioSessionHandler = AudioSessionHandler()

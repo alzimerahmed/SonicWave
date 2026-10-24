@@ -39,6 +39,11 @@ extension Notification.Name {
     .Name(rawValue: "com.alzimerahmed.sonicwave.settings.offline-mode")
   public static let networkStatusChanged = Notification
     .Name(rawValue: "com.alzimerahmed.sonicwave.settings.network.status.changed")
+  /// posted by `SyncedLyricsTracker` whenever its published
+  /// `LyricsTrackingUpdate` changes (track resolved, active line/word
+  /// moved, state cleared); `object` is the tracker
+  public static let syncedLyricsUpdate = Notification
+    .Name(rawValue: "com.alzimerahmed.sonicwave.lyrics.update")
 }
 
 // MARK: - DownloadNotification
