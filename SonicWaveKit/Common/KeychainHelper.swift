@@ -22,6 +22,24 @@
 import Foundation
 import Security
 
+// MARK: - KeychainReadResult
+
+/// Outcome of a Keychain read.
+///
+/// `notFound` means no item exists — a legitimate, stable state. `failure`
+/// means the read itself failed (e.g. `errSecInteractionNotAllowed` while the
+/// Keychain is locked before first unlock during a BGTask / background
+/// URLSession launch): an item may still exist and callers must NOT treat the
+/// store as empty — overwriting it would destroy real data.
+public enum KeychainReadResult: Sendable, Equatable {
+  /// The stored value was read successfully.
+  case success(Data)
+  /// No item exists for the queried account.
+  case notFound
+  /// The read failed — existing data may still be stored (SecItem status).
+  case failure(OSStatus)
+}
+
 // MARK: - KeychainHelper
 
 /// Minimal SecItem wrapper for `kSecClassGenericPassword` items.
@@ -52,34 +70,50 @@ public struct KeychainHelper: Sendable {
   @discardableResult
   public func save(data: Data, account: String) -> OSStatus {
     let query = baseQuery(account: account)
+    let updateAttributes: [String: Any] = [
+      kSecValueData as String: data,
+      kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
+    ]
     let lookupStatus = SecItemCopyMatching(query as CFDictionary, nil)
     switch lookupStatus {
     case errSecSuccess:
-      let attributes: [String: Any] = [
-        kSecValueData as String: data,
-        kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
-      ]
-      return SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
+      return SecItemUpdate(query as CFDictionary, updateAttributes as CFDictionary)
     case errSecItemNotFound:
       var item = query
       item[kSecValueData as String] = data
       item[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
-      return SecItemAdd(item as CFDictionary, nil)
+      let addStatus = SecItemAdd(item as CFDictionary, nil)
+      if addStatus == errSecDuplicateItem {
+        // Lost the lookup->insert race: another writer stored the item between
+        // SecItemCopyMatching and SecItemAdd -> retry as an update so the write
+        // does not degrade into a failure (e.g. a plaintext credential
+        // fallback would then be written).
+        return SecItemUpdate(query as CFDictionary, updateAttributes as CFDictionary)
+      }
+      return addStatus
     default:
       return lookupStatus
     }
   }
 
-  /// Returns the stored data or nil on any failure (`errSecItemNotFound`
-  /// included — an absent item is not an error to the caller).
-  public func read(account: String) -> Data? {
+  /// Reads the stored item. `notFound` means the item is genuinely absent;
+  /// `failure` means the read errored (e.g. Keychain locked before first
+  /// unlock) and an item may still exist — never overwrite on `failure`.
+  public func read(account: String) -> KeychainReadResult {
     var query = baseQuery(account: account)
     query[kSecReturnData as String] = kCFBooleanTrue
     query[kSecMatchLimit as String] = kSecMatchLimitOne
     var result: AnyObject?
     let status = SecItemCopyMatching(query as CFDictionary, &result)
-    guard status == errSecSuccess else { return nil }
-    return result as? Data
+    switch status {
+    case errSecSuccess:
+      guard let data = result as? Data else { return .failure(errSecDecode) }
+      return .success(data)
+    case errSecItemNotFound:
+      return .notFound
+    default:
+      return .failure(status)
+    }
   }
 
   /// Deletes the item. Returns the SecItem status; `errSecItemNotFound` is a

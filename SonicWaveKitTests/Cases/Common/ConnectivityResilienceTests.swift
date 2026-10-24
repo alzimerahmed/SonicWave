@@ -1,6 +1,6 @@
 //
 //  ConnectivityResilienceTests.swift
-//  AmperfyKitTests
+//  SonicWaveKitTests
 //
 //  Created by Alzimer Ahmed on 24.10.26.
 //  Copyright (c) 2026 Alzimer Ahmed. All rights reserved.
@@ -163,6 +163,32 @@ final class ConnectivityResilienceTests: XCTestCase {
       .classify(error: AFError.responseValidationFailed(reason: .unacceptableStatusCode(code: 500)))
     else {
       XCTFail("AFError.responseValidationFailed must classify as nonConnectivity")
+      return
+    }
+  }
+
+  func testClassifyTlsFailures() {
+    // certificate-validation failures are their own kind: NOT connectivity
+    // (the peer was reached — must not trip auto-offline) and NOT reachable
+    // evidence (a MITM must not satisfy the recovery probe / exit offline mode)
+    let codes: [URLError.Code] = [
+      .serverCertificateHasBadDate,
+      .serverCertificateUntrusted,
+      .serverCertificateHasUnknownRoot,
+      .serverCertificateNotYetValid,
+      .clientCertificateRejected,
+      .clientCertificateRequired,
+    ]
+    for code in codes {
+      guard case .tlsFailure = RequestFailureKind.classify(error: URLError(code)) else {
+        XCTFail("URLError.\(code) must classify as tlsFailure")
+        continue
+      }
+    }
+    // Alamofire wraps URLSession errors in .sessionTaskFailed
+    let afError = AFError.sessionTaskFailed(error: URLError(.serverCertificateUntrusted))
+    guard case .tlsFailure = RequestFailureKind.classify(error: afError) else {
+      XCTFail("AFError wrapping a TLS URLError must classify as tlsFailure")
       return
     }
   }

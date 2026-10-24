@@ -36,6 +36,12 @@ extension PersistentStorage {
   ///   credentials stay readable and the next launch retries — the user is
   ///   never stranded logged-out by a failed migration.
   ///
+  /// Accounts whose secrets store could not be READ during decode (Keychain
+  /// locked before first unlock — `secretsReadFailed`) are effectively
+  /// skipped: their encode writes neither a Keychain overwrite nor plaintext
+  /// keys, so their existing Keychain blob survives untouched and a later
+  /// healthy launch resolves them normally.
+  ///
   /// Idempotent: runs only while the stored JSON still contains secret keys.
   /// Called once at launch (AppDelegate) next to
   /// `applyMultiAccountSettingsUpdateIfNeeded`.

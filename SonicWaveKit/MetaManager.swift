@@ -60,7 +60,9 @@ public class MetaManager {
     OSLog(subsystem: "com.alzimerahmed.SonicWave", category: "MetaManager")
   }()
 
-  public lazy var backendApi: BackendProxy = {
+  private var _backendApi: BackendProxy?
+  public var backendApi: BackendProxy {
+    if let api = _backendApi { return api }
     // create backend API
     let api = BackendProxy(
       networkMonitor: networkMonitor,
@@ -78,8 +80,16 @@ public class MetaManager {
     } else {
       os_log("Initializing API without credentials", log: log, type: .info)
     }
+    _backendApi = api
     return api
-  }()
+  }
+
+  /// Cancels the account's auto-recovery probe loop without forcing lazy
+  /// services into existence — called on account teardown
+  /// (`AmperKit.resetMeta`, reached from logout / resync / failed login).
+  func stopAutoRecovery() {
+    _backendApi?.stopAutoRecovery()
+  }
 
   public lazy var librarySyncer: LibrarySyncer = {
     LibrarySyncerProxy(backendApi: backendApi, account: account, storage: storage)

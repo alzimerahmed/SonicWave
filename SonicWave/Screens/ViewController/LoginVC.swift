@@ -685,6 +685,7 @@ class LoginVC: UIViewController {
       serverUrlTF.text = credentials.serverUrl
       usernameTF.text = credentials.username
       httpHeaders = credentials.httpHeaders
+      allowUntrustedServerCertificates = credentials.allowUntrustedServerCertificates
     }
   }
 

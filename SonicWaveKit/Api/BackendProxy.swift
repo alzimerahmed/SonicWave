@@ -206,6 +206,9 @@ public final class BackendProxy: Sendable {
   private let sessionSecurity: AccountSessionSecurity
   /// latest known credentials — kept so URL failover can re-provide them
   private let currentCredentials = Atomic<LoginCredentials?>(wrappedValue: nil)
+  /// the shared unreachable monitor — kept so account teardown can cancel
+  /// its auto-recovery probe loop (`stopAutoRecovery`)
+  private let unreachableMonitor = Atomic<ServerUnreachableMonitor?>(wrappedValue: nil)
 
   public var selectedApi: BackenApiType {
     get {
@@ -277,6 +280,7 @@ public final class BackendProxy: Sendable {
         await self?.handleAutoRecovery(reachableURL: reachableURL)
       }
     )
+    unreachableMonitor.wrappedValue = serverUnreachableMonitor
     ampacheApi.wrappedValue = AmpacheApi(
       ampacheXmlServerApi: AmpacheXmlServerApi(
         performanceMonitor: performanceMonitor,
@@ -379,6 +383,9 @@ public final class BackendProxy: Sendable {
         request.setValue(value, forHTTPHeaderField: field)
       }
       let task = session.downloadTask(with: request) { tempLocalUrl, response, error in
+        // the closure captures the session — release session + delegate once
+        // the probe is done (same pattern as isServerUrlReachable)
+        defer { session.invalidateAndCancel() }
         if let error = error {
           continuation
             .resume(
@@ -397,6 +404,10 @@ public final class BackendProxy: Sendable {
             } else {
               continuation.resume()
             }
+          } else {
+            continuation.resume(
+              throwing: AuthenticationError.downloadError(message: "Server sent no HTTP response")
+            )
           }
         }
       }
@@ -409,9 +420,13 @@ public final class BackendProxy: Sendable {
 
   /// Ordered candidates for the recovery probe — the currently active URL
   /// first, then primary + all alternative URLs (deduplicated), so a reachable
-  /// alternative can take over when the active endpoint stays dead.
+  /// alternative can take over when the active endpoint stays dead. Falls back
+  /// to the persisted credentials (same source `handleAutoRecovery` uses) so
+  /// early loop iterations before `provideCredentials` aren't empty.
   private func serverURLCandidates() -> [String] {
-    guard let credentials = currentCredentials.wrappedValue else { return [] }
+    guard let credentials = currentCredentials.wrappedValue
+          ?? settings.accounts.getSetting(accountInfo).read.loginCredentials
+    else { return [] }
     var urls = [String]()
     if !credentials.activeBackendServerUrl.isEmpty {
       urls.append(credentials.activeBackendServerUrl)
@@ -424,9 +439,12 @@ public final class BackendProxy: Sendable {
 
   /// Transport-level probe used by the recovery loop: a host that answers —
   /// even with an HTTP error or an authentication failure — counts as
-  /// reachable. Only connectivity-class failures (DNS, TCP connect, timeout,
-  /// no route) keep it "unreachable". This intentionally can never retry-loop
-  /// on 401s: auth failures surface to the user once back online instead.
+  /// reachable. Connectivity-class failures (DNS, TCP connect, timeout,
+  /// no route) keep it "unreachable" — and so do TLS/certificate-validation
+  /// failures (`RequestFailureKind.tlsFailure`): a host whose certificate
+  /// cannot be trusted must never exit offline mode nor be persisted as the
+  /// active URL (possible MITM). This intentionally can never retry-loop on
+  /// 401s: auth failures surface to the user once back online instead.
   private func isServerUrlReachable(serverUrl: String) async -> Bool {
     guard let url = URL(string: serverUrl) else { return false }
     let sessionConfig = URLSessionConfiguration.default
@@ -480,6 +498,14 @@ public final class BackendProxy: Sendable {
     // refresh the active API + session policy with the (possibly failed-over)
     // credentials — the first requests after returning online re-auth lazily
     provideCredentials(credentials: credentials)
+  }
+
+  /// Cancels the auto-recovery probe loop — called on account teardown
+  /// (`AmperKit.resetMeta` via `MetaManager.stopAutoRecovery`) so the loop
+  /// can't outlive its account.
+  func stopAutoRecovery() {
+    guard let monitor = unreachableMonitor.wrappedValue else { return }
+    Task { await monitor.stopAutoRecovery() }
   }
 }
 

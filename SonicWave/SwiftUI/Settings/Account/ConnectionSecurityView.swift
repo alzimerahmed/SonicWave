@@ -102,6 +102,8 @@ struct ConnectionSecurityView: View {
     case .success:
       successMessage = "Client certificate installed."
       errorMessage = nil
+      // drop the passphrase from view state once it served its purpose
+      certificatePassword = ""
     case .invalidPassphraseOrData:
       errorMessage = "Could not read the certificate — wrong password or invalid .p12/.pfx file."
       successMessage = nil
@@ -191,7 +193,9 @@ struct ConnectionSecurityView: View {
     }
     .fileImporter(
       isPresented: $isImporterPresented,
-      allowedContentTypes: [.pkcs12, .data],
+      // UTType.pkcs12 (com.rsa.pkcs-12) declares both .p12 and .pfx filename
+      // extensions — no broader .data fallback needed
+      allowedContentTypes: [.pkcs12],
       allowsMultipleSelection: false
     ) { result in
       switch result {
@@ -215,7 +219,10 @@ struct ConnectionSecurityView: View {
     .alert("Certificate Password", isPresented: $isPasswordPromptVisible) {
       SecureField("Password (empty for none)", text: $certificatePassword)
       Button("Import") { confirmImport() }
-      Button("Cancel", role: .cancel) { pendingImportData = nil }
+      Button("Cancel", role: .cancel) {
+        pendingImportData = nil
+        certificatePassword = ""
+      }
     } message: {
       Text("Enter the password protecting this client certificate.")
     }

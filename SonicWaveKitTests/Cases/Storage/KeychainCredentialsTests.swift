@@ -27,24 +27,36 @@ import XCTest
 
 /// In-memory `CredentialSecretsStoring` — deterministic migration tests without
 /// depending on the host app Keychain state. `failSaves` simulates a Keychain
-/// write failure to exercise the plaintext fallback / retry path.
+/// write failure to exercise the plaintext fallback / retry path; `failReads`
+/// simulates a locked Keychain (e.g. `errSecInteractionNotAllowed` before first
+/// unlock) so reads report `.unavailable`.
 private final class StubSecretsStore: CredentialSecretsStoring {
   private let storage = Atomic<[String: LoginCredentialSecrets]>(wrappedValue: [:])
   private let failSaves: Bool
+  private let failReads: Bool
+  /// how often `save` was invoked — used to prove a guarded encode never
+  /// attempts a store write at all
+  let saveCallCount = Atomic<Int>(wrappedValue: 0)
 
-  init(failSaves: Bool = false) {
+  init(failSaves: Bool = false, failReads: Bool = false) {
     self.failSaves = failSaves
+    self.failReads = failReads
   }
 
   @discardableResult
   func save(secrets: LoginCredentialSecrets, accountIdent: String) -> Bool {
+    saveCallCount.wrappedValue += 1
     if failSaves { return false }
     storage.wrappedValue[accountIdent] = secrets
     return true
   }
 
-  func read(accountIdent: String) -> LoginCredentialSecrets? {
-    storage.wrappedValue[accountIdent]
+  func read(accountIdent: String) -> CredentialSecretsReadResult {
+    if failReads { return .unavailable }
+    if let secrets = storage.wrappedValue[accountIdent] {
+      return .found(secrets)
+    }
+    return .notFound
   }
 
   func delete(accountIdent: String) {
@@ -112,15 +124,15 @@ final class KeychainCredentialsTests: XCTestCase {
     let secretData = Data("hunter2".utf8)
 
     XCTAssertEqual(keychain.save(data: secretData, account: "roundtrip"), errSecSuccess)
-    XCTAssertEqual(keychain.read(account: "roundtrip"), secretData)
+    XCTAssertEqual(keychain.read(account: "roundtrip"), .success(secretData))
 
     // update path: second save overwrites
     let updatedData = Data("hunter3".utf8)
     XCTAssertEqual(keychain.save(data: updatedData, account: "roundtrip"), errSecSuccess)
-    XCTAssertEqual(keychain.read(account: "roundtrip"), updatedData)
+    XCTAssertEqual(keychain.read(account: "roundtrip"), .success(updatedData))
 
     XCTAssertEqual(keychain.delete(account: "roundtrip"), errSecSuccess)
-    XCTAssertNil(keychain.read(account: "roundtrip"))
+    XCTAssertEqual(keychain.read(account: "roundtrip"), .notFound)
     // delete is idempotent — deleting a missing item reports success
     XCTAssertEqual(keychain.delete(account: "roundtrip"), errSecSuccess)
   }
@@ -133,11 +145,17 @@ final class KeychainCredentialsTests: XCTestCase {
       httpHeaders: ["CF-Access-Client-Id": "id", "CF-Access-Client-Secret": "sec"]
     )
     XCTAssertTrue(store.save(secrets: secrets, accountIdent: testAccountIdent))
-    let loaded = store.read(accountIdent: testAccountIdent)
-    XCTAssertEqual(loaded?.password, secrets.password)
-    XCTAssertEqual(loaded?.httpHeaders, secrets.httpHeaders)
+    guard case let .found(loaded) = store.read(accountIdent: testAccountIdent) else {
+      XCTFail("secrets must be readable after save")
+      return
+    }
+    XCTAssertEqual(loaded.password, secrets.password)
+    XCTAssertEqual(loaded.httpHeaders, secrets.httpHeaders)
     store.delete(accountIdent: testAccountIdent)
-    XCTAssertNil(store.read(accountIdent: testAccountIdent))
+    guard case .notFound = store.read(accountIdent: testAccountIdent) else {
+      XCTFail("secrets store must report notFound after delete")
+      return
+    }
   }
 
   // MARK: Codable seam
@@ -175,6 +193,49 @@ final class KeychainCredentialsTests: XCTestCase {
     XCTAssertEqual(decoded.password, testCredentials.password)
   }
 
+  /// Locked-Keychain regression (read failure, e.g. BGTask before first
+  /// unlock): decode marks the instance `secretsReadFailed` and a re-encode
+  /// must write NEITHER a Keychain overwrite NOR empty plaintext keys — the
+  /// real secrets stay preserved in the store.
+  func testEncodePreservesStoredSecretsWhenReadFailed() throws {
+    // stage real secrets in a healthy store and produce the migrated payload
+    // form (no inline secret keys)
+    let healthyStore = StubSecretsStore()
+    LoginCredentials.secretsStore = healthyStore
+    healthyStore.save(
+      secrets: LoginCredentialSecrets(
+        password: testCredentials.password,
+        httpHeaders: ["CF-Access-Client-Secret": "sec"]
+      ),
+      accountIdent: testAccountIdent
+    )
+    var credentials = testCredentials
+    credentials.httpHeaders = ["CF-Access-Client-Secret": "sec"]
+    let migratedData = try JSONEncoder().encode(credentials)
+    let migratedJSON = try XCTUnwrap(
+      JSONSerialization.jsonObject(with: migratedData) as? [String: Any]
+    )
+    XCTAssertNil(migratedJSON["password"])
+    XCTAssertNil(migratedJSON["httpHeaders"])
+
+    // now reads fail (Keychain locked) -> decode marks the instance
+    let failingStore = StubSecretsStore(failReads: true)
+    LoginCredentials.secretsStore = failingStore
+    let decoded = try JSONDecoder().decode(LoginCredentials.self, from: migratedData)
+    XCTAssertTrue(decoded.secretsReadFailed)
+    XCTAssertEqual(decoded.password, "")
+    XCTAssertEqual(decoded.httpHeaders, [:])
+
+    // re-encode: no Keychain overwrite, no plaintext fallback keys
+    let reencodedData = try JSONEncoder().encode(decoded)
+    let json = try XCTUnwrap(
+      JSONSerialization.jsonObject(with: reencodedData) as? [String: Any]
+    )
+    XCTAssertNil(json["password"])
+    XCTAssertNil(json["httpHeaders"])
+    XCTAssertEqual(failingStore.saveCallCount.wrappedValue, 0)
+  }
+
   // MARK: Migration
 
   @MainActor
@@ -189,10 +250,13 @@ final class KeychainCredentialsTests: XCTestCase {
     LoginCredentials.secretsStore = workingStore
     storage.applyCredentialsKeychainMigrationIfNeeded()
     XCTAssertFalse(storedAccountDataContainsPlaintextSecrets())
-    XCTAssertEqual(
-      workingStore.read(accountIdent: testAccountIdent)?.password,
-      testCredentials.password
-    )
+    guard case let .found(migratedSecrets) = workingStore
+      .read(accountIdent: testAccountIdent)
+    else {
+      XCTFail("migrated secrets must be readable")
+      return
+    }
+    XCTAssertEqual(migratedSecrets.password, testCredentials.password)
 
     // credentials still resolve correctly after the migration
     let accountInfo = Account.createInfo(credentials: testCredentials)
@@ -241,9 +305,15 @@ final class KeychainCredentialsTests: XCTestCase {
     LoginCredentials.secretsStore = store
     storage.settings.accounts.login(testCredentials)
     let accountInfo = Account.createInfo(credentials: testCredentials)
-    XCTAssertNotNil(store.read(accountIdent: accountInfo.ident))
+    guard case .found = store.read(accountIdent: accountInfo.ident) else {
+      XCTFail("secrets must exist after login")
+      return
+    }
 
     storage.settings.accounts.logout(accountInfo)
-    XCTAssertNil(store.read(accountIdent: accountInfo.ident))
+    guard case .notFound = store.read(accountIdent: accountInfo.ident) else {
+      XCTFail("secrets must be deleted after logout")
+      return
+    }
   }
 }

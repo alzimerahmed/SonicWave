@@ -94,7 +94,8 @@ actor DownloadManager: NSObject, DownloadManageable {
   private let urlCleanser: URLCleanser
   /// per-account TLS policy — answers server-trust (self-signed TOFU pin) and
   /// client-certificate (mTLS) challenges for this account's sessions
-  private let sessionSecurity: AccountSessionSecurity
+  /// (internal — the URLSession-delegate extension lives in a separate file)
+  internal let sessionSecurity: AccountSessionSecurity
 
   private var isRunning = false
   private var taskOperations = [DownloadRequest: DownloadOperation]()

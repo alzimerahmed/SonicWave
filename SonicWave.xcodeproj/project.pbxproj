@@ -210,6 +210,7 @@
 		50BE5D552850F4E700156FC6 /* UtilitiesTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5090963726496A9500DD9826 /* UtilitiesTest.swift */; };
 		B5A5CE010000000000000001 /* ShareSongActionTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5A5CE010000000000000002 /* ShareSongActionTest.swift */; };
 		B5A5CE010000000000000003 /* ConnectivityResilienceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5A5CE010000000000000004 /* ConnectivityResilienceTests.swift */; };
+		7D41AA010000000000000001 /* AccountSessionSecurityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D41AA010000000000000002 /* AccountSessionSecurityTests.swift */; };
 		5EC0DE010000000000000001 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DE010000000000000002 /* KeychainHelper.swift */; };
 		5EC0DE010000000000000003 /* CredentialsKeychainMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC0DE010000000000000004 /* CredentialsKeychainMigration.swift */; };
 		7C3E9A000000000000000001 /* AccountSessionSecurity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C3E9A000000000000000002 /* AccountSessionSecurity.swift */; };
@@ -855,6 +856,7 @@
 		5090963726496A9500DD9826 /* UtilitiesTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UtilitiesTest.swift; sourceTree = "<group>"; };
 		B5A5CE010000000000000002 /* ShareSongActionTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSongActionTest.swift; sourceTree = "<group>"; };
 		B5A5CE010000000000000004 /* ConnectivityResilienceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectivityResilienceTests.swift; sourceTree = "<group>"; };
+		7D41AA010000000000000002 /* AccountSessionSecurityTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AccountSessionSecurityTests.swift; sourceTree = "<group>"; };
 		5EC0DE010000000000000002 /* KeychainHelper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
 		5EC0DE010000000000000004 /* CredentialsKeychainMigration.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CredentialsKeychainMigration.swift; sourceTree = "<group>"; };
 		7C3E9A000000000000000002 /* AccountSessionSecurity.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AccountSessionSecurity.swift; sourceTree = "<group>"; };
@@ -1593,6 +1595,7 @@
 				5090963726496A9500DD9826 /* UtilitiesTest.swift */,
 				B5A5CE010000000000000002 /* ShareSongActionTest.swift */,
 				B5A5CE010000000000000004 /* ConnectivityResilienceTests.swift */,
+				7D41AA010000000000000002 /* AccountSessionSecurityTests.swift */,
 			);
 			path = Common;
 			sourceTree = "<group>";
@@ -2903,6 +2906,7 @@
 				50BE5D552850F4E700156FC6 /* UtilitiesTest.swift in Sources */,
 				B5A5CE010000000000000001 /* ShareSongActionTest.swift in Sources */,
 				B5A5CE010000000000000003 /* ConnectivityResilienceTests.swift in Sources */,
+				7D41AA010000000000000001 /* AccountSessionSecurityTests.swift in Sources */,
 				5EC0DE010000000000000005 /* KeychainCredentialsTests.swift in Sources */,
 				50BE5D6A2850F4FB00156FC6 /* SsAlbumParserTest.swift in Sources */,
 				50BE5D702850F4FB00156FC6 /* SsIndexesParserTest.swift in Sources */,

@@ -32,6 +32,21 @@ struct LoginCredentialSecrets: Sendable, Codable {
   var httpHeaders: [String: String] = [:]
 }
 
+// MARK: - CredentialSecretsReadResult
+
+/// Result of reading credential secrets from the secrets store.
+enum CredentialSecretsReadResult: Sendable {
+  /// Secrets were read successfully.
+  case found(LoginCredentialSecrets)
+  /// The store is intact but holds no secrets for this account — a legitimate
+  /// empty state (e.g. the user never completed a login).
+  case notFound
+  /// The read itself failed (e.g. `errSecInteractionNotAllowed` while the
+  /// Keychain is locked before first unlock). Secrets may still exist in the
+  /// store — they must be preserved, never overwritten with empty values.
+  case unavailable
+}
+
 // MARK: - CredentialSecretsStoring
 
 /// Persistence boundary for `LoginCredentialSecrets`. Injectable in tests via
@@ -40,7 +55,7 @@ protocol CredentialSecretsStoring: Sendable {
   /// Returns true when the secrets were durably stored.
   @discardableResult
   func save(secrets: LoginCredentialSecrets, accountIdent: String) -> Bool
-  func read(accountIdent: String) -> LoginCredentialSecrets?
+  func read(accountIdent: String) -> CredentialSecretsReadResult
   func delete(accountIdent: String)
 }
 
@@ -61,9 +76,21 @@ struct KeychainCredentialSecretsStore: CredentialSecretsStoring {
     return keychain.save(data: data, account: accountIdent) == errSecSuccess
   }
 
-  func read(accountIdent: String) -> LoginCredentialSecrets? {
-    guard let data = keychain.read(account: accountIdent) else { return nil }
-    return try? Self.decoder.decode(LoginCredentialSecrets.self, from: data)
+  func read(accountIdent: String) -> CredentialSecretsReadResult {
+    switch keychain.read(account: accountIdent) {
+    case let .success(data):
+      guard let secrets = try? Self.decoder.decode(LoginCredentialSecrets.self, from: data)
+      else {
+        // Undecodable blob -> corrupt data; do not pretend the store is empty,
+        // overwriting it with empty secrets would destroy what is stored.
+        return .unavailable
+      }
+      return .found(secrets)
+    case .notFound:
+      return .notFound
+    case .failure:
+      return .unavailable
+    }
   }
 
   func delete(accountIdent: String) {
@@ -93,6 +120,9 @@ public struct LoginCredentials: Sendable, Codable {
   /// Persistence for the credential secrets (`password` + `httpHeaders`).
   /// `nonisolated(unsafe)` so tests can inject a stub store — production code
   /// always uses the Keychain-backed default.
+  /// WARNING: test seam only. Reassigning this outside tests while credential
+  /// instances are alive can split secrets across stores or strand writes —
+  /// never mutate in production code.
   nonisolated(unsafe) static var secretsStore: CredentialSecretsStoring =
     KeychainCredentialSecretsStore()
 
@@ -137,6 +167,14 @@ public struct LoginCredentials: Sendable, Codable {
   public var isClientCertificateInstalled: Bool {
     ClientCertificateStore().isInstalled(accountIdent: accountIdent)
   }
+
+  /// Transient flag — never persisted (not part of `CodingKeys`): set when
+  /// decoding could not READ the secrets store (e.g. `errSecInteractionNotAllowed`
+  /// while the Keychain is locked before first unlock during a BGTask or
+  /// background-URLSession launch). While set, `encode(to:)` writes neither a
+  /// Keychain overwrite nor plaintext fallback keys, so the secrets that may
+  /// still exist in the store are preserved until a healthy decode.
+  var secretsReadFailed = false
 
   public init() {
     self.serverUrl = ""
@@ -229,20 +267,37 @@ public struct LoginCredentials: Sendable, Codable {
           decodedAccountIdent
         )
       }
-    } else if let storedSecrets = Self.secretsStore.read(accountIdent: decodedAccountIdent) {
-      self.password = storedSecrets.password
-      self.httpHeaders = storedSecrets.httpHeaders
     } else {
-      // The account stays logged in structurally but cannot authenticate; the
-      // user has to re-enter the password. Never trap here.
-      self.password = ""
-      self.httpHeaders = [:]
-      os_log(
-        "No credential secrets found in the Keychain for account %s",
-        log: Self.log,
-        type: .error,
-        decodedAccountIdent
-      )
+      switch Self.secretsStore.read(accountIdent: decodedAccountIdent) {
+      case let .found(storedSecrets):
+        self.password = storedSecrets.password
+        self.httpHeaders = storedSecrets.httpHeaders
+      case .notFound:
+        // The account stays logged in structurally but cannot authenticate; the
+        // user has to re-enter the password. Never trap here.
+        self.password = ""
+        self.httpHeaders = [:]
+        os_log(
+          "No credential secrets found in the Keychain for account %s",
+          log: Self.log,
+          type: .error,
+          decodedAccountIdent
+        )
+      case .unavailable:
+        // Transient store failure (e.g. Keychain locked before first unlock):
+        // secrets may still exist in the store. Keep them empty in memory but
+        // mark the instance so encode() preserves the stored blob instead of
+        // overwriting it with empty secrets or writing empty plaintext.
+        self.password = ""
+        self.httpHeaders = [:]
+        self.secretsReadFailed = true
+        os_log(
+          "Credential secrets of account %s could not be read (store unavailable) — preserving stored secrets",
+          log: Self.log,
+          type: .error,
+          decodedAccountIdent
+        )
+      }
     }
     self.passwordHash = StringHasher.sha256(dataString: password)
   }
@@ -258,25 +313,33 @@ public struct LoginCredentials: Sendable, Codable {
       allowUntrustedServerCertificates,
       forKey: .allowUntrustedServerCertificates
     )
-    let secrets = LoginCredentialSecrets(password: password, httpHeaders: httpHeaders)
-    if Self.secretsStore.save(secrets: secrets, accountIdent: accountIdent) {
-      // Secrets live in the Keychain — keep them out of the UserDefaults JSON.
-    } else {
-      // Fallback: keep the legacy plaintext keys so the credentials stay
-      // readable; the next encode / the launch migrator retries the move.
-      os_log(
-        "Could not persist credential secrets of account %s in the Keychain — keeping plaintext fallback",
-        log: Self.log,
-        type: .error,
-        accountIdent
-      )
-      try container.encode(password, forKey: .password)
-      try container.encode(httpHeaders, forKey: .httpHeaders)
+    // Transient read failure at decode left no usable secrets in memory —
+    // saving would overwrite a possibly intact Keychain blob with empty
+    // secrets and the fallback would write empty plaintext into UserDefaults.
+    // Skip both so the stored secrets survive until a healthy decode.
+    if !secretsReadFailed {
+      let secrets = LoginCredentialSecrets(password: password, httpHeaders: httpHeaders)
+      if Self.secretsStore.save(secrets: secrets, accountIdent: accountIdent) {
+        // Secrets live in the Keychain — keep them out of the UserDefaults JSON.
+      } else {
+        // Fallback: keep the legacy plaintext keys so the credentials stay
+        // readable; the next encode / the launch migrator retries the move.
+        os_log(
+          "Could not persist credential secrets of account %s in the Keychain — keeping plaintext fallback",
+          log: Self.log,
+          type: .error,
+          accountIdent
+        )
+        try container.encode(password, forKey: .password)
+        try container.encode(httpHeaders, forKey: .httpHeaders)
+      }
     }
   }
 
   public mutating func changePasswordAndHash(password newPassword: String) {
     password = newPassword
     passwordHash = StringHasher.sha256(dataString: newPassword)
+    // a fresh in-memory secret exists again -> normal persistence applies
+    secretsReadFailed = false
   }
 }

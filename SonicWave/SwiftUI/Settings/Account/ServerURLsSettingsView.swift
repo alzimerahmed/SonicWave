@@ -85,6 +85,15 @@ struct ServerURLsSettingsView: View {
       .updateSetting(activeAccountInfo) { accountSettings in
         accountSettings.loginCredentials?.alternativeServerURLs = altURLs
       }
+    // re-provide credentials so the session TLS policy drops the deleted host
+    // from isConfiguredServerHost (no more client-cert offering / cert pinning
+    // for it) — mirrors what setAsActiveURL does
+    if let updatedCredentials = appDelegate.storage.settings.accounts
+      .getSetting(activeAccountInfo).read
+      .loginCredentials {
+      appDelegate.getMeta(activeAccountInfo).backendApi
+        .provideCredentials(credentials: updatedCredentials)
+    }
   }
 
   var body: some View {

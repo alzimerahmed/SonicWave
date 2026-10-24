@@ -138,6 +138,12 @@ enum RequestFailureKind: Sendable {
   case connectivity
   /// The request was cancelled — carries no evidence about server reachability.
   case cancellation
+  /// TLS/certificate validation failed — TCP connected but the peer could not
+  /// be *trusted* (untrusted root, expired, hostname mismatch, rejected client
+  /// certificate). This is NEITHER a connectivity failure NOR proof the right
+  /// server answered: a MITM must never count as "reachable" nor trigger the
+  /// unreachable-server offline transition.
+  case tlsFailure
   /// Any other failure — proves the server answered (HTTP status, validation, parse).
   case nonConnectivity
 
@@ -149,6 +155,16 @@ enum RequestFailureKind: Sendable {
     .networkConnectionLost,
     .dnsLookupFailed,
     .notConnectedToInternet,
+  ]
+
+  /// `URLError` codes produced by TLS/certificate validation.
+  private static let tlsFailureUrlErrorCodes: Set<URLError.Code> = [
+    .serverCertificateHasBadDate,
+    .serverCertificateUntrusted,
+    .serverCertificateHasUnknownRoot,
+    .serverCertificateNotYetValid,
+    .clientCertificateRejected,
+    .clientCertificateRequired,
   ]
 
   static func classify(error: Error) -> RequestFailureKind {
@@ -168,6 +184,9 @@ enum RequestFailureKind: Sendable {
     if let urlError = error as? URLError {
       if urlError.code == .cancelled {
         return .cancellation
+      }
+      if tlsFailureUrlErrorCodes.contains(urlError.code) {
+        return .tlsFailure
       }
       return connectivityUrlErrorCodes.contains(urlError.code) ? .connectivity : .nonConnectivity
     }
@@ -430,6 +449,10 @@ actor ServerUnreachableMonitor {
   private func recoverOnlineMode(reachableURL: String) async {
     consecutiveConnectivityFailures = 0
     isAutoOfflineActive = false
+    // failover (persist the reachable URL + re-provide credentials) runs
+    // BEFORE online mode is restored — no reader may observe "online" while
+    // the dead URL is still configured
+    await autoRecoveryHandler?(reachableURL)
     var mutableSettings = settings
     // the setter also clears isOfflineModeAutomaticallyActivated
     mutableSettings.user.isOfflineMode = false
@@ -438,9 +461,6 @@ actor ServerUnreachableMonitor {
       log: self.log,
       type: .info
     )
-    // failover happens before the notification so observers (download
-    // managers, syncers) already see the updated credentials
-    await autoRecoveryHandler?(reachableURL)
     await notificationHandler.post(
       name: .offlineModeChanged,
       object: nil,

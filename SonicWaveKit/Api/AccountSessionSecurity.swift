@@ -61,7 +61,10 @@ public struct ClientCertificateStore: Sendable {
   public init() {}
 
   public func isInstalled(accountIdent: String) -> Bool {
-    keychain.read(account: accountIdent) != nil
+    if case .success = keychain.read(account: accountIdent) {
+      return true
+    }
+    return false
   }
 
   /// Validates the PKCS#12 container + passphrase, then persists them.
@@ -93,7 +96,7 @@ public struct ClientCertificateStore: Sendable {
   /// deprecated but remains the only public PKCS#12 import API on iOS
   /// (`SecItemImport` is macOS-only) — the deprecation is cosmetic.
   func identity(accountIdent: String) -> (SecIdentity, [SecCertificate])? {
-    guard let data = keychain.read(account: accountIdent),
+    guard case let .success(data) = keychain.read(account: accountIdent),
           let payload = try? JSONDecoder().decode(Payload.self, from: data)
     else { return nil }
     return Self.importIdentity(pkcs12Data: payload.pkcs12, passphrase: payload.passphrase)
@@ -127,6 +130,10 @@ public struct ClientCertificateStore: Sendable {
 /// together with the rest of the account's trust material.
 public final class ServerCertificatePinStore: @unchecked Sendable {
   static let service = "com.alzimerahmed.SonicWave.servercertpins"
+  private let log = OSLog(
+    subsystem: "com.alzimerahmed.SonicWave",
+    category: "ServerCertificatePinStore"
+  )
   private let keychain = KeychainHelper(service: Self.service)
   private let lock = NSLock()
 
@@ -134,33 +141,53 @@ public final class ServerCertificatePinStore: @unchecked Sendable {
 
   /// Read-modify-write helper — always call while `lock` is held.
   private func loadPins(accountIdent: String) -> [String: String] {
-    guard let data = keychain.read(account: accountIdent),
+    guard case let .success(data) = keychain.read(account: accountIdent),
           let pins = try? JSONDecoder().decode([String: String].self, from: data)
     else { return [:] }
     return pins
   }
 
-  private func savePins(_ pins: [String: String], accountIdent: String) {
-    guard let data = try? JSONEncoder().encode(pins) else { return }
-    keychain.save(data: data, account: accountIdent)
+  /// Returns false when the pins could not be persisted — the caller must
+  /// fail closed (reject the connection) instead of silently degrading TOFU
+  /// into trust-everything.
+  @discardableResult
+  private func savePins(_ pins: [String: String], accountIdent: String) -> Bool {
+    guard let data = try? JSONEncoder().encode(pins) else { return false }
+    let status = keychain.save(data: data, account: accountIdent)
+    if status != errSecSuccess {
+      os_log(
+        "Could not persist server certificate pins for account %s (OSStatus %i)",
+        log: log,
+        type: .error,
+        accountIdent,
+        status
+      )
+    }
+    return status == errSecSuccess
   }
 
   public func pinnedHash(accountIdent: String, host: String) -> String? {
     lock.withLock { loadPins(accountIdent: accountIdent)[host.lowercased()] }
   }
 
-  public func setPinnedHash(accountIdent: String, host: String, hash: String) {
+  /// Returns false when the pin could not be persisted durably.
+  @discardableResult
+  public func setPinnedHash(accountIdent: String, host: String, hash: String) -> Bool {
     lock.withLock {
       var pins = loadPins(accountIdent: accountIdent)
       pins[host.lowercased()] = hash
-      savePins(pins, accountIdent: accountIdent)
+      return savePins(pins, accountIdent: accountIdent)
     }
   }
 
   /// Drops all pinned certificates of an account (e.g. server rotated its
   /// self-signed certificate, or the user wants to re-trust from scratch).
+  /// Takes the same lock as `setPinnedHash` so a delete can never interleave
+  /// with a concurrent read-modify-write.
   public func deleteAll(accountIdent: String) {
-    keychain.delete(account: accountIdent)
+    lock.withLock {
+      keychain.delete(account: accountIdent)
+    }
   }
 }
 
@@ -173,12 +200,16 @@ public final class ServerCertificatePinStore: @unchecked Sendable {
 ///
 /// Responsibilities:
 /// - **Server trust** — default (system) validation always wins. Only when it
-///   fails AND the account opted into `allowUntrustedServerCertificates` AND
-///   the challenged host is one of the account's configured server URLs does
-///   the trust-on-first-use path run: the leaf public-key hash is compared to
-///   the pin recorded on first contact; a mismatch rejects the connection
-///   (possible MITM or rotated self-signed cert — user must reset trust in
-///   settings). Never a blanket trust-all.
+///   fails AND the failure is purely an untrusted root
+///   (`isOnlyAnchorTrustFailure` re-evaluates the chain with the leaf as its
+///   own anchor — hostname mismatch, expiry, revocation or weak crypto still
+///   reject outright) AND the account opted into
+///   `allowUntrustedServerCertificates` AND the challenged host is one of the
+///   account's configured server URLs does the trust-on-first-use path run:
+///   the leaf public-key hash is compared to the pin recorded on first
+///   contact; a mismatch rejects the connection (possible MITM or rotated
+///   self-signed cert — user must reset trust in settings). Never a blanket
+///   trust-all.
 /// - **Client certificate (mTLS)** — answers
 ///   `NSURLAuthenticationMethodClientCertificate` with the identity stored in
 ///   the Keychain, but only for configured server hosts (never leaked to
@@ -260,6 +291,61 @@ public final class AccountSessionSecurity: Sendable {
       .joined()
   }
 
+  /// Per-certificate `TrustResultDetails` flags (from `SecTrustCopyResult`)
+  /// that make a failed trust evaluation ineligible for TOFU even when the
+  /// leaf-anchor re-evaluation below would pass.
+  private static let tofuBlockingTrustDetailKeys: Set<String> = [
+    "Revoked",
+    "RevokedNetworkRequired",
+    "BlackListedKey",
+    "BlackListedLeaf",
+    "GrayListedLeaf",
+  ]
+
+  /// True when the ONLY reason `trust` failed system validation is that its
+  /// chain anchors at an untrusted root (self-signed / private CA).
+  ///
+  /// How it is decided: the same chain is re-evaluated with the leaf
+  /// certificate as its own trust anchor while the SSL hostname policy,
+  /// BasicX509 (temporal validity, signature strength, ...) checks still
+  /// apply. A chain that then validates failed before ONLY because no
+  /// trusted anchor was found — the TOFU-eligible class. A hostname
+  /// mismatch, expired or weak certificate still fails the re-evaluation;
+  /// revocation/blocklist flags from the original evaluation's
+  /// `TrustResultDetails` additionally disqualify the chain.
+  static func isOnlyAnchorTrustFailure(trust: SecTrust, host: String) -> Bool {
+    guard let chain = SecTrustCopyCertificateChain(trust) as? [SecCertificate],
+          let leaf = chain.first
+    else { return false }
+    let policies = [
+      SecPolicyCreateSSL(true, host as CFString),
+      SecPolicyCreateBasicX509(),
+    ]
+    var anchoredTrust: SecTrust?
+    guard SecTrustCreateWithCertificates(
+      chain as CFTypeRef,
+      policies as CFTypeRef,
+      &anchoredTrust
+    ) == errSecSuccess,
+      let anchoredTrust,
+      SecTrustSetAnchorCertificates(anchoredTrust, [leaf] as CFArray) == errSecSuccess,
+      SecTrustSetAnchorCertificatesOnly(anchoredTrust, true) == errSecSuccess
+    else { return false }
+    guard SecTrustEvaluateWithError(anchoredTrust, nil) else { return false }
+    return !hasTofuBlockingTrustDetail(trust: trust)
+  }
+
+  /// Scans the original evaluation's per-certificate detail flags for
+  /// revocation/blocklist failures — those must never reach the pin store.
+  private static func hasTofuBlockingTrustDetail(trust: SecTrust) -> Bool {
+    guard let result = SecTrustCopyResult(trust) as? [String: Any],
+          let details = result["TrustResultDetails"] as? [[String: Any]]
+    else { return false }
+    return details.contains { certDetails in
+      certDetails.keys.contains { tofuBlockingTrustDetailKeys.contains($0) }
+    }
+  }
+
   private func evaluateServerTrust(protectionSpace: URLProtectionSpace)
     -> (URLSession.AuthChallengeDisposition, URLCredential?)? {
     guard let credentials = credentials.wrappedValue,
@@ -278,8 +364,26 @@ public final class AccountSessionSecurity: Sendable {
       return (.useCredential, URLCredential(trust: trust))
     }
 
-    // The certificate failed system validation (self-signed, expired, unknown
-    // CA, ...) and the account opted into untrusted certs -> TOFU policy:
+    // Only anchor-trust failures are TOFU-eligible: a self-signed or
+    // private-CA / unknown-root chain passes re-evaluation when its leaf is
+    // treated as the trust anchor, while hostname, temporal validity,
+    // signature strength and revocation checks still apply. Anything else —
+    // hostname mismatch, expired, revoked, weak crypto — is rejected
+    // outright: an attacked or misconfigured certificate must never be
+    // pinned.
+    guard Self.isOnlyAnchorTrustFailure(trust: trust, host: protectionSpace.host) else {
+      os_log(
+        "Certificate for host %s failed validation beyond an untrusted root (hostname mismatch, expiry, revocation or weak crypto) -> rejecting",
+        log: log,
+        type: .error,
+        protectionSpace.host
+      )
+      return (.rejectProtectionSpace, nil)
+    }
+
+    // The certificate failed system validation only because its root is
+    // untrusted (self-signed / private CA) and the account opted into
+    // untrusted certs -> TOFU policy:
     guard let leafHash = Self.leafPublicKeyHash(trust: trust) else {
       os_log(
         "Cannot read leaf public key of untrusted certificate for host %s -> rejecting",
@@ -305,19 +409,29 @@ public final class AccountSessionSecurity: Sendable {
       )
       return (.rejectProtectionSpace, nil)
     }
-    // first contact: pin the observed leaf key (trust-on-first-use)
-    certificatePinStore.setPinnedHash(
+    // first contact: pin the observed leaf key (trust-on-first-use); if the
+    // pin cannot be persisted, fail closed — trusting without a durable pin
+    // would silently degrade TOFU into trust-everything on each connection
+    if certificatePinStore.setPinnedHash(
       accountIdent: accountIdent,
       host: protectionSpace.host,
       hash: leafHash
-    )
+    ) {
+      os_log(
+        "TOFU: pinned public key of self-signed certificate for host %s",
+        log: log,
+        type: .info,
+        protectionSpace.host
+      )
+      return (.useCredential, URLCredential(trust: trust))
+    }
     os_log(
-      "TOFU: pinned public key of self-signed certificate for host %s",
+      "Could not persist the TOFU pin for host %s -> rejecting",
       log: log,
-      type: .info,
+      type: .error,
       protectionSpace.host
     )
-    return (.useCredential, URLCredential(trust: trust))
+    return (.rejectProtectionSpace, nil)
   }
 
   private func evaluateClientCertificate(protectionSpace: URLProtectionSpace)

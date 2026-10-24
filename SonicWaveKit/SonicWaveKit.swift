@@ -73,6 +73,10 @@ public class AmperKit {
   }
 
   public func resetMeta(_ accountInfo: AccountInfo) {
+    // account teardown also ends the auto-recovery loop running on behalf of
+    // this account's backend API (logout / resync / failed login all funnel
+    // through here)
+    metaManager[accountInfo]?.stopAutoRecovery()
     metaManager[accountInfo] = nil
   }
 

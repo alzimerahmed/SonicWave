@@ -809,6 +809,11 @@ final class AmpacheXmlServerApi: URLCleanser, Sendable {
           throw error
         case .cancellation:
           throw error
+        case .tlsFailure:
+          // certificate validation failed — neither a connectivity failure
+          // nor proof the right server answered (possible MITM): report
+          // nothing to the unreachable monitor, just fail the request
+          throw error
         case .nonConnectivity:
           // server answered (HTTP/API error) -> counts as reachable
           await serverUnreachableMonitor.reportServerResponded()
