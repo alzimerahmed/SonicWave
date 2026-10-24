@@ -28,10 +28,6 @@ SonicWave is a GPLv3 music streaming client for self-hosted servers, forked from
 **Subsonic/OpenSubsonic API**, so it works out of the box with Ampache, Navidrome,
 Gonic, Airsonic, Funkwhale, Nextcloud Music, and most other Subsonic-compatible servers.
 
-> **Naming note:** SonicWave is in the middle of a rebrand from its upstream name.
-> The Xcode project, build targets, schemes, and the `amperfy://` URL scheme are still
-> named `Amperfy` — this is intentional and tracked on the [roadmap](#roadmap).
-
 ## Features
 
 **Servers & library**
@@ -58,7 +54,7 @@ Gonic, Airsonic, Funkwhale, Nextcloud Music, and most other Subsonic-compatible 
 **Platform integration**
 - CarPlay
 - Siri media commands, Siri Shortcuts, and App Intents
-- `x-callback-url` automation (`amperfy://`)
+- `x-callback-url` automation (`sonicwave://`)
 - iOS, iPadOS, and macOS (Mac Catalyst) from a single codebase
 - Six tint themes (blue, green, red, yellow, orange, purple) with light/dark variants
 
@@ -89,24 +85,24 @@ Gonic, Airsonic, Funkwhale, Nextcloud Music, and most other Subsonic-compatible 
 | Platform | iOS 26+, iPadOS, macOS via Catalyst; CarPlay + Siri/App Intents entitlements |
 | Dependencies | Swift Package Manager (pinned in `Package.resolved`) |
 | Tooling | Xcode 26+, [SwiftFormat](https://github.com/nicklockwood/SwiftFormat) (Google Swift style) |
-| Tests | XCTest — `AmperfyKitTests` |
+| Tests | XCTest — `SonicWaveKitTests` |
 
 ### Project structure
 
 ```
 SonicWave/
-├── Amperfy.xcodeproj/    # Xcode project — targets: Amperfy, AmperfyKit, AmperfyKitTests
-├── Amperfy/              # App shell: UIKit screens, SwiftUI settings, CarPlay, App Intents
-│   ├── Intents/          #   App Intents, x-callback-url registration, Siri handling
-│   ├── CarPlay/          #   CarPlay scene + tab templates
-│   └── SwiftUI/          #   Settings UI
-├── AmperfyKit/           # Core framework — all logic lives here
-│   ├── Api/              #   Ampache + Subsonic/OpenSubsonic clients, parsers, syncers
-│   ├── Player/           #   Audio engine, EQ, replay gain, scrobbler, visualizers
-│   ├── Storage/          #   Core Data stack + settings (49-version staged migrations)
-│   ├── Download/         #   Background download manager
-│   └── Assets/           #   Icons, theme artwork, custom SF Symbols
-├── AmperfyKitTests/      # Unit tests: API parsers, player, storage
+├── SonicWave.xcodeproj/    # Xcode project — targets: SonicWave, SonicWaveKit, SonicWaveKitTests
+├── SonicWave/              # App shell: UIKit screens, SwiftUI settings, CarPlay, App Intents
+│   ├── Intents/            #   App Intents, x-callback-url registration, Siri handling
+│   ├── CarPlay/            #   CarPlay scene + tab templates
+│   └── SwiftUI/            #   Settings UI
+├── SonicWaveKit/           # Core framework — all logic lives here
+│   ├── Api/                #   Ampache + Subsonic/OpenSubsonic clients, parsers, syncers
+│   ├── Player/             #   Audio engine, EQ, replay gain, scrobbler, visualizers
+│   ├── Storage/            #   Core Data stack + settings (49-version staged migrations)
+│   ├── Download/           #   Background download manager
+│   └── Assets/             #   Icons, theme artwork, custom SF Symbols
+├── SonicWaveKitTests/      # Unit tests: API parsers, player, storage
 ├── BuildTools/           # SwiftFormat tooling (applyFormat.sh)
 └── Helper/               # License-header scripts
 ```
@@ -120,16 +116,16 @@ Requirements: **Xcode 26+** (iOS 26 SDK), macOS. SPM dependencies resolve automa
    git clone https://github.com/alzimerahmed/SonicWave.git
    cd SonicWave
    ```
-2. Open `Amperfy.xcodeproj` in Xcode.
-3. Select the **Amperfy** scheme and build & run (⌘R).
+2. Open `SonicWave.xcodeproj` in Xcode.
+3. Select the **SonicWave** scheme and build & run (⌘R).
 
 <details>
 <summary><strong>CarPlay & Siri entitlements on physical devices</strong></summary>
 
-`Amperfy/Amperfy.entitlements` contains `com.apple.developer.carplay-audio` and
+`SonicWave/SonicWave.entitlements` contains `com.apple.developer.carplay-audio` and
 `com.apple.developer.siri`, which require Apple-approved provisioning profiles.
 The simulator works as-is. To build on a device without those entitlements,
-clear the entries in `Amperfy/Amperfy.entitlements` — the app runs fine without
+clear the entries in `SonicWave/SonicWave.entitlements` — the app runs fine without
 CarPlay and Siri.
 
 </details>
@@ -137,14 +133,14 @@ CarPlay and Siri.
 <details>
 <summary><strong>Running the tests</strong></summary>
 
-In Xcode: select the **Amperfy** scheme and press ⌘U.
+In Xcode: select the **SonicWave** scheme and press ⌘U.
 
 From the command line:
 
 ```sh
-xcodebuild -scheme Amperfy \
+xcodebuild -scheme SonicWave \
   -destination 'platform=iOS Simulator' \
-  test -only-testing:AmperfyKitTests
+  test -only-testing:SonicWaveKitTests
 ```
 
 Running tests also applies the project's [SwiftFormat](https://github.com/nicklockwood/SwiftFormat)
@@ -166,7 +162,7 @@ Ampache or any Subsonic-compatible server):
 **Automate playback via `x-callback-url`:**
 
 ```
-amperfy://x-callback-url/searchAndPlay?searchTerm=Awesome&searchCategory=playlist
+sonicwave://x-callback-url/searchAndPlay?searchTerm=Awesome&searchCategory=playlist
 ```
 
 Registered actions include `searchAndPlay`, `playID`, `playRandomSongs`, `play`,
@@ -174,13 +170,13 @@ Registered actions include `searchAndPlay`, `playID`, `playRandomSongs`, `play`,
 `setRepeat`, `setOfflineMode`, `rateCurrentlyPlayingSong`, and
 `favoriteCurrentlyPlayingSong`. The full action list with parameters is browsable
 in-app under **Settings → x-callback URLs**, and defined in
-`Amperfy/Intents/IntentManager.swift`.
+`SonicWave/Intents/IntentManager.swift`.
 
 ## Roadmap
 
 Planned, in no strict order — contributions welcome:
 
-- [ ] Rebrand to the SonicWave identity (project/target names, bundle ID, icon, URL scheme)
+- [x] Rebrand to the SonicWave identity (project/target names, bundle ID, icon, URL scheme)
 - [ ] Time-synced lyrics view (OpenSubsonic structured lyrics)
 - [ ] Automatic download sync (keep favorites and playlists offline without manual action)
 - [ ] Discovery surface: smart mixes and recommendations on the Home tab
@@ -226,8 +222,7 @@ license your changes under GPLv3.
 
 Pull requests are welcome.
 
-- `AmperfyKitTests` must pass before merging.
+- `SonicWaveKitTests` must pass before merging.
 - Code style is enforced by SwiftFormat ([Google Swift Style Guide](https://google.github.io/swift)); run `./BuildTools/applyFormat.sh` or just run the tests.
 - Commit messages follow [Conventional Commits](https://www.conventionalcommits.org).
-- Do not rename `Amperfy` build artifacts, targets, or the URL scheme ad hoc — the SonicWave rebrand is a planned phase and must land atomically.
 - GPLv3: contributions are licensed under GPLv3, and upstream Amperfy attribution must be preserved.

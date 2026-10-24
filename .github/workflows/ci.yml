@@ -16,8 +16,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  XCODE_PROJECT: Amperfy.xcodeproj
-  XCODE_SCHEME: Amperfy
+  XCODE_PROJECT: SonicWave.xcodeproj
+  XCODE_SCHEME: SonicWave
   DERIVED_DATA: DerivedData
   # Checkout dir for the pinned SPM deps (10 top-level + transitive) — cached.
   SPM_PACKAGES_DIR: .spm-source-packages
@@ -52,7 +52,7 @@ jobs:
         with:
           # .spm-source-packages: cloned dep checkouts (all Package.resolved pins).
           # org.swift.swiftpm: SPM's shared bare-repo cache (feeds the clones).
-          # BuildTools/.build: the AmperfyKitTests "SwiftFormat" build phase runs
+          # BuildTools/.build: the SonicWaveKitTests "SwiftFormat" build phase runs
           # applyFormat.sh, which compiles SwiftFormat from source on first run
           # (~2–4 min on the 3-core runner). Restoring .build skips that compile.
           path: |
@@ -69,7 +69,7 @@ jobs:
           -clonedSourcePackagesDirPath "$SPM_PACKAGES_DIR"
 
       - name: Build app + hosted test bundle (unsigned simulator)
-        # AmperfyKitTests is a hosted bundle (TEST_HOST = Amperfy.app), so this
+        # SonicWaveKitTests is a hosted bundle (TEST_HOST = SonicWave.app), so this
         # must build the whole app, not just the test target.
         # GHA's default shell already runs bash with -eo pipefail, so xcodebuild's
         # exit code propagates through tee.
@@ -83,17 +83,17 @@ jobs:
           CODE_SIGNING_ALLOWED=NO
           2>&1 | tee xcodebuild-build.log
 
-      - name: Run AmperfyKitTests
+      - name: Run SonicWaveKitTests
         # -only-testing is belt-and-suspenders: the scheme's TestAction was
-        # already patched to list only AmperfyKitTests (dead AmperfyTests /
-        # AmperfyUITests refs removed) — build-for-testing resolves every
+        # already patched to list only SonicWaveKitTests (dead SonicWaveTests /
+        # SonicWaveUITests refs removed) — build-for-testing resolves every
         # TestableReference, so the fix had to land in the scheme itself.
         run: >
           xcodebuild test-without-building
           -project "$XCODE_PROJECT" -scheme "$XCODE_SCHEME"
           -destination "$IOS_DESTINATION"
           -derivedDataPath "$DERIVED_DATA"
-          -only-testing:AmperfyKitTests
+          -only-testing:SonicWaveKitTests
           -clonedSourcePackagesDirPath "$SPM_PACKAGES_DIR"
           -resultBundlePath TestResults.xcresult
           2>&1 | tee xcodebuild-test.log
@@ -140,7 +140,7 @@ jobs:
           -clonedSourcePackagesDirPath "$SPM_PACKAGES_DIR"
 
       # Plain `build` only builds the scheme's BuildAction (the app) — the
-      # SwiftFormat phase lives on AmperfyKitTests and never runs here.
+      # SwiftFormat phase lives on SonicWaveKitTests and never runs here.
       - name: Build for Mac Catalyst (unsigned)
         run: >
           xcodebuild build
