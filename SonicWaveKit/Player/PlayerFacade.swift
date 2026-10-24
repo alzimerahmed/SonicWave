@@ -180,9 +180,11 @@ public protocol PlayerFacade {
   /// .isAlbumShuffleActive` + `playShuffled` on a multi-album context)
   /// is running — album radio appends pending albums as the queue drains
   var isAlbumShuffleSessionActive: Bool { get }
-  /// playthrough progress of the album currently playing inside an
-  /// album-shuffle session; nil without a session or while the current
-  /// item is not part of the active album (e.g. user-queue playback)
+  /// playthrough progress of the album currently playing — the album-
+  /// shuffle session info when a session runs, otherwise a contiguous
+  /// same-album run in the context queue; nil without album context.
+  /// The verdict is cached per track/queue change in the kit, so
+  /// polling it on the 1s tick only folds in `elapsedTime`.
   var albumPlaythrough: AlbumProgressInfo? { get }
   var playbackRate: PlaybackRate { get }
   func setPlaybackRate(_: PlaybackRate)
@@ -444,10 +446,7 @@ class PlayerFacadeImpl: PlayerFacade {
   }
 
   var albumPlaythrough: AlbumProgressInfo? {
-    musicPlayer.albumShuffleHandler.progress(
-      currentlyPlaying: currentlyPlaying,
-      elapsedTime: elapsedTime
-    )
+    musicPlayer.albumPlaythroughInfo(elapsedTime: elapsedTime)
   }
 
   func toggleShuffle() {
@@ -589,10 +588,14 @@ class PlayerFacadeImpl: PlayerFacade {
 
   func removePlayable(at: PlayerIndex) {
     queueHandler.removePlayable(at: at)
+    musicPlayer.invalidateAlbumPlaythroughCache()
   }
 
   func movePlayable(from: PlayerIndex, to: PlayerIndex) {
     queueHandler.movePlayable(from: from, to: to)
+    // a reorder can change the contiguous album run without touching
+    // the cache key's counts — drop the verdict explicitly
+    musicPlayer.invalidateAlbumPlaythroughCache()
   }
 
   func clearUserQueue() {

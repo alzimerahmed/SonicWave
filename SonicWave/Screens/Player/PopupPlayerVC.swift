@@ -340,6 +340,10 @@ class PopupPlayerVC: UIViewController, UIScrollViewDelegate {
   /// §5.4 pane navigation — gesture-driven, page-dot-free. Every pane
   /// switch rides the signature 0.2s display-style choreography, fires a
   /// soft haptic and announces itself to VoiceOver.
+  /// Pane↔style persistence is deliberate: `playerDisplayStyle` is
+  /// load-bearing for the queue pane's swipe-down-back behavior, the
+  /// playlist chip state, and reopen continuity, so transient pane
+  /// swipes persist like a deliberate style change.
   func show(pane: PlayerPane) {
     switch pane {
     case .nowPlaying:
@@ -372,33 +376,6 @@ class PopupPlayerVC: UIViewController, UIScrollViewDelegate {
     UIAccessibility.post(
       notification: .announcement,
       argument: pane.accessibilityAnnouncement
-    )
-  }
-
-  /// G21 album playthrough for the Now Playing indicator — prefers the
-  /// kit's album-shuffle session info; falls back to a contiguous
-  /// same-album run in the context queue (full-album playback).
-  func currentAlbumPlaythrough() -> AlbumProgressInfo? {
-    if let info = player.albumPlaythrough { return info }
-    guard let current = player.currentlyPlaying?.asSong,
-          let album = current.album
-    else { return nil }
-    let prev = player.getAllPrevQueueItems()
-    let next = player.getAllNextQueueItems()
-    let albumRun = prev + [current] + next
-    // only when the whole context queue is this album (≥2 tracks)
-    guard albumRun.count > 1,
-          albumRun.allSatisfy({ $0.asSong?.album?.id == album.id })
-    else { return nil }
-    let played = Double(prev.reduce(0) { $0 + $1.duration }) + player.elapsedTime
-    return AlbumProgressInfo(
-      albumName: album.name,
-      totalTrackCount: albumRun.count,
-      playedTrackCount: prev.count,
-      totalDurationInSeconds: albumRun.reduce(0) { $0 + $1.duration },
-      playedDurationInSeconds: played,
-      queuedAlbumCount: 0,
-      nextAlbumName: nil
     )
   }
 

@@ -29,7 +29,9 @@ import UIKit
 /// Visible only while an album-shuffle session runs or the context queue
 /// is a contiguous album; collapses in the details stack otherwise.
 class AlbumPlaythroughView: UIView {
-  private static let barHeight: CGFloat = 3.0
+  /// hairline metric shared with the table-row variant
+  /// (`GenericTableCell` playthrough bar)
+  static let barHeight: CGFloat = 3.0
   private static let spacing: CGFloat = 8.0
 
   private let captionLabel = UILabel()

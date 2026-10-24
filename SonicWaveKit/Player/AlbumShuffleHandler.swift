@@ -65,6 +65,23 @@ public struct AlbumProgressInfo: Sendable, Equatable {
     guard totalDurationInSeconds > 0 else { return 0 }
     return min(max(playedDurationInSeconds / Double(totalDurationInSeconds), 0), 1)
   }
+
+  /// Copy with the live elapsed time folded into
+  /// `playedDurationInSeconds` — the player caches the verdict computed
+  /// once per track/queue change (played duration = finished tracks
+  /// only), so each read re-adds the current position and the 1s UI
+  /// tick stays allocation-free.
+  func addingElapsedTime(_ elapsedTime: Double) -> AlbumProgressInfo {
+    AlbumProgressInfo(
+      albumName: albumName,
+      totalTrackCount: totalTrackCount,
+      playedTrackCount: playedTrackCount,
+      totalDurationInSeconds: totalDurationInSeconds,
+      playedDurationInSeconds: playedDurationInSeconds + elapsedTime,
+      queuedAlbumCount: queuedAlbumCount,
+      nextAlbumName: nextAlbumName
+    )
+  }
 }
 
 // MARK: - AlbumShuffleGroup
@@ -212,13 +229,20 @@ class AlbumShuffleHandler {
     )
   }
 
-  /// Disk-aware album track order — mirrors `Song.sortByTrackNumber`.
+  /// Disk-aware album track order — like `Song.sortByTrackNumber`
+  /// except disks compare numerically when both parse, so `"10"` sorts
+  /// after `"2"` instead of before it.
   private static func sortInAlbumTrackOrder(
     _ playables: [AbstractPlayable]
   ) -> [AbstractPlayable] {
     playables.sorted {
       if $0.disk != $1.disk {
-        return $0.disk ?? "" < $1.disk ?? ""
+        let leftDisk = $0.disk ?? ""
+        let rightDisk = $1.disk ?? ""
+        if let leftNumber = Int(leftDisk), let rightNumber = Int(rightDisk) {
+          return leftNumber < rightNumber
+        }
+        return leftDisk < rightDisk
       } else if $0.track != $1.track {
         return $0.track < $1.track
       } else if $0.title != $1.title {

@@ -20,6 +20,7 @@
 //
 
 import AVFoundation
+import CoreData
 import Foundation
 import MediaPlayer
 import os.log
@@ -88,6 +89,9 @@ public class AudioPlayer: NSObject, BackendAudioPlayerNotifiable {
     self.backendAudioPlayer.nextPlayablePreloadCB = { () in
       guard !self.isShouldPauseAfterFinishedPlaying else { return nil }
       guard self.playerStatus.repeatMode != .single else { return nil }
+      // G21 — drain-triggered album append lives here (not in the pure
+      // `nextPlayerIndex` getter) so the preload sees the new first track
+      self.materializeNextAlbumInQueue()
       guard let nextPlayerIndex = self.nextPlayerIndex else { return nil }
       return self.queueHandler.getPlayable(at: nextPlayerIndex)
     }
@@ -218,6 +222,9 @@ public class AudioPlayer: NSObject, BackendAudioPlayerNotifiable {
 
   // BackendAudioPlayerNotifiable
   func playNext() {
+    // G21 — a fully drained queue pulls the next shuffled album into
+    // the context queue before the advance index is resolved
+    materializeNextAlbumInQueue()
     if let nextPlayerIndex = nextPlayerIndex {
       play(playerIndex: nextPlayerIndex)
     } else if settings.user.isAutoplayEnabled,
@@ -263,11 +270,15 @@ public class AudioPlayer: NSObject, BackendAudioPlayerNotifiable {
   /// G21 album-queue shuffle: when an album session is live and both
   /// music queues are drained, the next shuffled album is appended to
   /// the context queue — "album radio" until the pool is exhausted.
-  /// Materializing here (inside `nextPlayerIndex`, shared by `playNext`
-  /// and `nextPlayablePreloadCB`) lets the album boundary's first track
-  /// ride the existing gapless preload path.
+  /// Called explicitly by `playNext` and `nextPlayablePreloadCB` (self-
+  /// gated on drained queues) so the pure `nextPlayerIndex` getter keeps
+  /// no mutation side effects; the album boundary's first track still
+  /// rides the existing gapless preload path.
+  @discardableResult
   private func materializeNextAlbumInQueue() -> Bool {
     guard playerStatus.playerMode == .music,
+          queueHandler.userQueueCount == 0,
+          queueHandler.nextQueueCount == 0,
           let nextAlbum = albumShuffleHandler.dequeueNextAlbum(),
           !nextAlbum.playables.isEmpty
     else { return false }
@@ -284,13 +295,82 @@ public class AudioPlayer: NSObject, BackendAudioPlayerNotifiable {
       return PlayerIndex(queueType: .user, index: 0)
     } else if queueHandler.nextQueueCount > 0 {
       return PlayerIndex(queueType: .next, index: 0)
-    } else if materializeNextAlbumInQueue() {
-      return PlayerIndex(queueType: .next, index: 0)
     } else if playerStatus.repeatMode == .all, queueHandler.prevQueueCount > 0 {
       return PlayerIndex(queueType: .prev, index: 0)
     } else {
       return nil
     }
+  }
+
+  /// cache key for the album-playthrough verdict — track identity plus
+  /// the queue shape the contiguous-run check depends on
+  private struct AlbumPlaythroughCacheKey: Equatable {
+    var currentTrackID: NSManagedObjectID?
+    var prevCount: Int
+    var nextCount: Int
+    var isUserQueuePlaying: Bool
+  }
+
+  private var albumPlaythroughCacheKey: AlbumPlaythroughCacheKey?
+  private var albumPlaythroughCache: AlbumProgressInfo?
+
+  /// G21 playthrough for the Now Playing / table-row indicators —
+  /// prefers the album-shuffle session info; falls back to a contiguous
+  /// same-album run in the context queue (full-album playback). The
+  /// whole-album verdict (which materializes prev+next queues) is
+  /// computed once per track/queue change and cached; `elapsedTime`
+  /// only shifts `playedDurationInSeconds` on each read.
+  func albumPlaythroughInfo(elapsedTime: Double) -> AlbumProgressInfo? {
+    let cacheKey = AlbumPlaythroughCacheKey(
+      currentTrackID: currentlyPlaying?.objectID,
+      prevCount: queueHandler.prevQueueCount,
+      nextCount: queueHandler.nextQueueCount,
+      isUserQueuePlaying: queueHandler.isUserQueuePlaying
+    )
+    let base: AlbumProgressInfo?
+    if cacheKey == albumPlaythroughCacheKey {
+      base = albumPlaythroughCache
+    } else {
+      base = computeAlbumPlaythrough()
+      albumPlaythroughCacheKey = cacheKey
+      albumPlaythroughCache = base
+    }
+    return base?.addingElapsedTime(elapsedTime)
+  }
+
+  /// Drops the cached verdict — for queue mutations that change the
+  /// run's shape without changing the cache key (row reorder).
+  func invalidateAlbumPlaythroughCache() {
+    albumPlaythroughCacheKey = nil
+  }
+
+  private func computeAlbumPlaythrough() -> AlbumProgressInfo? {
+    // session path — the handler tracks the active album group itself
+    if let info = albumShuffleHandler.progress(
+      currentlyPlaying: currentlyPlaying,
+      elapsedTime: 0
+    ) {
+      return info
+    }
+    guard let current = currentlyPlaying?.asSong,
+          let album = current.album
+    else { return nil }
+    let prev = queueHandler.getAllPrevQueueItems()
+    let next = queueHandler.getAllNextQueueItems()
+    let albumRun = prev + [current] + next
+    // only when the whole context queue is this album (≥2 tracks)
+    guard albumRun.count > 1,
+          albumRun.allSatisfy({ $0.asSong?.album?.id == album.id })
+    else { return nil }
+    return AlbumProgressInfo(
+      albumName: album.name,
+      totalTrackCount: albumRun.count,
+      playedTrackCount: prev.count,
+      totalDurationInSeconds: albumRun.reduce(0) { $0 + $1.duration },
+      playedDurationInSeconds: Double(prev.reduce(0) { $0 + $1.duration }),
+      queuedAlbumCount: 0,
+      nextAlbumName: nil
+    )
   }
 
   func pause() {
@@ -412,6 +492,7 @@ public class AudioPlayer: NSObject, BackendAudioPlayerNotifiable {
   }
 
   func notifyPlayerStopped() {
+    albumPlaythroughCacheKey = nil
     notifierList = notifierList.filter { $0.value != nil }
     for notifier in notifierList {
       notifier.value?.didStopPlaying()
@@ -440,6 +521,7 @@ public class AudioPlayer: NSObject, BackendAudioPlayerNotifiable {
   }
 
   func notifyPlaylistUpdated() {
+    albumPlaythroughCacheKey = nil
     notifierList = notifierList.filter { $0.value != nil }
     for notifier in notifierList {
       notifier.value?.didPlaylistChange()

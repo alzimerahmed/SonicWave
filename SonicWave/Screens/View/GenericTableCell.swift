@@ -64,14 +64,13 @@ class GenericTableCell: BasicTableCell {
     if let playthroughTrack { return playthroughTrack }
     let track = UIView()
     track.backgroundColor = .secondarySystemFill
-    track.layer.cornerRadius = 1.5
+    track.layer.cornerRadius = AlbumPlaythroughView.barHeight / 2
     track.clipsToBounds = true
     track.translatesAutoresizingMaskIntoConstraints = false
-    track.isAccessibilityElement = true
     contentView.addSubview(track)
 
     let fill = UIView()
-    fill.layer.cornerRadius = 1.5
+    fill.layer.cornerRadius = AlbumPlaythroughView.barHeight / 2
     fill.clipsToBounds = true
     fill.translatesAutoresizingMaskIntoConstraints = false
     track.addSubview(fill)
@@ -83,7 +82,7 @@ class GenericTableCell: BasicTableCell {
       track.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
       track.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor),
       track.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -3),
-      track.heightAnchor.constraint(equalToConstant: 3),
+      track.heightAnchor.constraint(equalToConstant: AlbumPlaythroughView.barHeight),
       fill.leadingAnchor.constraint(equalTo: track.leadingAnchor),
       fill.topAnchor.constraint(equalTo: track.topAnchor),
       fill.bottomAnchor.constraint(equalTo: track.bottomAnchor),
@@ -93,34 +92,15 @@ class GenericTableCell: BasicTableCell {
     return track
   }
 
-  /// Playthrough progress while `album` is the album in play — prefers
-  /// the kit's album-shuffle session info; falls back to a contiguous
-  /// same-album run in the context queue, mirroring
-  /// `PopupPlayerVC.currentAlbumPlaythrough`.
+  /// Playthrough progress while `album` is the album in play — the
+  /// kit's cached verdict (album-shuffle session or contiguous album
+  /// run), shown only when the playing song belongs to this row.
   private func albumPlaythroughInfo(for album: Album) -> AlbumProgressInfo? {
     let player = appDelegate.player
-    if let info = player.albumPlaythrough,
-       player.currentlyPlaying?.asSong?.album?.id == album.id {
-      return info
-    }
-    guard let current = player.currentlyPlaying?.asSong,
-          current.album?.id == album.id
+    guard let info = player.albumPlaythrough,
+          player.currentlyPlaying?.asSong?.album?.id == album.id
     else { return nil }
-    let prev = player.getAllPrevQueueItems()
-    let next = player.getAllNextQueueItems()
-    let albumRun = prev + [current] + next
-    guard albumRun.count > 1,
-          albumRun.allSatisfy({ $0.asSong?.album?.id == album.id })
-    else { return nil }
-    return AlbumProgressInfo(
-      albumName: album.name,
-      totalTrackCount: albumRun.count,
-      playedTrackCount: prev.count,
-      totalDurationInSeconds: albumRun.reduce(0) { $0 + $1.duration },
-      playedDurationInSeconds: Double(prev.reduce(0) { $0 + $1.duration }) + player.elapsedTime,
-      queuedAlbumCount: 0,
-      nextAlbumName: nil
-    )
+    return info
   }
 
   private func registerPlaythrough() {
@@ -163,6 +143,7 @@ class GenericTableCell: BasicTableCell {
     guard let album = container as? Album,
           let info = albumPlaythroughInfo(for: album) else {
       playthroughTrack?.isHidden = true
+      accessibilityLabel = nil
       return
     }
     let track = ensurePlaythroughTrack()
@@ -177,14 +158,20 @@ class GenericTableCell: BasicTableCell {
       playthroughFillWidthConstraint = constraint
     }
     let trackNumber = min(info.playedTrackCount + 1, info.totalTrackCount)
-    track.accessibilityLabel = String(
-      format: NSLocalizedString(
-        "Album progress: track %d of %d",
-        comment: "VoiceOver label for the album playthrough hairline"
+    // fold the playthrough into the row's label — a separate nested
+    // element would split the cell's VoiceOver focus
+    accessibilityLabel = [
+      titleLabel.text,
+      subtitleLabel.text,
+      String(
+        format: NSLocalizedString(
+          "Album progress: track %d of %d",
+          comment: "VoiceOver label for the album playthrough hairline"
+        ),
+        trackNumber,
+        info.totalTrackCount
       ),
-      trackNumber,
-      info.totalTrackCount
-    )
+    ].compactMap { $0 }.joined(separator: ", ")
   }
 
   func display(container: PlayableContainable, rootView: UITableViewController) {
