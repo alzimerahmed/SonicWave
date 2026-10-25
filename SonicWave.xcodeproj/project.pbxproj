@@ -616,6 +616,8 @@
 		7ED1CB010000000000000011 /* WidgetStatePublisher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ED1CA010000000000000010 /* WidgetStatePublisher.swift */; };
 		7ED1CB010000000000000012 /* WidgetCommandConsumer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ED1CA010000000000000011 /* WidgetCommandConsumer.swift */; };
 		7ED1CB010000000000000013 /* LiveActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ED1CA010000000000000012 /* LiveActivityManager.swift */; };
+		7E51A0010000000000000002 /* SpotlightIndexing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E51A0010000000000000001 /* SpotlightIndexing.swift */; };
+		7E51A0010000000000000004 /* SpotlightIndexer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E51A0010000000000000003 /* SpotlightIndexer.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1327,6 +1329,8 @@
 		7ED1CA010000000000000010 /* WidgetStatePublisher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetStatePublisher.swift; sourceTree = "<group>"; };
 		7ED1CA010000000000000011 /* WidgetCommandConsumer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetCommandConsumer.swift; sourceTree = "<group>"; };
 		7ED1CA010000000000000012 /* LiveActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityManager.swift; sourceTree = "<group>"; };
+		7E51A0010000000000000001 /* SpotlightIndexing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotlightIndexing.swift; sourceTree = "<group>"; };
+		7E51A0010000000000000003 /* SpotlightIndexer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotlightIndexer.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1829,6 +1833,15 @@
 			path = Storage;
 			sourceTree = "<group>";
 		};
+		7E51A0010000000000000005 /* Spotlight */ = {
+			isa = PBXGroup;
+			children = (
+				7E51A0010000000000000001 /* SpotlightIndexing.swift */,
+				7E51A0010000000000000003 /* SpotlightIndexer.swift */,
+			);
+			path = Spotlight;
+			sourceTree = "<group>";
+		};
 		5095F98F23CA94BC008B0805 /* ManagedObjects */ = {
 			isa = PBXGroup;
 			children = (
@@ -2149,6 +2162,7 @@
 				7E8D2A010000000000000001 /* Lyrics */,
 				50F8CA2B21FA48770084F8D8 /* Player */,
 				50C9D6E7284FAC9D007F18D0 /* Screens */,
+				7E51A0010000000000000005 /* Spotlight */,
 				50BA92F221CC26BE00E5901D /* Storage */,
 				50C9D6EF28506EBC007F18D0 /* SonicWaveKit.swift */,
 				5087DE382EF0437F00644893 /* MetaManager.swift */,
@@ -3009,6 +3023,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7E51A0010000000000000002 /* SpotlightIndexing.swift in Sources */,
+				7E51A0010000000000000004 /* SpotlightIndexer.swift in Sources */,
 				8D15C801000000000000000002 /* DiscoveryModels.swift in Sources */,
 				8D15C801000000000000000004 /* SmartPlaylistCriteria.swift in Sources */,
 				8D15C801000000000000000006 /* NspCriteriaParser.swift in Sources */,

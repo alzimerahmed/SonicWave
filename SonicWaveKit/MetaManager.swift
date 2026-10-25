@@ -40,6 +40,9 @@ public class MetaManager {
   private let eventLogger: EventLogger
   private let notificationHandler: EventNotificationHandler
   private let localNotificationManager: LocalNotificationManager
+  /// G27: Spotlight indexer shared across accounts — handed to services
+  /// that produce indexable side effects (e.g. newly cached lyrics)
+  private let spotlightIndexer: SpotlightIndexer?
 
   public let account: Account
 
@@ -145,7 +148,8 @@ public class MetaManager {
     performanceMonitor: ThreadPerformanceMonitor,
     eventLogger: EventLogger,
     notificationHandler: EventNotificationHandler,
-    localNotificationManager: LocalNotificationManager
+    localNotificationManager: LocalNotificationManager,
+    spotlightIndexer: SpotlightIndexer? = nil
   ) {
     self.storage = storage
     self.account = account
@@ -154,6 +158,7 @@ public class MetaManager {
     self.eventLogger = eventLogger
     self.notificationHandler = notificationHandler
     self.localNotificationManager = localNotificationManager
+    self.spotlightIndexer = spotlightIndexer
   }
 
   private var playQueueSyncer: PlayQueueSyncer?

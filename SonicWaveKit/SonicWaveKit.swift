@@ -61,7 +61,8 @@ public class AmperKit {
         performanceMonitor: threadPerformanceMonitor,
         eventLogger: eventLogger,
         notificationHandler: notificationHandler,
-        localNotificationManager: localNotificationManager
+        localNotificationManager: localNotificationManager,
+        spotlightIndexer: spotlightIndexer
       )
       metaManager[accountInfo] = newManager
       return newManager
@@ -281,5 +282,19 @@ public class AmperKit {
   @MainActor
   public lazy var localNotificationManager = {
     LocalNotificationManager(userStatistics: userStatistics, storage: storage)
+  }()
+
+  /// Spotlight indexing (G27) — mirrors synced library entities + cached
+  /// lyric text into CoreSpotlight. `start()` is idempotent and re-evaluates
+  /// `UserSettings.isSpotlightIndexingEnabled`; it is driven from the app's
+  /// manager-start seams (`startManagerForNormalOperation` /
+  /// `startManagerAfterSync`) so nothing is indexed before an account is
+  /// active and the library is synced.
+  public lazy var spotlightIndexer = {
+    SpotlightIndexer(
+      asyncStorage: asyncStorage,
+      settings: storage.settings,
+      performanceMonitor: threadPerformanceMonitor
+    )
   }()
 }

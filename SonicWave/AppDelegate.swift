@@ -316,6 +316,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
       player.addNotifier(notifier: self)
     }
     widgetBridge.start()
+    // G27: a sync just completed — (re)build the Spotlight index
+    Task { await AmperKit.shared.spotlightIndexer.start(forceFullReindex: true) }
   }
 
   func startManagerForNormalOperation() {
@@ -328,6 +330,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     isAlreadyRegisteredToPlayer = true
     player.addNotifier(notifier: self)
     widgetBridge.start()
+    // G27: start delta observation; one-time full index if never done
+    Task { await AmperKit.shared.spotlightIndexer.start() }
   }
 
   func setAppTheme(color: UIColor) {

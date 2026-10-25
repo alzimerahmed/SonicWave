@@ -41,6 +41,16 @@ public struct AppSettings: Sendable, Codable {
     get { _librarySyncVersion }
     set { _librarySyncVersion = newValue }
   }
+
+  /// Spotlight indexing (G27): set once `SpotlightIndexer` completed its
+  /// first full pass. `false` again after opt-out wipes the index so a
+  /// re-enable rebuilds it.
+  // optional backing to stay decodable for settings stored before this key existed
+  private var _hasCompletedInitialSpotlightIndex: Bool? = nil
+  public var hasCompletedInitialSpotlightIndex: Bool {
+    get { _hasCompletedInitialSpotlightIndex ?? false }
+    set { _hasCompletedInitialSpotlightIndex = newValue }
+  }
 }
 
 // MARK: - UserSettings
@@ -367,6 +377,16 @@ public struct UserSettings: Sendable, Codable {
       _albumsGridSizeSetting ?? ((UIDevice.current.userInterfaceIdiom == .pad) ? 4 : 3)
     }
     set { _albumsGridSizeSetting = newValue }
+  }
+
+  /// Spotlight indexing (G27): mirror library entities + cached lyric
+  /// text into CoreSpotlight. Defaults ON (opt-out) — disabling wipes the
+  /// on-device index via `SpotlightIndexer.start()` re-evaluation.
+  // optional backing to stay decodable for settings stored before this key existed
+  private var _isSpotlightIndexingEnabled: Bool? = nil
+  public var isSpotlightIndexingEnabled: Bool {
+    get { _isSpotlightIndexingEnabled ?? true }
+    set { _isSpotlightIndexingEnabled = newValue }
   }
 }
 
