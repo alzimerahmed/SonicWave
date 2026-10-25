@@ -193,19 +193,27 @@ extension CarPlaySceneDelegate: CPNowPlayingTemplateObserver {
   )
     -> CPListItem {
     let accessoryType: CPListItemAccessoryType = playable.isCached ? .cloud : .none
-    let image = LibraryEntityImage.getImageToDisplayImmediately(
-      libraryEntity: playable,
-      themePreference: getPreference(playable.account?.info).theme,
-      artworkDisplayPreference: getPreference(playable.account?.info).artworkDisplayPreference,
-      useCache: false
+    let imagePathToDisplay = playable.imagePath(
+      setting: getPreference(playable.account?.info).artworkDisplayPreference
     )
     let listItem = CPListItem(
       text: playable.title,
       detailText: playable.subtitle,
-      image: image.carPlayImage(carTraitCollection: traits),
+      image: UIImage.getGeneratedArtwork(
+        theme: getPreference(playable.account?.info).theme,
+        artworkType: playable.getDefaultArtworkType()
+      ).carPlayImage(carTraitCollection: traits),
       accessoryImage: nil,
       accessoryType: accessoryType
     )
+    // on-disk artwork is decoded off the main thread and patched in once
+    // ready; the generated placeholder is displayed in the meantime
+    if let imagePathToDisplay {
+      loadCarPlayImageAsync(imagePath: imagePathToDisplay) { [weak self] loadedImage in
+        guard let self else { return }
+        listItem.setImage(loadedImage.carPlayImage(carTraitCollection: traits))
+      }
+    }
     listItem.handler = { [weak self] item, completion in
       guard let self = self else { completion(); return }
       appDelegate.player.play(playerIndex: playerIndex)

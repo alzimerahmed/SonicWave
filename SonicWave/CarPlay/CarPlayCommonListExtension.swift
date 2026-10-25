@@ -677,6 +677,22 @@ extension CarPlaySceneDelegate {
       )
   }
 
+  /// Loads an image file off the main thread and delivers it already decoded
+  /// (`byPreparingForDisplay`) back on the main actor. Mirrors the
+  /// `LibraryEntityImage.loadImageAndCacheIt` pattern so CarPlay item
+  /// building does not block on synchronous `UIImage(named:)` disk decodes.
+  func loadCarPlayImageAsync(
+    imagePath: String,
+    updateImage: @escaping @MainActor (UIImage) -> Void
+  ) {
+    Task.detached(priority: .userInitiated) {
+      guard let loadedImage = UIImage(contentsOfFile: imagePath),
+            let readyImage = await loadedImage.byPreparingForDisplay()
+      else { return }
+      await updateImage(readyImage)
+    }
+  }
+
   func triggerPlayRandomSongsItem(onlyCached: Bool) {
     let songs = appDelegate.storage.main.library
       .getRandomSongs(for: activeAccount, onlyCached: onlyCached || isOfflineMode)

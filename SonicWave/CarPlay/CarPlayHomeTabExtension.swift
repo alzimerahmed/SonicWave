@@ -188,15 +188,12 @@ extension CarPlaySceneDelegate {
     var imageRowElements = [CPListImageRowItemRowElement]()
     let items = requestedData ?? []
     for item in items {
-      var image: UIImage?
       var artwork: Artwork?
       var entity: AbstractLibraryEntity?
+      var imagePathToDisplay: String?
       if let libEntity = item.playableContainable as? AbstractLibraryEntity {
-        image = LibraryEntityImage.getImageToDisplayImmediately(
-          libraryEntity: libEntity,
-          themePreference: getPreference(activeAccountInfo).theme,
-          artworkDisplayPreference: getPreference(activeAccountInfo).artworkDisplayPreference,
-          useCache: false
+        imagePathToDisplay = libEntity.imagePath(
+          setting: getPreference(activeAccountInfo).artworkDisplayPreference
         )
         if let entityArtwork = libEntity.artwork, let accountInfo = entityArtwork.account?.info {
           artwork = entityArtwork
@@ -207,18 +204,25 @@ extension CarPlaySceneDelegate {
           }
         }
       }
-      let displayImage = image?.carPlayImage(carTraitCollection: traits) ?? UIImage
-        .getGeneratedArtwork(
-          theme: getPreference(activeAccountInfo).theme,
-          artworkType: item.playableContainable
-            .getArtworkCollection(theme: getPreference(activeAccountInfo).theme).defaultArtworkType
-        )
+      let displayImage = UIImage.getGeneratedArtwork(
+        theme: getPreference(activeAccountInfo).theme,
+        artworkType: item.playableContainable
+          .getArtworkCollection(theme: getPreference(activeAccountInfo).theme).defaultArtworkType
+      )
 
       let element = CPListImageRowItemRowElement(
-        image: displayImage,
+        image: displayImage.carPlayImage(carTraitCollection: traits),
         title: item.playableContainable.name,
         subtitle: item.playableContainable.subtitle
       )
+      // on-disk artwork is decoded off the main thread and patched in once
+      // ready; the generated placeholder is displayed in the meantime
+      if let imagePathToDisplay {
+        loadCarPlayImageAsync(imagePath: imagePathToDisplay) { [weak self] loadedImage in
+          guard let self else { return }
+          element.image = loadedImage.carPlayImage(carTraitCollection: traits)
+        }
+      }
       if let artwork, let entity {
         if homeArtworkUpdate[artwork.uniqueID] == nil {
           homeArtworkUpdate[artwork.uniqueID] = EntityImageRowContainer(
