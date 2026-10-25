@@ -240,9 +240,10 @@ public struct ShareDescription: Sendable, Equatable {
 // MARK: - ShareUrlRewriter
 
 /// G18: applies the per-account `publicUrlOverride` (reverse-proxy base URL)
-/// to server-generated share links. Only scheme/host/port/userinfo are
-/// replaced — path, query and fragment are preserved so `/share/<id>`-style
-/// server paths keep working. Pure function for testability.
+/// to server-generated share links. Scheme/host/port/userinfo are replaced
+/// and the override's path component is prepended so a subpath-proxied
+/// server (`https://example.com/music/`) hands out working links — query
+/// and fragment are preserved untouched. Pure function for testability.
 public enum ShareUrlRewriter {
   public static func rewrite(urlString: String, publicBaseUrl override: String?) -> String {
     guard let override, !override.isEmpty,
@@ -255,6 +256,14 @@ public enum ShareUrlRewriter {
     urlComp.port = baseComp.port
     urlComp.user = baseComp.user
     urlComp.password = baseComp.password
+    // the override may carry a subpath (reverse proxy) — prepend it so
+    // `/share/<id>` resolves under `/music/share/<id>`, not the domain root
+    let basePath = baseComp.path
+    if !basePath.isEmpty, basePath != "/" {
+      urlComp.path = basePath.hasSuffix("/")
+        ? basePath + urlComp.path.dropFirst()
+        : basePath + urlComp.path
+    }
     return urlComp.string ?? urlString
   }
 }

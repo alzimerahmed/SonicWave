@@ -108,76 +108,220 @@ public class MixProvider {
   }
 
   /// The mixes the UI may offer for this account — computed from what the
-  /// local mirror actually contains so empty kinds never surface.
-  public func availableMixes() -> [Mix] {
-    var mixes = [Mix]()
-    var favoriteCount = 0
-    var decadeCounts = [Int: Int]()
-    var genreNames = [String]()
-    var hasAnySongs = false
-    storage.main.perform { companion in
-      let fetchRequest: NSFetchRequest<SongMO> = SongMO.fetchRequest()
-      fetchRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
-        companion.library.getFetchPredicate(forAccount: self.account),
-        SongMO.excludeServerDeleteUncachedSongsFetchPredicate,
-      ])
-      let songMOs = (try? companion.context.fetch(fetchRequest)) ?? []
-      hasAnySongs = !songMOs.isEmpty
-      for songMO in songMOs {
-        if songMO.isFavorite { favoriteCount += 1 }
-        let year = Int(songMO.year)
-        if year >= 1900 {
-          decadeCounts[year - (year % 10), default: 0] += 1
-        }
-        if let genreName = songMO.genre?.name, !genreName.isEmpty {
-          genreNames.append(genreName)
-        }
-      }
-    }
-    guard hasAnySongs else { return [] }
+  /// local mirror actually contains so empty kinds never surface. The
+  /// mirror stats are collected on a background context with
+  /// count/group-by fetches only — no `SongMO` materialization, so this
+  /// stays cheap at 50k-song library scale.
+  public func availableMixes() async -> [Mix] {
+    let accountObjectId = account.managedObject.objectID
+    let stats =
+      (try? await storage.async.performAndGet { asyncCompanion in
+        let accountAsync = asyncCompanion.library.getAccount(
+          managedObjectId: accountObjectId
+        )
+        return MixLibraryStats(
+          context: asyncCompanion.context,
+          library: asyncCompanion.library,
+          account: accountAsync
+        )
+      }) ?? MixLibraryStats()
+    guard stats.songCount > 0 else { return [] }
 
-    if favoriteCount > 0 {
+    var mixes = [Mix]()
+    if stats.favoriteCount > 0 {
       mixes.append(Mix(
         kind: .favoritesRadio,
-        title: "Favorites Radio",
+        title: String(localized: "Favorites Radio", bundle: .main),
         subtitle: isOnline
-          ? "Similar songs around your favorites"
-          : "Your favorites, shuffled"
+          ? String(localized: "Similar songs around your favorites", bundle: .main)
+          : String(localized: "Your favorites, shuffled", bundle: .main)
       ))
     }
-    for decade in decadeCounts.keys.sorted() where decadeCounts[decade, default: 0] >= 10 {
+    for decade in stats.decadeCounts.keys.sorted()
+    where stats.decadeCounts[decade, default: 0] >= Self.minSongsPerDecadeMix {
       mixes.append(Mix(
         kind: .decadeMix,
-        title: "\(decade)s Mix",
-        subtitle: "Songs from the \(decade)s",
+        title: String(
+          format: String(localized: "%llds Mix", bundle: .main),
+          decade
+        ),
+        subtitle: String(
+          format: String(localized: "Songs from the %llds", bundle: .main),
+          decade
+        ),
         parameter: String(decade)
       ))
     }
-    // blend the top genres by song count — a handful, not an exhaustive list
-    let topGenres = Dictionary(grouping: genreNames, by: { $0 })
-      .mapValues { $0.count }
-      .sorted { $0.value > $1.value }
-      .prefix(3)
-      .map { $0.key }
-    for genre in topGenres {
+    for genre in stats.topGenreNames {
       mixes.append(Mix(
         kind: .genreBlend,
-        title: "\(genre) Blend",
-        subtitle: "A fresh pick from \(genre)",
+        title: String(
+          format: String(localized: "%@ Blend", bundle: .main),
+          genre
+        ),
+        subtitle: String(
+          format: String(localized: "A fresh pick from %@", bundle: .main),
+          genre
+        ),
         parameter: genre
       ))
     }
-    mixes.append(Mix(
-      kind: .deepCuts,
-      title: "Deep Cuts",
-      subtitle: "Favorites and high-rated songs you barely play"
-    ))
-    mixes.append(Mix(
-      kind: .timeOfDay,
-      title: "Time Machine",
-      subtitle: "What you usually play around now"
-    ))
+    // deep cuts needs favorites or rated songs to cut from — without them
+    // the card would resolve to an empty list
+    if stats.favoriteOrRatedCount > 0 {
+      mixes.append(Mix(
+        kind: .deepCuts,
+        title: String(localized: "Deep Cuts", bundle: .main),
+        subtitle: String(
+          localized: "Favorites and high-rated songs you barely play",
+          bundle: .main
+        )
+      ))
+    }
+    // time-of-day needs play history — without `lastPlayedDate` rows the
+    // card would degrade to a random pick that the title doesn't describe
+    if stats.hasPlayedSongs {
+      mixes.append(Mix(
+        kind: .timeOfDay,
+        title: String(localized: "Time Machine", bundle: .main),
+        subtitle: String(
+          localized: "What you usually play around now",
+          bundle: .main
+        )
+      ))
+    }
     return mixes
+  }
+
+  /// minimum songs in a decade bucket before it gets its own mix card
+  private static let minSongsPerDecadeMix = 10
+  /// how many genre-blend cards the hub offers at most
+  private static let maxGenreBlendMixes = 3
+
+  /// aggregate mirror stats behind `availableMixes()` — collected via
+  /// `count(for:)` and dictionary group-by fetches, never by fetching
+  /// `SongMO`s to count them
+  private struct MixLibraryStats: Sendable {
+    var songCount = 0
+    var favoriteCount = 0
+    /// favorites OR rated — presence gate for `deepCuts`
+    var favoriteOrRatedCount = 0
+    var decadeCounts = [Int: Int]()
+    var topGenreNames = [String]()
+    var hasPlayedSongs = false
+
+    init() {}
+
+    init(context: NSManagedObjectContext, library: LibraryStorage, account: Account) {
+      let basePredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
+        library.getFetchPredicate(forAccount: account),
+        SongMO.excludeServerDeleteUncachedSongsFetchPredicate,
+      ])
+
+      let countRequest: NSFetchRequest<SongMO> = SongMO.fetchRequest()
+      countRequest.predicate = basePredicate
+      songCount = (try? context.count(for: countRequest)) ?? 0
+      guard songCount > 0 else { return }
+
+      let favoritesRequest: NSFetchRequest<SongMO> = SongMO.fetchRequest()
+      favoritesRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
+        basePredicate,
+        NSPredicate(format: "%K == TRUE", #keyPath(SongMO.isFavorite)),
+      ])
+      favoriteCount = (try? context.count(for: favoritesRequest)) ?? 0
+
+      let favoriteOrRatedRequest: NSFetchRequest<SongMO> = SongMO.fetchRequest()
+      favoriteOrRatedRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
+        basePredicate,
+        NSCompoundPredicate(orPredicateWithSubpredicates: [
+          NSPredicate(format: "%K == TRUE", #keyPath(SongMO.isFavorite)),
+          NSPredicate(format: "%K > 0", #keyPath(SongMO.rating)),
+        ]),
+      ])
+      favoriteOrRatedCount = (try? context.count(for: favoriteOrRatedRequest)) ?? 0
+
+      let playedRequest: NSFetchRequest<SongMO> = SongMO.fetchRequest()
+      playedRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
+        basePredicate,
+        NSPredicate(format: "%K != nil", #keyPath(SongMO.lastPlayedDate)),
+      ])
+      hasPlayedSongs = ((try? context.count(for: playedRequest)) ?? 0) > 0
+
+      decadeCounts = Self.fetchYearHistogram(
+        context: context,
+        basePredicate: basePredicate
+      )
+      topGenreNames = Self.fetchTopGenreNames(
+        context: context,
+        basePredicate: basePredicate
+      )
+    }
+
+    /// songs per calendar year → folded into decade buckets by the caller
+    private static func fetchYearHistogram(
+      context: NSManagedObjectContext,
+      basePredicate: NSPredicate
+    ) -> [Int: Int] {
+      let countExpression = NSExpressionDescription()
+      countExpression.name = "count"
+      countExpression.expression = NSExpression(
+        forFunction: "count:",
+        arguments: [NSExpression(forKeyPath: "year")]
+      )
+      countExpression.expressionResultType = .integer64AttributeType
+
+      let fetchRequest = NSFetchRequest<NSDictionary>(entityName: "Song")
+      fetchRequest.resultType = .dictionaryResultType
+      fetchRequest.propertiesToGroupBy = [#keyPath(SongMO.year)]
+      fetchRequest.propertiesToFetch = [#keyPath(SongMO.year), countExpression]
+      fetchRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
+        basePredicate,
+        NSPredicate(format: "%K >= 1900", #keyPath(SongMO.year)),
+      ])
+      let rows = (try? context.fetch(fetchRequest)) ?? [NSDictionary]()
+      var decadeCounts = [Int: Int]()
+      for row in rows {
+        guard let year = row[#keyPath(SongMO.year)] as? Int,
+              let count = row["count"] as? Int
+        else { continue }
+        decadeCounts[year - (year % 10), default: 0] += count
+      }
+      return decadeCounts
+    }
+
+    /// genre names by song count, descending — capped at `maxGenreBlendMixes`
+    private static func fetchTopGenreNames(
+      context: NSManagedObjectContext,
+      basePredicate: NSPredicate
+    ) -> [String] {
+      let genreKeyPath = "genre.name"
+      let countExpression = NSExpressionDescription()
+      countExpression.name = "count"
+      countExpression.expression = NSExpression(
+        forFunction: "count:",
+        arguments: [NSExpression(forKeyPath: genreKeyPath)]
+      )
+      countExpression.expressionResultType = .integer64AttributeType
+
+      let fetchRequest = NSFetchRequest<NSDictionary>(entityName: "Song")
+      fetchRequest.resultType = .dictionaryResultType
+      fetchRequest.propertiesToGroupBy = [genreKeyPath]
+      fetchRequest.propertiesToFetch = [genreKeyPath, countExpression]
+      fetchRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
+        basePredicate,
+        NSPredicate(format: "%K != nil", genreKeyPath),
+      ])
+      let rows = (try? context.fetch(fetchRequest)) ?? [NSDictionary]()
+      return rows.compactMap { row -> (String, Int)? in
+        guard let name = row[genreKeyPath] as? String, !name.isEmpty,
+              let count = row["count"] as? Int
+        else { return nil }
+        return (name, count)
+      }
+      .sorted { $0.1 > $1.1 }
+      .prefix(maxGenreBlendMixes)
+      .map { $0.0 }
+    }
   }
 
   /// Resolves a mix to songs. Empty result = mix can't be built right now
@@ -218,7 +362,7 @@ public class MixProvider {
         value: .int(3)
       )]), count: count)
     case .timeOfDay:
-      return resolveTimeOfDay(count: count)
+      return await resolveTimeOfDay(count: count)
     }
   }
 
@@ -254,31 +398,55 @@ public class MixProvider {
 
   /// Songs whose `lastPlayedDate` hour-of-day matches the current hour
   /// (±1h tolerance bucket). Date-field criteria can't express "hour of
-  /// day", so this runs a post-fetch filter — cheap at library scale and
-  /// honest about its approximation.
-  private func resolveTimeOfDay(count: Int) -> [Song] {
+  /// day", so the hour filter runs as a post-fetch scan of
+  /// `lastPlayedDate` dictionary rows on a background context — no
+  /// `SongMO` materialization — and only the matching handful is then
+  /// resolved to objects on the main context.
+  private func resolveTimeOfDay(count: Int) async -> [Song] {
     let calendar = Calendar.current
     let currentHour = calendar.component(.hour, from: Date())
+    let accountObjectId = account.managedObject.objectID
+    let candidateIds =
+      (try? await storage.async.performAndGet { asyncCompanion in
+        let accountAsync = asyncCompanion.library.getAccount(
+          managedObjectId: accountObjectId
+        )
+        let objectIDExpression = NSExpressionDescription()
+        objectIDExpression.name = "objectID"
+        objectIDExpression.expression = NSExpression.expressionForEvaluatedObject()
+        objectIDExpression.expressionResultType = .objectIDAttributeType
+
+        let fetchRequest = NSFetchRequest<NSDictionary>(entityName: "Song")
+        fetchRequest.resultType = .dictionaryResultType
+        fetchRequest.propertiesToFetch = [
+          objectIDExpression,
+          #keyPath(SongMO.lastPlayedDate),
+        ]
+        fetchRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
+          asyncCompanion.library.getFetchPredicate(forAccount: accountAsync),
+          SongMO.excludeServerDeleteUncachedSongsFetchPredicate,
+          NSPredicate(format: "%K != nil", #keyPath(SongMO.lastPlayedDate)),
+        ])
+        let rows = (try? asyncCompanion.context.fetch(fetchRequest)) ?? [NSDictionary]()
+        return rows.compactMap { row -> NSManagedObjectID? in
+          guard let played = row[#keyPath(SongMO.lastPlayedDate)] as? Date,
+                let objectID = row["objectID"] as? NSManagedObjectID
+          else { return nil }
+          let playedHour = calendar.component(.hour, from: played)
+          let distance = abs(playedHour - currentHour)
+          return min(distance, 24 - distance) <= 1 ? objectID : nil
+        }
+      }) ?? [NSManagedObjectID]()
+    guard !candidateIds.isEmpty else {
+      // no matches in this window — random library pick
+      return resolveCriteriaMix(criteria: SmartPlaylistCriteria(), count: count)
+    }
     var candidates = [Song]()
     storage.main.perform { companion in
       let fetchRequest: NSFetchRequest<SongMO> = SongMO.fetchRequest()
-      fetchRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
-        companion.library.getFetchPredicate(forAccount: self.account),
-        SongMO.excludeServerDeleteUncachedSongsFetchPredicate,
-        NSPredicate(format: "lastPlayedDate != nil"),
-      ])
+      fetchRequest.predicate = NSPredicate(format: "self IN %@", candidateIds)
       let found = (try? companion.context.fetch(fetchRequest)) ?? []
       candidates = found.compactMap { Song(managedObject: $0) }
-        .filter { song in
-          guard let played = song.lastTimePlayed else { return false }
-          let playedHour = calendar.component(.hour, from: played)
-          let distance = abs(playedHour - currentHour)
-          return min(distance, 24 - distance) <= 1
-        }
-    }
-    if candidates.isEmpty {
-      // never played / no matches in this window — random library pick
-      return resolveCriteriaMix(criteria: SmartPlaylistCriteria(), count: count)
     }
     return Array(candidates[randomPick: count])
   }

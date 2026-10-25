@@ -171,7 +171,7 @@ public enum SmartPlaylistValue: Codable, Sendable, Equatable {
     case .int(let value): return String(value)
     case .bool(let value): return value ? "true" : "false"
     case .intRange(let lower, let upper): return "\(lower)–\(upper)"
-    case .days(let value): return "\(value)d"
+    case .days(let value): return value == 1 ? "1 day" : "\(value) days"
     }
   }
 }
@@ -194,34 +194,71 @@ public struct SmartPlaylistRule: Codable, Sendable, Equatable {
   }
 
   /// `true` when the field+operator pair can be evaluated against the local
-  /// CoreData mirror (`.custom` fields and string ops on numeric/date fields
-  /// are not evaluable and get skipped by `predicate()`).
+  /// CoreData mirror (`.custom` fields and incompatible operator/field
+  /// combos are not evaluable and get skipped by `predicate()`).
   public var isLocallyEvaluable: Bool {
     predicate(referenceDate: Date()) != nil
+  }
+
+  /// per-field operator compatibility — an incompatible combo returns a
+  /// nil predicate so it lands in `unsupportedNotes` (import) / gets
+  /// skipped by the evaluator instead of building a predicate against a
+  /// mismatched field type:
+  /// - numeric fields (`rating`, `playCount`, `year`): eq/neq/gt/lt/inRange
+  /// - date fields (`lastPlayed`, `addedDate`): inLastDays/notInLastDays
+  /// - string fields (`genre`, `artist`, `album`, `title`): text ops
+  /// - bool fields (`favorite`, `disliked`): eq/neq
+  private var isOperatorCompatibleWithField: Bool {
+    switch field {
+    case .rating, .playCount, .year:
+      switch `operator` {
+      case .equal, .notEqual, .greaterThan, .lessThan, .inRange: return true
+      default: return false
+      }
+    case .lastPlayed, .addedDate:
+      switch `operator` {
+      case .inLastDays, .notInLastDays: return true
+      default: return false
+      }
+    case .genre, .artist, .album, .title:
+      switch `operator` {
+      case .equal, .notEqual, .contains, .notContains, .startsWith, .endsWith: return true
+      default: return false
+      }
+    case .favorite, .disliked:
+      switch `operator` {
+      case .equal, .notEqual: return true
+      default: return false
+      }
+    case .custom:
+      return false
+    }
   }
 
   /// Builds the single-rule predicate or `nil` when the combination cannot
   /// be expressed. String comparisons are case/diacritic-insensitive to
   /// match Navidrome's normalized-field semantics.
   func predicate(referenceDate: Date) -> NSPredicate? {
-    guard let keyPath = field.songKeyPath else { return nil }
+    guard isOperatorCompatibleWithField,
+          let keyPath = field.songKeyPath
+    else { return nil }
     switch (`operator`, value) {
     case (.equal, .text(let value)):
       return NSPredicate(format: "%K ==[cd] %@", keyPath, value)
     case (.notEqual, .text(let value)):
       return NSPredicate(format: "%K !=[cd] %@", keyPath, value)
     case (.equal, .int(let value)):
-      return NSPredicate(format: "%K == %d", keyPath, value)
+      return NSPredicate(format: "%K == %@", keyPath, NSNumber(value: value))
     case (.notEqual, .int(let value)):
-      return NSPredicate(format: "%K != %d", keyPath, value)
+      return NSPredicate(format: "%K != %@", keyPath, NSNumber(value: value))
     case (.equal, .bool(let value)):
       return NSPredicate(format: "%K == %@", keyPath, NSNumber(value: value))
     case (.notEqual, .bool(let value)):
       return NSPredicate(format: "%K != %@", keyPath, NSNumber(value: value))
     case (.greaterThan, .int(let value)):
-      return NSPredicate(format: "%K > %d", keyPath, value)
+      return NSPredicate(format: "%K > %@", keyPath, NSNumber(value: value))
     case (.lessThan, .int(let value)):
-      return NSPredicate(format: "%K < %d", keyPath, value)
+      return NSPredicate(format: "%K < %@", keyPath, NSNumber(value: value))
     case (.contains, .text(let value)):
       return NSPredicate(format: "%K CONTAINS[cd] %@", keyPath, value)
     case (.notContains, .text(let value)):
@@ -231,7 +268,13 @@ public struct SmartPlaylistRule: Codable, Sendable, Equatable {
     case (.endsWith, .text(let value)):
       return NSPredicate(format: "%K ENDSWITH[cd] %@", keyPath, value)
     case (.inRange, .intRange(let lower, let upper)):
-      return NSPredicate(format: "%K >= %d AND %K <= %d", keyPath, lower, keyPath, upper)
+      return NSPredicate(
+        format: "%K >= %@ AND %K <= %@",
+        keyPath,
+        NSNumber(value: lower),
+        keyPath,
+        NSNumber(value: upper)
+      )
     case (.inLastDays, .days(let dayCount)):
       guard dayCount >= 0 else { return nil }
       let cutoff = referenceDate.addingTimeInterval(-TimeInterval(dayCount) * 86_400)

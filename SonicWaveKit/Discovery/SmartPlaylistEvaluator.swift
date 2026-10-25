@@ -66,6 +66,11 @@ public class SmartPlaylistEvaluator {
   /// `sort == nil`) are handled by `randomPickLimit` — pass a count to get
   /// a random subset instead of the full match set.
   public func evaluate(criteria: SmartPlaylistCriteria, randomPickLimit: Int? = nil) -> [Song] {
+    // rules present but NONE locally evaluable → `criteria.predicate()`
+    // degrades to TRUEPREDICATE under `matchAll`, which would return the
+    // whole library — an empty result is the honest answer instead
+    guard criteria.rules.isEmpty || criteria.rules.contains(where: { $0.isLocallyEvaluable })
+    else { return [] }
     var songs = [Song]()
     // `CoreDataCompanion.perform` wraps `performAndWait` — safe to capture
     // the result out of the closure like the syncers do

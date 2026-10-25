@@ -86,7 +86,6 @@ public enum NspCriteriaParser {
       rules.append(contentsOf: parseConjunction(
         expressions: all,
         parentCombination: .matchAll,
-        depth: 0,
         notes: &notes
       ))
     }
@@ -97,14 +96,15 @@ public enum NspCriteriaParser {
       rules.append(contentsOf: parseConjunction(
         expressions: any,
         parentCombination: .matchAny,
-        depth: 0,
         notes: &notes
       ))
     }
 
     var sort: SmartPlaylistSort? = nil
     if let sortFieldName = rootDict["sort"] as? String {
-      let normalized = sortFieldName.trimmingCharacters(in: CharacterSet(charactersIn: "+-"))
+      let normalized = sortFieldName
+        .trimmingCharacters(in: CharacterSet(charactersIn: "+-"))
+        .lowercased()
       if normalized == "random" {
         notes.append("sort field 'random' not supported locally")
       } else if let sortField = mapField(name: normalized).knownField {
@@ -139,7 +139,6 @@ public enum NspCriteriaParser {
   private static func parseConjunction(
     expressions: [[String: Any]],
     parentCombination: SmartPlaylistCriteria.Combination,
-    depth: Int,
     notes: inout [String]
   ) -> [SmartPlaylistRule] {
     var rules = [SmartPlaylistRule]()
@@ -153,12 +152,12 @@ public enum NspCriteriaParser {
             notes.append("malformed nested conjunction '\(normalizedKey)' skipped")
             continue
           }
-          if depth == 0 && nestedCombination == parentCombination {
-            // same-type nested conjunctions flatten losslessly
+          if nestedCombination == parentCombination {
+            // same-type nested conjunctions flatten losslessly at any
+            // depth — `all(all(a, all(b)))` == `all(a, b)`
             rules.append(contentsOf: parseConjunction(
               expressions: nestedExpressions,
               parentCombination: parentCombination,
-              depth: depth + 1,
               notes: &notes
             ))
           } else {
@@ -207,11 +206,17 @@ public enum NspCriteriaParser {
     if mappedField.knownField == nil {
       notes.append("field '\(fieldName)' has no local mapping — kept as custom rule")
     }
-    return SmartPlaylistRule(
+    let rule = SmartPlaylistRule(
       field: mappedField.field,
       operator: operatorMap,
       value: value
     )
+    if mappedField.knownField != nil, !rule.isLocallyEvaluable {
+      notes.append(
+        "rule '\(operatorName).\(fieldName)' cannot be evaluated locally — kept for display"
+      )
+    }
+    return rule
   }
 
   // MARK: field/operator/value mapping
