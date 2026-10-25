@@ -438,7 +438,9 @@ extension AppDelegate {
     }
   }
 
-  private func activateSleepTimer(timeInterval: TimeInterval) {
+  /// internal (not private) so `SleepTimerIntent` can drive the same
+  /// activation path as the main-menu presets
+  func activateSleepTimer(timeInterval: TimeInterval) {
     appDelegate.sleepTimer?.invalidate()
     appDelegate.sleepTimer = Timer
       .scheduledTimer(withTimeInterval: timeInterval, repeats: false) { _ in
@@ -452,6 +454,14 @@ extension AppDelegate {
           self.appDelegate.sleepTimer = nil
         }
       }
+  }
+
+  /// turns every sleep-timer mechanism off: the countdown `Timer` and
+  /// the pause-at-end-of-track flag (used by `SleepTimerIntent`'s `.off`)
+  func deactivateSleepTimer() {
+    appDelegate.sleepTimer?.invalidate()
+    appDelegate.sleepTimer = nil
+    player.isShouldPauseAfterFinishedPlaying = false
   }
 
   var isMainOrMiniPlayerPlayerOpen: Bool {
