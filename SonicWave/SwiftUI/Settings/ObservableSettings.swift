@@ -110,6 +110,8 @@ final class Settings: ObservableObject {
   var isMusicHapticsActive = false
   @Published
   var isLiveActivityEnabled = true
+  @Published
+  var isSpotlightIndexingEnabled = true
 
   @Published
   var artworkTintIntensity: ArtworkTintIntensity = .defaultValue

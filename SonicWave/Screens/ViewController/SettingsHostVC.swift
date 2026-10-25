@@ -278,6 +278,15 @@ class SettingsHostVC: UIViewController {
       self.appDelegate.widgetBridge.notifyLiveActivitySettingChanged()
     }))
 
+    settings.isSpotlightIndexingEnabled = appDelegate.storage.settings.user
+      .isSpotlightIndexingEnabled
+    changesAgent.append(settings.$isSpotlightIndexingEnabled.sink(receiveValue: { newValue in
+      self.appDelegate.storage.settings.user.isSpotlightIndexingEnabled = newValue
+      // `start()` re-evaluates the flag both ways — disabling stops the
+      // indexer and wipes the index, enabling re-arms the full pass
+      Task { await AmperKit.shared.spotlightIndexer.start() }
+    }))
+
     // following account specific setting sinks are assigned.
     // the correct assignment is done in the account switched callback
 

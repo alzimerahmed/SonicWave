@@ -961,6 +961,18 @@
         }
       }
     },
+    "Shows your library in Spotlight search. Turning this off removes everything already indexed." : {
+      "comment" : "Settings footer under the Spotlight Indexing row",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shows your library in Spotlight search. Turning this off removes everything already indexed."
+          }
+        }
+      }
+    },
     "Shuffle Albums" : {
       "comment" : "Context menu action: start album-radio mode (whole albums played back-to-back, shuffled)",
       "extractionState" : "manual",
@@ -1077,6 +1089,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sort: %@ (%@)"
+          }
+        }
+      }
+    },
+    "Spotlight Indexing" : {
+      "comment" : "Settings row title: index library into iOS Spotlight search",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotlight Indexing"
           }
         }
       }

@@ -72,6 +72,19 @@ struct SettingsView: View {
           "Songs, podcasts, and artworks won’t download offline. Searches are limited to the device, and playlists won’t sync with the server."
         )
 
+        SettingsSection(
+          content: {
+            SettingsCheckBoxRow(
+              title: String(localized: "Spotlight Indexing"),
+              isOn: $settings.isSpotlightIndexingEnabled
+            )
+          },
+          footer:
+          String(
+            localized: "Shows your library in Spotlight search. Turning this off removes everything already indexed."
+          )
+        )
+
         SettingsSection {
           SettingsRow(title: "Prevent Screen Lock") {
             Menu(settings.screenLockPreventionPreference.description) {
