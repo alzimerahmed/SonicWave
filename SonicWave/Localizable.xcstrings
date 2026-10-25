@@ -1,6 +1,78 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%lds" : {
+      "comment" : "Decade label (e.g. \"1980s\")",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lds"
+          }
+        }
+      }
+    },
+    "%lds Albums" : {
+      "comment" : "Title of the decade album browse screen (e.g. \"1980s Albums\")",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lds Albums"
+          }
+        }
+      }
+    },
+    "%lld Songs" : {
+      "comment" : "Song count label on the resolved-list header (play/shuffle row)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld Songs"
+          }
+        }
+      }
+    },
+    "%lld visits" : {
+      "comment" : "Share list: visit count",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld visits"
+          }
+        }
+      }
+    },
+    "About" : {
+      "comment" : "Artist bio sheet header",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About"
+          }
+        }
+      }
+    },
+    "Album" : {
+      "comment" : "Smart playlist rule field",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Album"
+          }
+        }
+      }
+    },
     "Album Shuffle" : {
       "comment" : "Settings row title: enables whole-album shuffle mode",
       "extractionState" : "manual",
@@ -25,6 +97,18 @@
         }
       }
     },
+    "Albums appear here once they are synced to your library." : {
+      "comment" : "Empty state subtitle for decade browse",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Albums appear here once they are synced to your library."
+          }
+        }
+      }
+    },
     "App Icon" : {
       "comment" : "Settings row title for the alternate app icon picker",
       "extractionState" : "manual",
@@ -33,6 +117,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "App Icon"
+          }
+        }
+      }
+    },
+    "Artist" : {
+      "comment" : "Smart playlist rule field",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Artist"
           }
         }
       }
@@ -73,6 +169,18 @@
         }
       }
     },
+    "Browse by Decade" : {
+      "comment" : "Albums menu action: open decade browse",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Browse by Decade"
+          }
+        }
+      }
+    },
     "Choose an alternate Home Screen icon." : {
       "comment" : "Settings footer under the App Icon picker",
       "extractionState" : "manual",
@@ -81,6 +189,42 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choose an alternate Home Screen icon."
+          }
+        }
+      }
+    },
+    "Copy Link" : {
+      "comment" : "Manage Shares row action",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy Link"
+          }
+        }
+      }
+    },
+    "Create Share Link" : {
+      "comment" : "Context menu action: create a public share link and copy it",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create Share Link"
+          }
+        }
+      }
+    },
+    "Created %@" : {
+      "comment" : "Share list: creation date",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Created %@"
           }
         }
       }
@@ -109,6 +253,30 @@
         }
       }
     },
+    "Date added" : {
+      "comment" : "Smart playlist rule field",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Date added"
+          }
+        }
+      }
+    },
+    "Decade" : {
+      "comment" : "Decade picker button/menu title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Decade"
+          }
+        }
+      }
+    },
     "Default" : {
       "comment" : "App Icon picker option: the primary app icon",
       "extractionState" : "manual",
@@ -117,6 +285,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Default"
+          }
+        }
+      }
+    },
+    "Dislike" : {
+      "comment" : "Context menu action: mark a song with the local thumbs-down flag",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dislike"
+          }
+        }
+      }
+    },
+    "Disliked" : {
+      "comment" : "VoiceOver label for the thumbs-down badge on a song row + smart rule field",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disliked"
           }
         }
       }
@@ -133,6 +325,66 @@
         }
       }
     },
+    "Expired %@" : {
+      "comment" : "Share list: expiry date (tense changes on expiry)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expired %@"
+          }
+        }
+      }
+    },
+    "Expires %@" : {
+      "comment" : "Share list: expiry date (tense changes on expiry)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expires %@"
+          }
+        }
+      }
+    },
+    "Favorite" : {
+      "comment" : "Smart playlist rule field",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favorite"
+          }
+        }
+      }
+    },
+    "For servers behind a reverse proxy — links are generated from this base URL." : {
+      "comment" : "Sharing settings footer",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For servers behind a reverse proxy — links are generated from this base URL."
+          }
+        }
+      }
+    },
+    "Genre" : {
+      "comment" : "Smart playlist rule field",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Genre"
+          }
+        }
+      }
+    },
     "How strongly the Now Playing background takes on the current artwork's colors. Stored per account." : {
       "comment" : "Settings footer under the Artwork Tint row",
       "extractionState" : "manual",
@@ -141,6 +393,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "How strongly the Now Playing background takes on the current artwork's colors. Stored per account."
+          }
+        }
+      }
+    },
+    "Last played" : {
+      "comment" : "Smart playlist rule field",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last played"
           }
         }
       }
@@ -157,6 +421,18 @@
         }
       }
     },
+    "Long-press for share actions" : {
+      "comment" : "VoiceOver hint on share rows",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Long-press for share actions"
+          }
+        }
+      }
+    },
     "Lyrics" : {
       "comment" : "VoiceOver announcement when swiping to the lyrics pane of Now Playing",
       "extractionState" : "manual",
@@ -165,6 +441,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Lyrics"
+          }
+        }
+      }
+    },
+    "Manage Shares" : {
+      "comment" : "Manage Shares screen title and settings row",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manage Shares"
+          }
+        }
+      }
+    },
+    "Match all rules" : {
+      "comment" : "Smart playlist combination label: every rule must match",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Match all rules"
+          }
+        }
+      }
+    },
+    "Match any rule" : {
+      "comment" : "Smart playlist combination label: at least one rule must match",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Match any rule"
+          }
+        }
+      }
+    },
+    "Mixes" : {
+      "comment" : "Navigation button opening the mixes discovery screen + its title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mixes"
+          }
+        }
+      }
+    },
+    "Mixes appear once your library has enough songs, favorites and play history." : {
+      "comment" : "Empty state subtitle on the mixes screen",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mixes appear once your library has enough songs, favorites and play history."
           }
         }
       }
@@ -181,6 +517,54 @@
         }
       }
     },
+    "No Albums in the %lds" : {
+      "comment" : "Empty state title for decade browse",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Albums in the %lds"
+          }
+        }
+      }
+    },
+    "No Matching Songs" : {
+      "comment" : "Empty state title for a smart playlist whose rules match nothing",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Matching Songs"
+          }
+        }
+      }
+    },
+    "No Mixes Available" : {
+      "comment" : "Empty state title on the mixes screen",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Mixes Available"
+          }
+        }
+      }
+    },
+    "No Songs" : {
+      "comment" : "Empty state title for a resolved song list (mix, smart playlist)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Songs"
+          }
+        }
+      }
+    },
     "No lyrics available for this song" : {
       "comment" : "Lyrics pane empty state",
       "extractionState" : "manual",
@@ -189,6 +573,42 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No lyrics available for this song"
+          }
+        }
+      }
+    },
+    "No share links yet. Create one from a song's, album's or playlist's actions menu." : {
+      "comment" : "Manage Shares: empty state hint",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No share links yet. Create one from a song's, album's or playlist's actions menu."
+          }
+        }
+      }
+    },
+    "No songs match these rules right now." : {
+      "comment" : "Empty state subtitle for a smart playlist whose rules match nothing",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No songs match these rules right now."
+          }
+        }
+      }
+    },
+    "Nothing could be resolved here right now." : {
+      "comment" : "Empty state subtitle for a resolved song list",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing could be resolved here right now."
           }
         }
       }
@@ -229,6 +649,18 @@
         }
       }
     },
+    "Partially evaluated — the server resolves rules SonicWave cannot read." : {
+      "comment" : "Note on smart playlists with unmapped server rules",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partially evaluated — the server resolves rules SonicWave cannot read."
+          }
+        }
+      }
+    },
     "Pause" : {
       "comment" : "Mini-player context menu action: pause playback",
       "extractionState" : "manual",
@@ -253,6 +685,174 @@
         }
       }
     },
+    "Play count" : {
+      "comment" : "Smart playlist rule field",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play count"
+          }
+        }
+      }
+    },
+    "Public URL Override" : {
+      "comment" : "Account settings row: base URL for share links behind a reverse proxy",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Public URL Override"
+          }
+        }
+      }
+    },
+    "Rating" : {
+      "comment" : "Smart playlist rule field",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rating"
+          }
+        }
+      }
+    },
+    "Refresh Mixes" : {
+      "comment" : "VoiceOver label for the mixes refresh button",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Refresh Mixes"
+          }
+        }
+      }
+    },
+    "Refresh Shares" : {
+      "comment" : "VoiceOver label for the shares refresh button",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Refresh Shares"
+          }
+        }
+      }
+    },
+    "Remove Dislike" : {
+      "comment" : "Context menu action: clear the local thumbs-down flag on a song",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove Dislike"
+          }
+        }
+      }
+    },
+    "Revoke" : {
+      "comment" : "Manage Shares row action + confirmation button",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revoke"
+          }
+        }
+      }
+    },
+    "Revoke Share Link?" : {
+      "comment" : "Revoke confirmation title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revoke Share Link?"
+          }
+        }
+      }
+    },
+    "Rules" : {
+      "comment" : "Section header for the smart playlist criteria summary",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rules"
+          }
+        }
+      }
+    },
+    "Share link copied to clipboard." : {
+      "comment" : "Toast shown after a public share link is created",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share link copied to clipboard."
+          }
+        }
+      }
+    },
+    "Share links are public — anyone with the URL can listen. Revoking deletes the link on the server." : {
+      "comment" : "Manage Shares footer",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share links are public — anyone with the URL can listen. Revoking deletes the link on the server."
+          }
+        }
+      }
+    },
+    "Sharing" : {
+      "comment" : "Settings section header for share links",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sharing"
+          }
+        }
+      }
+    },
+    "Sharing is not supported by this server." : {
+      "comment" : "Toast/manage-shares note when the backend has no share API",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sharing is not supported by this server."
+          }
+        }
+      }
+    },
+    "Shows the full biography" : {
+      "comment" : "VoiceOver hint on the collapsed artist bio",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shows the full biography"
+          }
+        }
+      }
+    },
     "Shuffle Albums" : {
       "comment" : "Context menu action: start album-radio mode (whole albums played back-to-back, shuffled)",
       "extractionState" : "manual",
@@ -273,6 +873,78 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Shuffle plays whole albums back-to-back; the next album is queued automatically. Stored per account."
+          }
+        }
+      }
+    },
+    "Similar Artists" : {
+      "comment" : "Artist detail section header",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Similar Artists"
+          }
+        }
+      }
+    },
+    "Smart playlist" : {
+      "comment" : "Badge line for locally-authored smart playlists + VoiceOver modifier",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Smart playlist"
+          }
+        }
+      }
+    },
+    "Smart playlist · Navidrome — managed by the server, read-only" : {
+      "comment" : "Badge line for server-managed .nsp smart playlists",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Smart playlist · Navidrome — managed by the server, read-only"
+          }
+        }
+      }
+    },
+    "Smart playlist · imported from server" : {
+      "comment" : "Badge line for smart playlists imported from the server",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Smart playlist · imported from server"
+          }
+        }
+      }
+    },
+    "Songs" : {
+      "comment" : "Section header for the resolved smart playlist song list",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Songs"
+          }
+        }
+      }
+    },
+    "Sort: %@ (%@)" : {
+      "comment" : "Smart playlist sort line: field + direction",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sort: %@ (%@)"
           }
         }
       }
@@ -313,6 +985,54 @@
         }
       }
     },
+    "The public link stops working immediately." : {
+      "comment" : "Revoke confirmation body",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The public link stops working immediately."
+          }
+        }
+      }
+    },
+    "This mix has no songs right now." : {
+      "comment" : "Toast when a mix resolves to an empty song list",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This mix has no songs right now."
+          }
+        }
+      }
+    },
+    "Title" : {
+      "comment" : "Smart playlist rule field",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Title"
+          }
+        }
+      }
+    },
+    "Top Songs" : {
+      "comment" : "Artist detail section header",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Top Songs"
+          }
+        }
+      }
+    },
     "Track %d of %d" : {
       "comment" : "Album playthrough caption under Now Playing. First %d = current track number, second %d = total tracks on the album.",
       "extractionState" : "manual",
@@ -349,6 +1069,18 @@
         }
       }
     },
+    "Up to %lld songs" : {
+      "comment" : "Smart playlist limit line",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up to %lld songs"
+          }
+        }
+      }
+    },
     "Vivid" : {
       "comment" : "Artwork Tint preference option: full gradient plus accent-tinted controls",
       "extractionState" : "manual",
@@ -369,6 +1101,174 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "When the server has no synced lyrics, title, artist, album, and duration of the current track are sent to lrclib.net — only while online, never your account data."
+          }
+        }
+      }
+    },
+    "Year" : {
+      "comment" : "Smart playlist rule field",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Year"
+          }
+        }
+      }
+    },
+    "ascending" : {
+      "comment" : "Sort direction",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ascending"
+          }
+        }
+      }
+    },
+    "contains" : {
+      "comment" : "Rule operator",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "contains"
+          }
+        }
+      }
+    },
+    "descending" : {
+      "comment" : "Sort direction",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "descending"
+          }
+        }
+      }
+    },
+    "does not contain" : {
+      "comment" : "Rule operator",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "does not contain"
+          }
+        }
+      }
+    },
+    "ends with" : {
+      "comment" : "Rule operator",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ends with"
+          }
+        }
+      }
+    },
+    "is" : {
+      "comment" : "Rule operator",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "is"
+          }
+        }
+      }
+    },
+    "is between" : {
+      "comment" : "Rule operator",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "is between"
+          }
+        }
+      }
+    },
+    "is greater than" : {
+      "comment" : "Rule operator",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "is greater than"
+          }
+        }
+      }
+    },
+    "is less than" : {
+      "comment" : "Rule operator",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "is less than"
+          }
+        }
+      }
+    },
+    "is not" : {
+      "comment" : "Rule operator",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "is not"
+          }
+        }
+      }
+    },
+    "is not within the last" : {
+      "comment" : "Rule operator",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "is not within the last"
+          }
+        }
+      }
+    },
+    "is within the last" : {
+      "comment" : "Rule operator",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "is within the last"
+          }
+        }
+      }
+    },
+    "starts with" : {
+      "comment" : "Rule operator",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "starts with"
           }
         }
       }
