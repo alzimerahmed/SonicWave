@@ -227,6 +227,11 @@ public class Playlist: Identifyable {
     set {
       guard let newValue else {
         managedObject.smartCriteriaJson = nil
+        // a playlist that loses its criteria is a plain playlist again;
+        // the `smart_` id prefix still marks locally-authored ones smart
+        if !id.hasPrefix(Self.smartPlaylistIdPrefix) {
+          managedObject.isSmartPlaylist = false
+        }
         return
       }
       guard let data = try? Self.smartCriteriaEncoder.encode(newValue),
