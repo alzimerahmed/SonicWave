@@ -208,11 +208,33 @@ extension SubsonicApi: BackendApi {
 
   // MARK: G18 shares
 
+  /// Subsonic-family servers answer unimplemented/disabled endpoints with
+  /// a typed error — `serverVerionToLow` (unknown action) and
+  /// `userIsNotAuthorized` (e.g. Navidrome with sharing disabled or a
+  /// non-admin user) both mean "feature not available", so collapse them
+  /// into `.notSupported` per the degraded-path contract.
+  internal func unsupportedIfMissing<T: Sendable>(
+    _ body: () async throws -> BackendFeatureResult<T>
+  ) async throws -> BackendFeatureResult<T> {
+    do {
+      return try await body()
+    } catch let error as ResponseError {
+      switch error.asSubsonicError {
+      case .serverVerionToLow, .userIsNotAuthorized:
+        return .notSupported
+      default:
+        throw error
+      }
+    }
+  }
+
   func getShares() async throws -> BackendFeatureResult<[ShareDescription]> {
-    let response = try await subsonicServerApi.requestShares()
-    let delegate = SsSharesParserDelegate(performanceMonitor: performanceMonitor)
-    try parse(response: response, delegate: delegate)
-    return .supported(subsonicServerApi.applyPublicUrlOverride(to: delegate.shares))
+    try await unsupportedIfMissing {
+      let response = try await self.subsonicServerApi.requestShares()
+      let delegate = SsSharesParserDelegate(performanceMonitor: self.performanceMonitor)
+      try self.parse(response: response, delegate: delegate)
+      return .supported(self.subsonicServerApi.applyPublicUrlOverride(to: delegate.shares))
+    }
   }
 
   func createShare(
@@ -221,18 +243,20 @@ extension SubsonicApi: BackendApi {
     description: String?,
     expiresInDays: Int?
   ) async throws -> BackendFeatureResult<ShareDescription> {
-    let response = try await subsonicServerApi.requestCreateShare(
-      id: shareableId,
-      description: description,
-      expiresInDays: expiresInDays
-    )
-    let delegate = SsSharesParserDelegate(performanceMonitor: performanceMonitor)
-    try parse(response: response, delegate: delegate)
-    let shares = subsonicServerApi.applyPublicUrlOverride(to: delegate.shares)
-    guard let created = shares.first else {
-      throw ResponseError(type: .xml, cleansedURL: nil, data: response.data)
+    try await unsupportedIfMissing {
+      let response = try await self.subsonicServerApi.requestCreateShare(
+        id: shareableId,
+        description: description,
+        expiresInDays: expiresInDays
+      )
+      let delegate = SsSharesParserDelegate(performanceMonitor: self.performanceMonitor)
+      try self.parse(response: response, delegate: delegate)
+      let shares = self.subsonicServerApi.applyPublicUrlOverride(to: delegate.shares)
+      guard let created = shares.first else {
+        throw ResponseError(type: .xml, cleansedURL: nil, data: response.data)
+      }
+      return .supported(created)
     }
-    return .supported(created)
   }
 
   func updateShare(
@@ -241,26 +265,30 @@ extension SubsonicApi: BackendApi {
     expiresInDays: Int?
   ) async throws -> BackendFeatureResult<ShareDescription> {
     guard try await subsonicServerApi.isShareUpdateSupported() else { return .notSupported }
-    let response = try await subsonicServerApi.requestUpdateShare(
-      id: id,
-      description: description,
-      expiresInDays: expiresInDays
-    )
-    let delegate = SsSharesParserDelegate(performanceMonitor: performanceMonitor)
-    try parse(response: response, delegate: delegate)
-    let shares = subsonicServerApi.applyPublicUrlOverride(to: delegate.shares)
-    guard let updated = shares.first else {
-      throw ResponseError(type: .xml, cleansedURL: nil, data: response.data)
+    return try await unsupportedIfMissing {
+      let response = try await self.subsonicServerApi.requestUpdateShare(
+        id: id,
+        description: description,
+        expiresInDays: expiresInDays
+      )
+      let delegate = SsSharesParserDelegate(performanceMonitor: self.performanceMonitor)
+      try self.parse(response: response, delegate: delegate)
+      let shares = self.subsonicServerApi.applyPublicUrlOverride(to: delegate.shares)
+      guard let updated = shares.first else {
+        throw ResponseError(type: .xml, cleansedURL: nil, data: response.data)
+      }
+      return .supported(updated)
     }
-    return .supported(updated)
   }
 
   func deleteShare(id: String) async throws -> BackendFeatureResult<Bool> {
-    let response = try await subsonicServerApi.requestDeleteShare(id: id)
-    try parse(response: response, delegate: SsPingParserDelegate(
-      performanceMonitor: performanceMonitor
-    ))
-    return .supported(true)
+    try await unsupportedIfMissing {
+      let response = try await self.subsonicServerApi.requestDeleteShare(id: id)
+      try self.parse(response: response, delegate: SsPingParserDelegate(
+        performanceMonitor: self.performanceMonitor
+      ))
+      return .supported(true)
+    }
   }
 
   // MARK: G8 smart playlists

@@ -1681,7 +1681,8 @@ public class LibraryStorage: PlayableFileCachable {
 
   /// local-only dislike flag (#587, v51): both shipped backends resolve
   /// `setDislike`/`clearDislike` to `.localOnly`, so this is the
-  /// authoritative list for the UI's disliked-songs surface
+  /// authoritative list for a disliked-songs surface — prepared for a
+  /// later phase, no consumer yet
   public func getDislikedSongs(for account: Account) -> [Song] {
     let fetchRequest = SongMO.identifierSortedFetchRequest
     fetchRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [

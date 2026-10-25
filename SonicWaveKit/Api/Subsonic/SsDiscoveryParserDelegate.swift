@@ -219,6 +219,10 @@ class SsSimilarArtistsParserDelegate: SsXmlParser {
 class SsSharesParserDelegate: SsXmlParser {
   private(set) var shares = [ShareDescription]()
   private var currentEntryIds = [String]()
+  /// index into `shares` of the `<share>` currently open — `nil` when the
+  /// element had no `id` (skipped), so its `<entry>` children are not
+  /// attributed to the previous share
+  private var currentShareIndex: Int?
 
   override func parser(
     _ parser: XMLParser,
@@ -237,7 +241,10 @@ class SsSharesParserDelegate: SsXmlParser {
     switch elementName {
     case "share":
       currentEntryIds = []
-      guard let id = attributeDict["id"] else { return }
+      guard let id = attributeDict["id"] else {
+        currentShareIndex = nil
+        return
+      }
       shares.append(ShareDescription(
         id: id,
         url: attributeDict["url"] ?? "",
@@ -248,8 +255,9 @@ class SsSharesParserDelegate: SsXmlParser {
         visitCount: Int(attributeDict["visitCount"] ?? "0") ?? 0,
         sharedObjectIds: []
       ))
+      currentShareIndex = shares.count - 1
     case "entry":
-      if let entryId = attributeDict["id"] {
+      if currentShareIndex != nil, let entryId = attributeDict["id"] {
         currentEntryIds.append(entryId)
       }
     default:
@@ -263,8 +271,11 @@ class SsSharesParserDelegate: SsXmlParser {
     namespaceURI: String?,
     qualifiedName qName: String?
   ) {
-    if elementName == "share", !shares.isEmpty {
-      shares[shares.count - 1].sharedObjectIds = currentEntryIds
+    if elementName == "share" {
+      if let index = currentShareIndex {
+        shares[index].sharedObjectIds = currentEntryIds
+      }
+      currentShareIndex = nil
       currentEntryIds = []
     }
     super.parser(

@@ -366,6 +366,8 @@ public protocol BackendApi: URLCleanser, Sendable {
     description: String?,
     expiresInDays: Int?
   ) async throws -> BackendFeatureResult<ShareDescription>
+  /// share mutation (rename/expiry) — wired end-to-end for a share-edit
+  /// UI prepared for a later phase; no caller yet
   func updateShare(
     id: String,
     description: String?,
