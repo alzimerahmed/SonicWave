@@ -38,6 +38,8 @@ class PlainDetailsVC: UIViewController {
   private var player: PlayerFacade?
   private var lyricsRelFilePath: URL?
   private var lyricsAccount: Account?
+  private var plainText: String?
+  private var plainHeader: String?
 
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -92,7 +94,24 @@ class PlainDetailsVC: UIViewController {
     self.lyricsAccount = lyricsAccount
   }
 
+  /// G20: generic scrollable text sheet (artist bio, album notes) —
+  /// same sheet chrome as the podcast description
+  func display(text: String, header: String, on rootView: UIViewController) {
+    self.rootView = rootView
+    podcast = nil
+    podcastEpisode = nil
+    player = nil
+    lyricsRelFilePath = nil
+    plainText = text
+    plainHeader = header
+  }
+
   func refresh() {
+    if let plainText, let plainHeader {
+      detailsTextView.text = plainText
+      headerLabel.text = plainHeader
+      return
+    }
     if let podcast = podcast {
       detailsTextView.text = podcast.depiction
       headerLabel.text = "Description"

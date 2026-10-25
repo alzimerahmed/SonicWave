@@ -177,6 +177,18 @@ class GenericDetailTableHeader: UIView {
     playShuffleInfoView?.refresh()
   }
 
+  /// G20: enrichment text (artist bio / album notes) resolves async after
+  /// the header is built — this swaps it in and re-heights the table
+  /// header the same way `applyTraitCollectionChange` does
+  func updateDescription(text: String?) {
+    guard var updated = config else { return }
+    updated.descriptionText = text
+    config = updated
+    descriptionLabel.text = text
+    descriptionLabel.isHidden = text == nil
+    applyTraitCollectionChange()
+  }
+
   func applyTraitCollectionChange() {
     guard let config = config else { return }
     let rootView = config.rootView

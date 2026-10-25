@@ -26,12 +26,37 @@ import UIKit
 class ArtistDetailVC: MultiSourceTableViewController {
   override var sceneTitle: String? { artist.name }
 
+  /// G20 enrichment sections appended after the FRC-driven ones —
+  /// presence is data-driven: `.notSupported`/empty results hide them
+  private enum EnrichmentSection {
+    case similarArtists
+    case topSongs
+  }
+
   private let artist: Artist
   var albumToScrollTo: Album?
   private var albumsFetchedResultsController: ArtistAlbumsItemsFetchedResultsController!
   private var songsFetchedResultsController: ArtistSongsItemsFetchedResultsController!
   private var optionsButton: UIBarButtonItem!
   private var detailOperationsView: GenericDetailTableHeader?
+  private var similarArtistStubs = [ArtistStub]()
+  private var topSongs = [Song]()
+  private var artistBio: String?
+  private var enrichmentTask: Task<Void, Never>?
+
+  private var visibleEnrichmentSections: [EnrichmentSection] {
+    var sections = [EnrichmentSection]()
+    if !similarArtistStubs.isEmpty { sections.append(.similarArtists) }
+    if !topSongs.isEmpty { sections.append(.topSongs) }
+    return sections
+  }
+
+  /// FRC sections keep their historic indices (0 = top spacer, 1 = albums,
+  /// 2 = songs); enrichment sections sit after them
+  private func enrichmentSectionKind(for section: Int) -> EnrichmentSection? {
+    guard section > LibraryElement.Song.rawValue - 1 else { return nil }
+    return visibleEnrichmentSections.element(at: section - LibraryElement.Song.rawValue)
+  }
 
   init(account: Account, artist: Artist) {
     self.artist = artist
@@ -63,6 +88,10 @@ class ArtistDetailVC: MultiSourceTableViewController {
     songsFetchedResultsController.delegate = self
     tableView.register(nibName: GenericTableCell.typeName)
     tableView.register(nibName: PlayableTableCell.typeName)
+    tableView.register(
+      SimilarArtistsShelfCell.self,
+      forCellReuseIdentifier: SimilarArtistsShelfCell.reuseID
+    )
     tableView.sectionHeaderHeight = 0.0
     tableView.estimatedSectionHeaderHeight = 0.0
     tableView.sectionFooterHeight = 0.0
@@ -100,6 +129,9 @@ class ArtistDetailVC: MultiSourceTableViewController {
     navigationItem.rightBarButtonItem = optionsButton
 
     containableAtIndexPathCallback = { indexPath in
+      if self.enrichmentSectionKind(for: indexPath.section) == .topSongs {
+        return self.topSongs.element(at: indexPath.row)
+      }
       switch indexPath.section + 1 {
       case LibraryElement.Album.rawValue:
         return self.albumsFetchedResultsController.getWrappedEntity(at: IndexPath(
@@ -116,6 +148,13 @@ class ArtistDetailVC: MultiSourceTableViewController {
       }
     }
     playContextAtIndexPathCallback = { indexPath in
+      if self.enrichmentSectionKind(for: indexPath.section) == .topSongs,
+         let song = self.topSongs.element(at: indexPath.row) {
+        let playables = self.topSongs
+          .filterCached(dependigOn: self.appDelegate.storage.settings.user.isOfflineMode)
+        guard let contextIndex = playables.firstIndex(of: song) else { return nil }
+        return PlayContext(containable: self.artist, index: contextIndex, playables: playables)
+      }
       switch indexPath.section + 1 {
       case LibraryElement.Album.rawValue:
         let album = self.albumsFetchedResultsController.getWrappedEntity(at: IndexPath(
@@ -141,6 +180,21 @@ class ArtistDetailVC: MultiSourceTableViewController {
       }
     }
     swipeCallback = { indexPath, completionHandler in
+      if self.enrichmentSectionKind(for: indexPath.section) == .topSongs {
+        guard let song = self.topSongs.element(at: indexPath.row) else {
+          completionHandler(nil)
+          return
+        }
+        completionHandler(SwipeActionContext(
+          containable: song,
+          playContext: PlayContext(containable: self.artist, playables: self.topSongs)
+        ))
+        return
+      }
+      guard self.enrichmentSectionKind(for: indexPath.section) == nil else {
+        completionHandler(nil)
+        return
+      }
       switch indexPath.section + 1 {
       case LibraryElement.Album.rawValue:
         let album = self.albumsFetchedResultsController.getWrappedEntity(at: IndexPath(
@@ -194,6 +248,71 @@ class ArtistDetailVC: MultiSourceTableViewController {
       }
       self.detailOperationsView?.refresh()
     }
+    enrichmentTask?.cancel()
+    enrichmentTask = Task { @MainActor in
+      await self.loadEnrichment()
+    }
+  }
+
+  /// G20: server-side enrichment (bio, similar artists, top songs).
+  /// Every call is `BackendFeatureResult`-matched — `.notSupported` or an
+  /// empty payload leaves the section hidden, it never shows "error".
+  private func loadEnrichment() async {
+    guard appDelegate.storage.settings.user.isOnlineMode else { return }
+    let backendApi = appDelegate.getMeta(account.info).backendApi
+    do {
+      if case .supported(let info) = try await backendApi.getArtistInfo(artistId: artist.id) {
+        if let bio = info.biography?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !bio.isEmpty {
+          artistBio = bio
+          detailOperationsView?.updateDescription(text: bio)
+          // collapsed bio in the header → tap expands into the text sheet
+          detailOperationsView?.descriptionLabel.isUserInteractionEnabled = true
+          detailOperationsView?.descriptionLabel.accessibilityTraits = .button
+          detailOperationsView?.descriptionLabel.accessibilityHint = NSLocalizedString(
+            "Shows the full biography",
+            comment: "VoiceOver hint on the collapsed artist bio"
+          )
+          detailOperationsView?.descriptionLabel.addGestureRecognizer(
+            UITapGestureRecognizer(target: self, action: #selector(showFullBio))
+          )
+        }
+        if !info.similarArtists.isEmpty {
+          similarArtistStubs = info.similarArtists
+        }
+      }
+      if similarArtistStubs.isEmpty,
+         case .supported(let stubs) = try await backendApi.getSimilarArtists(
+           artistId: artist.id,
+           count: 20
+         ) {
+        similarArtistStubs = stubs
+      }
+      if case .supported(let remoteSongs) = try await backendApi.getTopSongs(
+        artistName: artist.name,
+        count: 10
+      ) {
+        topSongs = remoteSongs.compactMap {
+          appDelegate.storage.main.library.getSong(for: account, id: $0.id)
+        }
+      }
+    } catch {
+      appDelegate.eventLogger.report(topic: "Artist Enrichment", error: error)
+    }
+    tableView.reloadData()
+  }
+
+  /// collapsed bio in the header expands into the plain-text sheet
+  @objc
+  private func showFullBio() {
+    guard let artistBio else { return }
+    let detailsVC = PlainDetailsVC()
+    detailsVC.display(
+      text: artistBio,
+      header: NSLocalizedString("About", comment: "Artist bio sheet header"),
+      on: self
+    )
+    present(detailsVC, animated: true)
   }
 
   override func viewWillDisappear(_ animated: Bool) {
@@ -233,7 +352,8 @@ class ArtistDetailVC: MultiSourceTableViewController {
 
   override func numberOfSections(in tableView: UITableView) -> Int {
     // 2 section + 1 top section. The top section is needed due to display bugs
-    3
+    // + G20 enrichment sections (similar artists shelf, top songs)
+    3 + visibleEnrichmentSections.count
   }
 
   override func tableView(
@@ -241,6 +361,17 @@ class ArtistDetailVC: MultiSourceTableViewController {
     titleForHeaderInSection section: Int
   )
     -> String? {
+    switch enrichmentSectionKind(for: section) {
+    case .similarArtists:
+      return NSLocalizedString(
+        "Similar Artists",
+        comment: "Artist detail section header"
+      )
+    case .topSongs:
+      return NSLocalizedString("Top Songs", comment: "Artist detail section header")
+    case nil:
+      break
+    }
     switch section + 1 {
     case LibraryElement.Album.rawValue:
       return "Albums"
@@ -252,6 +383,12 @@ class ArtistDetailVC: MultiSourceTableViewController {
   }
 
   override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    switch enrichmentSectionKind(for: section) {
+    case .similarArtists: return 1
+    case .topSongs: return topSongs.count
+    case nil:
+      break
+    }
     switch section + 1 {
     case LibraryElement.Album.rawValue:
       return albumsFetchedResultsController.sections?[0].numberOfObjects ?? 0
@@ -267,6 +404,38 @@ class ArtistDetailVC: MultiSourceTableViewController {
     cellForRowAt indexPath: IndexPath
   )
     -> UITableViewCell {
+    switch enrichmentSectionKind(for: indexPath.section) {
+    case .similarArtists:
+      guard let cell = tableView.dequeueReusableCell(
+        withIdentifier: SimilarArtistsShelfCell.reuseID,
+        for: indexPath
+      ) as? SimilarArtistsShelfCell else { return UITableViewCell() }
+      cell.display(stubs: similarArtistStubs, account: account)
+      cell.onSelectArtist = { [weak self] artist in
+        guard let self else { return }
+        self.navigationController?.pushViewController(
+          AppStoryboard.Main.segueToArtistDetail(account: self.account, artist: artist),
+          animated: true
+        )
+      }
+      return cell
+    case .topSongs:
+      let cell: PlayableTableCell = dequeueCell(for: tableView, at: indexPath)
+      guard let song = topSongs.element(at: indexPath.row) else { return cell }
+      cell.display(
+        playable: song,
+        playContextCb: { [weak self] cell in
+          guard let self,
+                let indexPath = self.tableView.indexPath(for: cell)
+          else { return nil }
+          return self.playContextAtIndexPathCallback?(indexPath)
+        },
+        rootView: self
+      )
+      return cell
+    case nil:
+      break
+    }
     switch indexPath.section + 1 {
     case LibraryElement.Album.rawValue:
       let cell: GenericTableCell = dequeueCell(for: tableView, at: indexPath)
@@ -294,6 +463,9 @@ class ArtistDetailVC: MultiSourceTableViewController {
     heightForHeaderInSection section: Int
   )
     -> CGFloat {
+    if enrichmentSectionKind(for: section) != nil {
+      return CommonScreenOperations.tableSectionHeightLarge
+    }
     switch section + 1 {
     case LibraryElement.Album.rawValue:
       return albumsFetchedResultsController.sections?[0]
@@ -311,6 +483,11 @@ class ArtistDetailVC: MultiSourceTableViewController {
     heightForRowAt indexPath: IndexPath
   )
     -> CGFloat {
+    switch enrichmentSectionKind(for: indexPath.section) {
+    case .similarArtists: return SimilarArtistsShelfCell.shelfHeight
+    case .topSongs: return PlayableTableCell.rowHeight
+    case nil: break
+    }
     switch indexPath.section + 1 {
     case LibraryElement.Album.rawValue:
       return GenericTableCell.rowHeight
@@ -326,6 +503,11 @@ class ArtistDetailVC: MultiSourceTableViewController {
     estimatedHeightForRowAt indexPath: IndexPath
   )
     -> CGFloat {
+    switch enrichmentSectionKind(for: indexPath.section) {
+    case .similarArtists: return SimilarArtistsShelfCell.shelfHeight
+    case .topSongs: return PlayableTableCell.rowHeight
+    case nil: break
+    }
     switch indexPath.section + 1 {
     case LibraryElement.Album.rawValue:
       return GenericTableCell.rowHeight
@@ -337,6 +519,14 @@ class ArtistDetailVC: MultiSourceTableViewController {
   }
 
   override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+    switch enrichmentSectionKind(for: indexPath.section) {
+    case .topSongs:
+      // forwards to one-tap row playback when enabled in settings
+      super.tableView(tableView, didSelectRowAt: indexPath)
+      return
+    case .similarArtists, nil:
+      break
+    }
     switch indexPath.section + 1 {
     case LibraryElement.Album.rawValue:
       let album = albumsFetchedResultsController.getWrappedEntity(at: IndexPath(

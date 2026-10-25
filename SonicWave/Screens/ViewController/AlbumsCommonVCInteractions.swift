@@ -271,6 +271,11 @@ class AlbumsCommonVCInteractions {
     actions.append(createStyleButtonMenu())
 
     if appDelegate.storage.settings.user.isOnlineMode {
+      // G20: decade browse is a Subsonic `getAlbumList2 type=byYear`
+      // surface — `.notSupported` on Ampache, so the entry hides there
+      if account.apiType.asServerApiType == .subsonic {
+        actions.append(createDecadeMenu())
+      }
       actions.append(createActionButtonMenu())
     }
 
@@ -281,6 +286,24 @@ class AlbumsCommonVCInteractions {
     } else {
       rootVC?.navigationItem.rightBarButtonItems = []
     }
+  }
+
+  /// G20: entry into decade browse (`getAlbums(fromYear:toYear:)`) —
+  /// pushed like every other albums-adjacent surface
+  private func createDecadeMenu() -> UIMenu {
+    let browse = UIAction(
+      title: NSLocalizedString(
+        "Browse by Decade",
+        comment: "Albums menu action: open decade browse"
+      ),
+      image: .clock
+    ) { _ in
+      self.rootVC?.navigationController?.pushViewController(
+        AppStoryboard.Main.segueToDecadeAlbums(account: self.account),
+        animated: true
+      )
+    }
+    return UIMenu(options: [.displayInline], children: [browse])
   }
 
   private func createSortButtonMenu() -> UIMenu {

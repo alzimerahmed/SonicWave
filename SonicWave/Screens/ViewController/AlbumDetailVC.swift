@@ -158,6 +158,19 @@ class AlbumDetailVC: SingleSnapshotFetchedResultsTableViewController<SongMO> {
       }
       self.detailOperationsView?.refresh()
     }
+    // G20: album notes land in the header description slot when the
+    // backend supports `getAlbumInfo` — `.notSupported` stays hidden
+    Task { @MainActor in do {
+      guard self.appDelegate.storage.settings.user.isOnlineMode else { return }
+      if case .supported(let info) = try await self.appDelegate.getMeta(self.account.info)
+        .backendApi.getAlbumInfo(albumId: self.album.id),
+         let notes = info.notes?.trimmingCharacters(in: .whitespacesAndNewlines),
+         !notes.isEmpty {
+        self.detailOperationsView?.updateDescription(text: notes)
+      }
+    } catch {
+      self.appDelegate.eventLogger.report(topic: "Album Info", error: error)
+    }}
   }
 
   override func viewDidAppear(_ animated: Bool) {
