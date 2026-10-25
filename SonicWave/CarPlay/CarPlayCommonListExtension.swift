@@ -187,6 +187,7 @@ extension CarPlaySceneDelegate {
       CarPlayListUserInfoKeys.artworkOwnerObjectID.rawValue: artist.managedObject.objectID as Any,
       CarPlayListUserInfoKeys.artworkOwnerType.rawValue: ArtworkType.artist as Any,
     ]
+    registerListItemArtworkUpdate(item: section, playable: nil, entity: artist)
     section.handler = { [weak self] item, completion in
       guard let self = self else { completion(); return }
       var albumItems = [CPListItem]()
@@ -273,6 +274,7 @@ extension CarPlaySceneDelegate {
       CarPlayListUserInfoKeys.artworkOwnerObjectID.rawValue: album.managedObject.objectID as Any,
       CarPlayListUserInfoKeys.artworkOwnerType.rawValue: ArtworkType.album as Any,
     ]
+    registerListItemArtworkUpdate(item: section, playable: nil, entity: album)
     section.handler = { [weak self] item, completion in
       guard let self = self else { completion(); return }
       let albumTemplate = createAlbumSongListTemplate(for: album, onlyCached: onlyCached)
@@ -396,6 +398,7 @@ extension CarPlaySceneDelegate {
             .objectID as Any,
           CarPlayListUserInfoKeys.artworkOwnerType.rawValue: ArtworkType.podcast as Any,
         ]
+        registerListItemArtworkUpdate(item: item, playable: nil, entity: podcast)
         item.handler = { [weak self] item, completion in
           guard let self = self else { completion(); return }
           let podcastDetailTemplate = CPListTemplate(title: podcast.name, sections: [
@@ -657,6 +660,12 @@ extension CarPlaySceneDelegate {
         .song : ArtworkType.podcastEpisode,
       CarPlayListUserInfoKeys.isTrackDisplayed.rawValue: isTrackDisplayed,
     ]
+    registerListItemArtworkUpdate(
+      item: listItem,
+      playable: playable,
+      entity: nil,
+      isTrackDisplayed: isTrackDisplayed
+    )
     listItem.handler = { [weak self] item, completion in
       guard let self = self else { completion(); return }
       appDelegate.player.play(context: playContext)

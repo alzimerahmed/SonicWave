@@ -277,6 +277,46 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
   var homeRowData: [HomeSection: [HomeItem]] = [:]
   var homeArtworkUpdate: [String: EntityImageRowContainer] = [:] // String is Artwork.uniqueID
 
+  /// A CarPlay list item whose image has to be refreshed once a download
+  /// with one of its registered unique IDs (playable file or artwork)
+  /// finishes.
+  struct CarPlayArtworkUpdateTarget {
+    weak var item: CPListItem?
+    let playable: AbstractPlayable?
+    let entity: AbstractLibraryEntity?
+    let isTrackDisplayed: Bool
+  }
+
+  // String key is a download uniqueID (AbstractPlayable.uniqueID or
+  // Artwork.uniqueID); avoids an O(templates x items) userInfo scan per
+  // finished download.
+  var listItemArtworkUpdate: [String: [CarPlayArtworkUpdateTarget]] = [:]
+
+  /// Indexes a list item under the unique IDs of the downloads that should
+  /// trigger an image refresh for it.
+  func registerListItemArtworkUpdate(
+    item: CPListItem,
+    playable: AbstractPlayable?,
+    entity: AbstractLibraryEntity?,
+    isTrackDisplayed: Bool = false
+  ) {
+    let target = CarPlayArtworkUpdateTarget(
+      item: item,
+      playable: playable,
+      entity: entity,
+      isTrackDisplayed: isTrackDisplayed
+    )
+    if let playable {
+      listItemArtworkUpdate[playable.uniqueID, default: []].append(target)
+      if let artworkUniqueID = playable.artwork?.uniqueID {
+        listItemArtworkUpdate[artworkUniqueID, default: []].append(target)
+      }
+    }
+    if let entity, let artworkUniqueID = entity.artwork?.uniqueID {
+      listItemArtworkUpdate[artworkUniqueID, default: []].append(target)
+    }
+  }
+
   private var _cachedTab: CPListTemplate?
   var cachedTab: CPListTemplate {
     if let template = _cachedTab { return template }
@@ -473,6 +513,7 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
     homeImageRows = [:]
     homeRowData = [:]
     homeArtworkUpdate = [:]
+    listItemArtworkUpdate = [:]
   }
 
   @objc
@@ -525,99 +566,27 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
       container.detailRow = newCreatedRowImages
     }
 
-    // refresh List items
-    for template in templates {
-      var sections: [CPListSection]?
-
-      if let listTemplate = template as? CPListTemplate {
-        sections = listTemplate.sections
-      } else if let tabBarTemplate = template as? CPTabBarTemplate,
-                let selectedTemplate = tabBarTemplate.selectedTemplate as? CPListTemplate {
-        sections = selectedTemplate.sections
-      }
-
-      guard let sections = sections else { continue }
-      for section in sections {
-        for listTemplateItem in section.items {
-          guard let item = listTemplateItem as? CPListItem,
-                let userInfo = item.userInfo as? [String: Any]
-          else { continue }
-
-          var isThisRelatedToTheDownload = false
-          var isTrackDisplayed = false
-          var playable: AbstractPlayable?
-          var entity: AbstractLibraryEntity?
-
-          for info in userInfo {
-            if info.key == CarPlayListUserInfoKeys.playableDownloadID.rawValue ||
-              info.key == CarPlayListUserInfoKeys.artworkDownloadID.rawValue,
-              let uniqueID = info.value as? String,
-              uniqueID == downloadNotification.id {
-              isThisRelatedToTheDownload = true
-            } else if info.key == CarPlayListUserInfoKeys.artworkOwnerType.rawValue,
-                      let ownerType = info.value as? ArtworkType,
-                      let objectIdInfo = userInfo
-                      .first(where: {
-                        $0.key == CarPlayListUserInfoKeys.artworkOwnerObjectID.rawValue
-                      }),
-                      let managedObjectID = objectIdInfo.value as? NSManagedObjectID {
-              switch ownerType {
-              case .song:
-                let mo = appDelegate.storage.main.context.object(with: managedObjectID) as? SongMO
-                if let mo = mo {
-                  playable = Song(managedObject: mo)
-                }
-              case .album:
-                let mo = appDelegate.storage.main.context.object(with: managedObjectID) as? AlbumMO
-                if let mo = mo {
-                  entity = Album(managedObject: mo)
-                }
-              case .artist:
-                let mo = appDelegate.storage.main.context.object(with: managedObjectID) as? ArtistMO
-                if let mo = mo {
-                  entity = Artist(managedObject: mo)
-                }
-              case .podcast:
-                let mo = appDelegate.storage.main.context
-                  .object(with: managedObjectID) as? PodcastMO
-                if let mo = mo {
-                  entity = Podcast(managedObject: mo)
-                }
-              case .podcastEpisode:
-                let mo = appDelegate.storage.main.context
-                  .object(with: managedObjectID) as? PodcastEpisodeMO
-                if let mo = mo {
-                  playable = PodcastEpisode(managedObject: mo)
-                }
-              case .radio:
-                let mo = appDelegate.storage.main.context.object(with: managedObjectID) as? RadioMO
-                if let mo = mo {
-                  playable = Radio(managedObject: mo)
-                }
-              default: break
-              }
-            } else if info.key == CarPlayListUserInfoKeys.isTrackDisplayed.rawValue {
-              isTrackDisplayed = (info.value as? Bool) ?? false
-            }
-          }
-
-          if isThisRelatedToTheDownload {
-            if let playable = playable {
-              item.setImage(getImage(for: playable, isTrackDisplayed: isTrackDisplayed))
-            } else if let entity = entity {
-              item.setImage(
-                LibraryEntityImage.getImageToDisplayImmediately(
-                  libraryEntity: entity,
-                  themePreference: getPreference(activeAccountInfo).theme,
-                  artworkDisplayPreference: getPreference(activeAccountInfo)
-                    .artworkDisplayPreference,
-                  useCache: false
-                ).carPlayImage(carTraitCollection: traits)
-              )
-            }
-          }
+    // refresh List items via the downloadID -> items index (no
+    // O(templates x items) scan per finished download)
+    if var targets = listItemArtworkUpdate[downloadNotification.id] {
+      let preference = getPreference(activeAccountInfo)
+      targets = targets.filter { $0.item != nil }
+      for target in targets {
+        guard let item = target.item else { continue }
+        if let playable = target.playable {
+          item.setImage(getImage(for: playable, isTrackDisplayed: target.isTrackDisplayed))
+        } else if let entity = target.entity {
+          item.setImage(
+            LibraryEntityImage.getImageToDisplayImmediately(
+              libraryEntity: entity,
+              themePreference: preference.theme,
+              artworkDisplayPreference: preference.artworkDisplayPreference,
+              useCache: false
+            ).carPlayImage(carTraitCollection: traits)
+          )
         }
       }
+      listItemArtworkUpdate[downloadNotification.id] = targets
     }
   }
 
