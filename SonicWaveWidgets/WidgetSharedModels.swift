@@ -36,8 +36,10 @@ enum WidgetSharedConfig {
 
   /// Darwin notification posted by the widget extension after writing a
   /// command file; the app's `WidgetCommandConsumer` consumes the file.
+  /// Plain `String` (cast to `CFString` at the CoreFoundation call sites)
+  /// so the shared static stays trivially Sendable.
   static let commandDarwinNotification =
-    "com.alzimerahmed.sonicwave.widget.command" as CFString
+    "com.alzimerahmed.sonicwave.widget.command"
 
   /// Widget extension waits this long for the app to consume a command
   /// before falling back to opening the app (cold start path).
@@ -246,7 +248,7 @@ enum WidgetStore {
   static func postCommandNotification() {
     CFNotificationCenterPostNotification(
       CFNotificationCenterGetDarwinNotifyCenter(),
-      CFNotificationName(WidgetSharedConfig.commandDarwinNotification),
+      CFNotificationName(WidgetSharedConfig.commandDarwinNotification as CFString),
       nil,
       nil,
       true

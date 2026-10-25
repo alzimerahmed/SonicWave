@@ -65,24 +65,26 @@ final class WidgetCommandConsumer {
     CFNotificationCenterRemoveObserver(
       CFNotificationCenterGetDarwinNotifyCenter(),
       Unmanaged.passUnretained(self).toOpaque(),
-      CFNotificationName(WidgetSharedConfig.commandDarwinNotification),
+      CFNotificationName(WidgetSharedConfig.commandDarwinNotification as CFString),
       nil
     )
   }
 
-  /// drains any pending command, then starts observing the Darwin channel
+  /// starts observing the Darwin channel, then drains any pending
+  /// command — observing first closes the race where a command file
+  /// written between drain and registration would sit until next launch
   func start() {
-    consumePending()
     guard !isObserving else { return }
     isObserving = true
     CFNotificationCenterAddObserver(
       CFNotificationCenterGetDarwinNotifyCenter(),
       Unmanaged.passUnretained(self).toOpaque(),
       widgetCommandDarwinCallback,
-      WidgetSharedConfig.commandDarwinNotification,
+      WidgetSharedConfig.commandDarwinNotification as CFString,
       nil,
       .deliverImmediately
     )
+    consumePending()
   }
 
   /// runs the newest pending command; envelopes older than
