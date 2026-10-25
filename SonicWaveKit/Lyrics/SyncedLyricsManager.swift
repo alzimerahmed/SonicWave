@@ -58,19 +58,26 @@ public final class SyncedLyricsManager {
   /// session-scoped result cache (hits only) keyed by song id —
   /// positive results are additionally persisted on disk
   private var sessionResultCache = [String: LyricsResult]()
+  /// G27: notified after a `.swlyrics.json` cache file is persisted
+  /// (accountIdent, playableId) — the Spotlight indexer re-reads lyric
+  /// text for just that playable. The write touches no CoreData object,
+  /// so the indexer's context-save observer cannot see it.
+  private let lyricsPersistedCB: (@Sendable (String, String) -> Void)?
 
   init(
     account: Account,
     networkMonitor: NetworkMonitorFacade,
     storage: PersistentStorage,
     librarySyncer: LibrarySyncer,
-    eventLogger: EventLogger
+    eventLogger: EventLogger,
+    lyricsPersistedCB: (@Sendable (String, String) -> Void)? = nil
   ) {
     self.account = account
     self.networkMonitor = networkMonitor
     self.storage = storage
     self.librarySyncer = librarySyncer
     self.eventLogger = eventLogger
+    self.lyricsPersistedCB = lyricsPersistedCB
   }
 
   /// Resolves lyrics for `playable` through the source chain.
@@ -251,6 +258,7 @@ public final class SyncedLyricsManager {
         to: absPath,
         accountInfo: account.info
       )
+      lyricsPersistedCB?(account.ident, song.id)
     }
     return LyricsResult(wrapping: lyrics)
   }

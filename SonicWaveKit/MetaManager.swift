@@ -123,7 +123,13 @@ public class MetaManager {
       networkMonitor: networkMonitor,
       storage: storage,
       librarySyncer: librarySyncer,
-      eventLogger: eventLogger
+      eventLogger: eventLogger,
+      lyricsPersistedCB: { [spotlightIndexer] accountIdent, playableId in
+        Task { await spotlightIndexer?.reindexPlayable(
+          accountIdent: accountIdent,
+          playableId: playableId
+        ) }
+      }
     )
   }()
 
