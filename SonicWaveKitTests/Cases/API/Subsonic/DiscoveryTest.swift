@@ -189,13 +189,21 @@ class DiscoveryTest: XCTestCase {
   // MARK: mix provider (G7)
 
   func testMixProviderLocalMixes() async throws {
+    let storage = makeStorage()
+    // the mix cards are gated on real library content — seed a favorite
+    // and a play timestamp or the corresponding kinds never surface
+    storage.main.perform { companion in
+      guard let song = companion.library.getSongs(for: self.account).first else { return }
+      song.isFavorite = true
+      song.lastTimePlayed = Date()
+    }
     let provider = MixProvider(
       account: account,
-      storage: makeStorage(),
+      storage: storage,
       librarySyncer: MOCK_LibrarySyncer(),
       networkMonitor: MOCK_NetworkMonitor()
     )
-    let mixes = provider.availableMixes()
+    let mixes = await provider.availableMixes()
     // seeded storage has songs + favorites → these mixes must exist
     XCTAssertTrue(mixes.contains { $0.kind == .favoritesRadio })
     XCTAssertTrue(mixes.contains { $0.kind == .deepCuts })
@@ -229,9 +237,13 @@ class DiscoveryTest: XCTestCase {
 
   func testMixProviderOfflineFavoritesRadio() async throws {
     // no connectivity → favorites radio must resolve locally, no server call
+    let storage = makeStorage()
+    storage.main.perform { companion in
+      companion.library.getSongs(for: self.account).first?.isFavorite = true
+    }
     let provider = MixProvider(
       account: account,
-      storage: makeStorage(),
+      storage: storage,
       librarySyncer: MOCK_LibrarySyncer(),
       networkMonitor: MOCK_OfflineNetworkMonitor()
     )

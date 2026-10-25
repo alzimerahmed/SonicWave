@@ -125,9 +125,14 @@ final class MixesVC: UICollectionViewController {
   }
 
   private func reloadMixes() {
-    mixes = mixProvider.availableMixes()
-    collectionView.reloadData()
-    updateContentUnavailable()
+    // the mirror stats run on a background context inside the provider —
+    // card rebuild lands back on the main actor
+    Task { @MainActor [weak self] in
+      guard let self else { return }
+      self.mixes = await self.mixProvider.availableMixes()
+      self.collectionView.reloadData()
+      self.updateContentUnavailable()
+    }
   }
 
   private func updateContentUnavailable() {
@@ -178,7 +183,12 @@ final class MixesVC: UICollectionViewController {
       for: indexPath
     ) as? DiscoveryShelfCell else { return UICollectionViewCell() }
     guard let mix = mixes.element(at: indexPath.item) else { return cell }
-    cell.display(artworkType: artworkType(for: mix.kind), title: mix.title, subtitle: mix.subtitle)
+    cell.display(
+      artworkType: artworkType(for: mix.kind),
+      title: mix.title,
+      subtitle: mix.subtitle,
+      isInteractive: true
+    )
     return cell
   }
 
@@ -220,7 +230,11 @@ final class MixesVC: UICollectionViewController {
           PlayableListVC(
             account: self.account,
             title: mix.title,
-            playables: songs
+            playables: songs,
+            emptySubtitle: NSLocalizedString(
+              "This mix couldn't pick any songs right now — try again in a bit.",
+              comment: "Empty state subtitle for a resolved mix with no songs"
+            )
           ),
           animated: true
         )
