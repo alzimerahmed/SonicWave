@@ -163,5 +163,78 @@ struct AmperfyAppShortcuts: AppShortcutsProvider {
       shortTitle: "Change Track",
       systemImageName: "forward.fill"
     )
+    //
+    // Sleep Timer / Playback Rate
+    //
+    AppShortcut(
+      intent: SleepTimerIntent(),
+      phrases: [
+        "Set sleep timer in \(.applicationName)",
+        "Set sleep timer to \(\.$timerOption) in \(.applicationName)",
+        "Turn off sleep timer in \(.applicationName)",
+        "Cancel sleep timer in \(.applicationName)",
+        "Stop playback in \(\.$timerOption) in \(.applicationName)",
+      ],
+      shortTitle: "Sleep Timer",
+      systemImageName: "moon.zzz"
+    )
+    AppShortcut(
+      intent: SetPlaybackRateIntent(),
+      phrases: [
+        "Set playback rate in \(.applicationName)",
+        "Set playback rate to \(\.$rate) in \(.applicationName)",
+        "Change playback speed to \(\.$rate) in \(.applicationName)",
+        "Change playback rate to \(\.$rate) in \(.applicationName)",
+      ],
+      shortTitle: "Playback Rate",
+      systemImageName: "gauge.open.with.lines.needle.33percent"
+    )
+    //
+    // Discovery / Album Shuffle
+    //
+    AppShortcut(
+      intent: PlayMixIntent(),
+      phrases: [
+        "Play a mix in \(.applicationName)",
+        "Play \(\.$mixKind) in \(.applicationName)",
+        "Play the \(\.$mixKind) mix in \(.applicationName)",
+        "Start \(\.$mixKind) in \(.applicationName)",
+      ],
+      shortTitle: "Play Mix",
+      systemImageName: "point.3.filled.connected.trianglepath.dotted"
+    )
+    AppShortcut(
+      intent: StartAlbumShuffleIntent(),
+      phrases: [
+        "Shuffle albums in \(.applicationName)",
+        "Start album shuffle in \(.applicationName)",
+        "Play album radio in \(.applicationName)",
+        "Shuffle my albums in \(.applicationName)",
+      ],
+      shortTitle: "Shuffle Albums",
+      systemImageName: "shuffle"
+    )
+    //
+    // Library Maintenance
+    //
+    AppShortcut(
+      intent: DownloadEntityIntent(),
+      phrases: [
+        "Download an item by ID in \(.applicationName)",
+        "Download \(\.$libraryElementType) with ID \(\.$id) in \(.applicationName)",
+      ],
+      shortTitle: "Download ID",
+      systemImageName: "arrow.down.circle"
+    )
+    AppShortcut(
+      intent: SetDislikeForCurrentlyPlayingSongIntent(),
+      phrases: [
+        "Dislike song in \(.applicationName)",
+        "Dislike current song in \(.applicationName)",
+        "Dislike this song in \(.applicationName)",
+      ],
+      shortTitle: "Dislike Song",
+      systemImageName: "hand.thumbsdown"
+    )
   }
 }
