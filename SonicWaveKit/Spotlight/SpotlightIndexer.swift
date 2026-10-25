@@ -360,6 +360,12 @@ public actor SpotlightIndexer {
     fullReindexTask = nil
   }
 
+  /// test seam — lets unit tests await a scheduled full reindex without
+  /// racing its background batches
+  func awaitFullReindex() async {
+    await fullReindexTask?.value
+  }
+
   private func performFullReindex() async {
     os_log(
       "Spotlight: full reindex started",

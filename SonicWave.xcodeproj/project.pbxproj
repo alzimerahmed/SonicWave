@@ -618,6 +618,7 @@
 		7ED1CB010000000000000013 /* LiveActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ED1CA010000000000000012 /* LiveActivityManager.swift */; };
 		7E51A0010000000000000002 /* SpotlightIndexing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E51A0010000000000000001 /* SpotlightIndexing.swift */; };
 		7E51A0010000000000000004 /* SpotlightIndexer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E51A0010000000000000003 /* SpotlightIndexer.swift */; };
+		7E51A0010000000000000007 /* SpotlightIndexingTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E51A0010000000000000006 /* SpotlightIndexingTest.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1331,6 +1332,7 @@
 		7ED1CA010000000000000012 /* LiveActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityManager.swift; sourceTree = "<group>"; };
 		7E51A0010000000000000001 /* SpotlightIndexing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotlightIndexing.swift; sourceTree = "<group>"; };
 		7E51A0010000000000000003 /* SpotlightIndexer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotlightIndexer.swift; sourceTree = "<group>"; };
+		7E51A0010000000000000006 /* SpotlightIndexingTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotlightIndexingTest.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1774,6 +1776,7 @@
 				B5A5CE010000000000000002 /* ShareSongActionTest.swift */,
 				B5A5CE010000000000000004 /* ConnectivityResilienceTests.swift */,
 				7D41AA010000000000000002 /* AccountSessionSecurityTests.swift */,
+				7E51A0010000000000000006 /* SpotlightIndexingTest.swift */,
 			);
 			path = Common;
 			sourceTree = "<group>";
@@ -3248,6 +3251,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7E51A0010000000000000007 /* SpotlightIndexingTest.swift in Sources */,
 				50BE5D6D2850F4FB00156FC6 /* SsDirectoriesExample1ParserTest.swift in Sources */,
 				50BE5D6F2850F4FB00156FC6 /* SsPingParserTest.swift in Sources */,
 				50BE5D6C2850F4FB00156FC6 /* SsAlbumParserPreCreatedArtistsTest.swift in Sources */,
