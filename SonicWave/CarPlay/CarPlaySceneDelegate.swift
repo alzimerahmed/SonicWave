@@ -92,21 +92,26 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
         storage: appDelegate.storage,
         notificationHandler: appDelegate.notificationHandler
       )
-      accountNotificationHandler?.registerCallbackForAllAccounts { [weak self] accountInfo in
+      // Download-observer registration can lazily create MetaManagers via
+      // getMeta -> deferred so the connect critical path stays light.
+      Task { @MainActor [weak self] in
         guard let self else { return }
-        let meta = appDelegate.getMeta(accountInfo)
-        appDelegate.notificationHandler.register(
-          self,
-          selector: #selector(downloadFinishedSuccessful(notification:)),
-          name: .downloadFinishedSuccess,
-          object: meta.artworkDownloadManager
-        )
-        appDelegate.notificationHandler.register(
-          self,
-          selector: #selector(downloadFinishedSuccessful(notification:)),
-          name: .downloadFinishedSuccess,
-          object: meta.playableDownloadManager
-        )
+        accountNotificationHandler?.registerCallbackForAllAccounts { [weak self] accountInfo in
+          guard let self else { return }
+          let meta = appDelegate.getMeta(accountInfo)
+          appDelegate.notificationHandler.register(
+            self,
+            selector: #selector(downloadFinishedSuccessful(notification:)),
+            name: .downloadFinishedSuccess,
+            object: meta.artworkDownloadManager
+          )
+          appDelegate.notificationHandler.register(
+            self,
+            selector: #selector(downloadFinishedSuccessful(notification:)),
+            name: .downloadFinishedSuccess,
+            object: meta.playableDownloadManager
+          )
+        }
       }
 
       appDelegate.player.addNotifier(notifier: self)
@@ -127,6 +132,7 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
               type: .info
             )
             activeAccount = nil
+            sharedHome = nil
             self.interfaceController?.setRootTemplate(
               disconnectedTemplate,
               animated: true,
@@ -135,29 +141,37 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
             return
           }
           activeAccount = appDelegate.storage.main.library.getAccount(info: accountInfo)
-          sharedHome = HomeManager(
-            account: activeAccount,
-            storage: appDelegate.storage,
-            getMeta: appDelegate.getMeta,
-            eventLogger: appDelegate.eventLogger
-          )
-          sharedHome?.applySnapshotCB = { [weak self] in
-            guard let self else { return }
-            updateHomeSections()
-          }
           self.interfaceController?.setRootTemplate(
             rootBarTemplate,
             animated: false,
             completion: nil
           )
-          Task { @MainActor in
+          // HomeManager + fetched results controller creation (synchronous
+          // performFetch calls) and the first section population run after
+          // the connect path returned control to CarPlay.
+          Task { @MainActor [weak self] in
+            guard let self, self.interfaceController != nil,
+                  let account = self.activeAccount else { return }
+            self.sharedHome = HomeManager(
+              account: account,
+              storage: appDelegate.storage,
+              getMeta: appDelegate.getMeta,
+              eventLogger: appDelegate.eventLogger
+            )
+            self.sharedHome?.applySnapshotCB = { [weak self] in
+              guard let self else { return }
+              updateHomeSections()
+            }
             self.refreshOfflineMode()
           }
         }
 
-      if self.appDelegate.player.currentlyPlaying != nil, self.appDelegate.player.isPlaying {
-        self.updatePlayerQueueSection()
-        self.displayNowPlaying(immediately: true) {}
+      Task { @MainActor [weak self] in
+        guard let self, self.interfaceController != nil else { return }
+        if self.appDelegate.player.currentlyPlaying != nil, self.appDelegate.player.isPlaying {
+          self.updatePlayerQueueSection()
+          self.displayNowPlaying(immediately: true) {}
+        }
       }
     }
   }
@@ -233,7 +247,9 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
   private var _libraryTab: CPListTemplate?
   var libraryTab: CPListTemplate {
     if let template = _libraryTab { return template }
-    let template = CPListTemplate(title: "Library", sections: createLibrarySections())
+    // Sections are populated by the templateWillAppear hook instead of at
+    // creation so the connect path does not build them synchronously.
+    let template = CPListTemplate(title: "Library", sections: [CPListSection]())
     template.tabImage = UIImage.musicLibrary
     template.assistantCellConfiguration = CarPlaySceneDelegate.assistantConfig
     _libraryTab = template
@@ -264,7 +280,9 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
   private var _cachedTab: CPListTemplate?
   var cachedTab: CPListTemplate {
     if let template = _cachedTab { return template }
-    let template = CPListTemplate(title: "Cached", sections: createCachedSections())
+    // Sections are populated by the templateWillAppear hook instead of at
+    // creation so the connect path does not build them synchronously.
+    let template = CPListTemplate(title: "Cached", sections: [CPListSection]())
     template.tabImage = UIImage.cache
     _cachedTab = template
     return template
