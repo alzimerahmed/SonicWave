@@ -153,6 +153,18 @@ struct PlayerSettingsView: View {
           )
         }
 
+        if LiveActivityManager.isSupported {
+          SettingsSection(
+            content: {
+              SettingsCheckBoxRow(
+                title: String(localized: "Live Activity"),
+                isOn: $settings.isLiveActivityEnabled
+              )
+            },
+            footer: String(localized: "Shows the current track with playback controls on the Lock Screen and in the Dynamic Island while playing.")
+          )
+        }
+
         // Streaming Format Settings
         SettingsSection(
           content: {

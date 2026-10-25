@@ -270,6 +270,14 @@ class SettingsHostVC: UIViewController {
       self.appDelegate.storage.settings.user.isMusicHapticsActive = newValue
     }))
 
+    settings.isLiveActivityEnabled = appDelegate.storage.settings.user.isLiveActivityEnabled
+    changesAgent.append(settings.$isLiveActivityEnabled.sink(receiveValue: { newValue in
+      self.appDelegate.storage.settings.user.isLiveActivityEnabled = newValue
+      // a running activity honors the opt-out on the next player event;
+      // nudge it now so disabling takes effect immediately
+      self.appDelegate.widgetBridge.notifyLiveActivitySettingChanged()
+    }))
+
     // following account specific setting sinks are assigned.
     // the correct assignment is done in the account switched callback
 

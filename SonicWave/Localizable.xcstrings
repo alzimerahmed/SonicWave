@@ -493,6 +493,18 @@
         }
       }
     },
+    "Live Activity" : {
+      "comment" : "Live Activity opt-out toggle title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Live Activity"
+          }
+        }
+      }
+    },
     "Loading lyrics…" : {
       "comment" : "Lyrics pane loading state (ellipsis is U+2026)",
       "extractionState" : "manual",
@@ -921,6 +933,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sharing is not supported by this server."
+          }
+        }
+      }
+    },
+    "Shows the current track with playback controls on the Lock Screen and in the Dynamic Island while playing." : {
+      "comment" : "Live Activity toggle footer",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shows the current track with playback controls on the Lock Screen and in the Dynamic Island while playing."
           }
         }
       }
