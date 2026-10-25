@@ -19,6 +19,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+import Foundation
 import UIKit
 
 // MARK: - QuickActionsHandler
@@ -48,6 +49,7 @@ public class QuickActionsHandler {
   // List of known shortcut actions.
   enum QuickActionType: String {
     case searchAction = "SearchAction"
+    case shuffleAlbumsAction = "ShuffleAlbumsAction"
     case playMusicAction = "PlayMusicAction"
     case playPodcastAction = "PlayPodcastAction"
     case onlineModeAction = "OnlineModeAction"
@@ -78,6 +80,18 @@ public class QuickActionsHandler {
       localizedTitle: "Search",
       localizedSubtitle: nil,
       icon: UIApplicationShortcutIcon(systemImageName: "magnifyingglass"),
+      userInfo: nil
+    ))
+
+    // iOS shows at most 4 quick actions — "Shuffle Albums" is inserted
+    // right after Search so it always surfaces; when a music item, a
+    // podcast item and the mode toggle all apply, the mode toggle (last)
+    // is the one iOS truncates
+    quickActions.append(UIApplicationShortcutItem(
+      type: QuickActionType.shuffleAlbumsAction.rawValue,
+      localizedTitle: String(localized: "Shuffle Albums", bundle: .main),
+      localizedSubtitle: nil,
+      icon: UIApplicationShortcutIcon(systemImageName: "shuffle"),
       userInfo: nil
     ))
 
@@ -132,6 +146,8 @@ public class QuickActionsHandler {
       switch actionTypeValue {
       case .searchAction:
         displaySearchTabCB()
+      case .shuffleAlbumsAction:
+        startAlbumShuffle()
       case .playMusicAction:
         if player.playerMode != .music {
           player.setPlayerMode(.music)
@@ -157,6 +173,20 @@ public class QuickActionsHandler {
       }
     }
     return true
+  }
+
+  /// G21 "album radio" from the Home Screen: same entry path as the
+  /// entity-preview "Shuffle Albums" action — enable the account-level
+  /// album-shuffle mode, then `playShuffled` over the whole library
+  private func startAlbumShuffle() {
+    guard let accountInfo = storage.settings.accounts.active else { return }
+    let account = storage.main.library.getAccount(info: accountInfo)
+    let songs = storage.main.library.getSongs(for: account)
+    guard !songs.isEmpty else { return }
+    storage.settings.accounts.updateSetting(accountInfo) { accountSettings in
+      accountSettings.isAlbumShuffleActive = true
+    }
+    player.playShuffled(context: PlayContext(name: "Album Shuffle", playables: songs))
   }
 }
 
