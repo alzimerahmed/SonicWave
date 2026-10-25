@@ -33,6 +33,8 @@ struct AccountSettingsView: View {
   var isShowLogoutAlert = false
   @State
   var isShowResyncLibraryAlert = false
+  @State
+  private var publicUrlOverride: String = ""
   @EnvironmentObject
   var settings: Settings
 
@@ -80,6 +82,16 @@ struct AccountSettingsView: View {
       appDelegate.getMeta(accountInfo).backendApi
         .provideCredentials(credentials: updatedCredentials)
     }
+  }
+
+  /// G18: reverse-proxy base URL for share links — nil when blank so the
+  /// server-provided URL is used as-is (`ShareUrlRewriter`)
+  private func savePublicUrlOverride(accountInfo: AccountInfo) {
+    let trimmed = publicUrlOverride.trimmingCharacters(in: .whitespacesAndNewlines)
+    appDelegate.storage.settings.accounts
+      .updateSetting(accountInfo) { accountSettings in
+        accountSettings.publicUrlOverride = trimmed.isEmpty ? nil : trimmed
+      }
   }
 
   private func saveAllowUntrustedCertificates(_ allowUntrusted: Bool, accountInfo: AccountInfo) {
@@ -260,6 +272,30 @@ struct AccountSettingsView: View {
             }
           }
 
+          SettingsSection(
+            content: {
+              SettingsRow(title: "Public URL Override", orientation: .vertical) {
+                TextField(
+                  "https://music.example.com",
+                  text: $publicUrlOverride
+                )
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .keyboardType(.URL)
+                .onSubmit { savePublicUrlOverride(accountInfo: activeAccountInfo) }
+                .onChange(of: publicUrlOverride) { _, _ in
+                  savePublicUrlOverride(accountInfo: activeAccountInfo)
+                }
+              }
+              NavigationLink(destination: SharesSettingsView(accountInfo: activeAccountInfo)) {
+                Text("Manage Shares")
+              }
+            },
+            header: "Sharing",
+            footer:
+            "For servers behind a reverse proxy — links are generated from this base URL."
+          )
+
           SettingsSection {
             NavigationLink(destination: ServerURLsSettingsView()) {
               Text("Manage Server URLs")
@@ -332,6 +368,12 @@ struct AccountSettingsView: View {
     .navigationBarTitleDisplayMode(.inline)
     .sheet(isPresented: $isPwUpdateDialogVisible) {
       UpdatePasswordView(isVisible: $isPwUpdateDialogVisible)
+    }
+    .onAppear {
+      if let accountInfo = settings.activeAccountInfo {
+        publicUrlOverride = appDelegate.storage.settings.accounts
+          .getSetting(accountInfo).read.publicUrlOverride ?? ""
+      }
     }
   }
 }

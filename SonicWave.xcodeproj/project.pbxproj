@@ -7,6 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0D15C0DE0000000000000002 /* DiscoveryShelfCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D15C0DE0000000000000001 /* DiscoveryShelfCell.swift */; };
+		0D15C0DE0000000000000004 /* SimilarArtistsShelfCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D15C0DE0000000000000003 /* SimilarArtistsShelfCell.swift */; };
+		0D15C0DE0000000000000006 /* PlayableListVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D15C0DE0000000000000005 /* PlayableListVC.swift */; };
+		0D15C0DE0000000000000008 /* MixesVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D15C0DE0000000000000007 /* MixesVC.swift */; };
+		0D15C0DE000000000000000A /* SmartPlaylistDetailVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D15C0DE0000000000000009 /* SmartPlaylistDetailVC.swift */; };
+		0D15C0DE000000000000000C /* DecadeAlbumsVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D15C0DE000000000000000B /* DecadeAlbumsVC.swift */; };
+		0D15C0DE000000000000000E /* SharesSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D15C0DE000000000000000D /* SharesSettingsView.swift */; };
 		09EB5F102F93B96E00B1C71C /* ShareSongAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09EB5F0D2F93B65400B1C71C /* ShareSongAction.swift */; };
 		43FBE27F250D4DFD00D5F9B3 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 43FBE27E250D4DFD00D5F9B3 /* LaunchScreen.storyboard */; };
 		7E1BC50100000000000001 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 7E1BC50100000000000002 /* Localizable.xcstrings */; };
@@ -650,6 +657,13 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0D15C0DE0000000000000001 /* DiscoveryShelfCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveryShelfCell.swift; sourceTree = "<group>"; };
+		0D15C0DE0000000000000003 /* SimilarArtistsShelfCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimilarArtistsShelfCell.swift; sourceTree = "<group>"; };
+		0D15C0DE0000000000000005 /* PlayableListVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayableListVC.swift; sourceTree = "<group>"; };
+		0D15C0DE0000000000000007 /* MixesVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MixesVC.swift; sourceTree = "<group>"; };
+		0D15C0DE0000000000000009 /* SmartPlaylistDetailVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartPlaylistDetailVC.swift; sourceTree = "<group>"; };
+		0D15C0DE000000000000000B /* DecadeAlbumsVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DecadeAlbumsVC.swift; sourceTree = "<group>"; };
+		0D15C0DE000000000000000D /* SharesSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharesSettingsView.swift; sourceTree = "<group>"; };
 		09EB5F0D2F93B65400B1C71C /* ShareSongAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSongAction.swift; sourceTree = "<group>"; };
 		43FBE27E250D4DFD00D5F9B3 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		5002565625E69DC700674CE1 /* SpinnerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpinnerViewController.swift; sourceTree = "<group>"; };
@@ -1425,6 +1439,8 @@
 		503E04472B98F42F0091D31E /* Collection */ = {
 			isa = PBXGroup;
 			children = (
+				0D15C0DE0000000000000001 /* DiscoveryShelfCell.swift */,
+				0D15C0DE0000000000000003 /* SimilarArtistsShelfCell.swift */,
 				5005938828E2D4EF008C8DF6 /* CommonCollectionSectionHeader.xib */,
 				5005938A28E2D4FB008C8DF6 /* CommonCollectionSectionHeader.swift */,
 				50DF1E5928DDECEA00F3EA00 /* AlbumCollectionCell.xib */,
@@ -1529,6 +1545,7 @@
 		50791E8228D36EAD006CE6E5 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				0D15C0DE000000000000000D /* SharesSettingsView.swift */,
 				50E77DB628D2163F00BDF882 /* SettingsView.swift */,
 				503BAF332E4A1EAC00AE50B4 /* SettingsTabView.swift */,
 				631C166C2C6D61110085F62E /* NavigationTarget.swift */,
@@ -1966,6 +1983,10 @@
 		50C16C0D21E533B600F086F0 /* ViewController */ = {
 			isa = PBXGroup;
 			children = (
+				0D15C0DE0000000000000005 /* PlayableListVC.swift */,
+				0D15C0DE0000000000000007 /* MixesVC.swift */,
+				0D15C0DE0000000000000009 /* SmartPlaylistDetailVC.swift */,
+				0D15C0DE000000000000000B /* DecadeAlbumsVC.swift */,
 				50C171402D0E142900C0C53A /* PlaylistAdd */,
 				505CA20B2B88E95400AA81CD /* TableViewHelper */,
 				5020D5192E3B6FF0000A6F85 /* WelcomePopupPresenter.swift */,
@@ -2867,6 +2888,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0D15C0DE0000000000000002 /* DiscoveryShelfCell.swift in Sources */,
+				0D15C0DE0000000000000004 /* SimilarArtistsShelfCell.swift in Sources */,
+				0D15C0DE0000000000000006 /* PlayableListVC.swift in Sources */,
+				0D15C0DE0000000000000008 /* MixesVC.swift in Sources */,
+				0D15C0DE000000000000000A /* SmartPlaylistDetailVC.swift in Sources */,
+				0D15C0DE000000000000000C /* DecadeAlbumsVC.swift in Sources */,
+				0D15C0DE000000000000000E /* SharesSettingsView.swift in Sources */,
 				50C9D68E284FAA6C007F18D0 /* MusicFolderMO+CoreDataClass.swift in Sources */,
 				50C9D684284FAA6C007F18D0 /* LogEntryMO+CoreDataClass.swift in Sources */,
 				50C9D6C9284FAB0C007F18D0 /* EventNotificationHandler.swift in Sources */,
