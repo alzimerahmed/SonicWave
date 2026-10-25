@@ -618,6 +618,10 @@ extension CarPlaySceneDelegate {
     item.handler = { [weak self] item, completion in
       guard let self = self else { completion(); return }
       Task { @MainActor in
+        guard self.interfaceController != nil else {
+          completion()
+          return
+        }
         let _ = try? await interfaceController?
           .pushTemplate(sectionToDisplay, animated: true)
         completion()

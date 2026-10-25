@@ -377,8 +377,11 @@ class HomeManager: NSObject {
 
 extension HomeManager: @preconcurrency NSFetchedResultsControllerDelegate {
   func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
-    // fetch controller is created on Main thread -> Runtime Error if this function call is not on Main thread
-    MainActor.assumeIsolated {
+    // the callback is not guaranteed to arrive on the main thread -> hop to
+    // the main actor instead of crashing via MainActor.assumeIsolated
+    // (fetch controllers are main-actor objects -> safe to forward)
+    nonisolated(unsafe) let controller = controller
+    Task { @MainActor [self] in
       if controller == albumsRecentlyPlayedFetchController?.fetchResultsController {
         updateAlbumsRecentlyPlayed()
       } else if controller == albumsNewestFetchController?.fetchResultsController {

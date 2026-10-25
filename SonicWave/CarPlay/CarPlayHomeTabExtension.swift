@@ -89,6 +89,10 @@ extension CarPlaySceneDelegate {
       guard let self else { completion(); return }
       if !isDetailTemplate {
         Task { @MainActor in
+          guard self.interfaceController != nil else {
+            completion()
+            return
+          }
           let detailSectionRow = createHomeRow(section: section, isDetailTemplate: true)
           let detailListTemplate = CPListTemplate(title: section.title, sections: [
             CPListSection(items: detailSectionRow != nil ? [detailSectionRow!] : []),
@@ -128,6 +132,10 @@ extension CarPlaySceneDelegate {
             let selectedPlayable = sharedHome.data[section]?[index].playableContainable
       else { completion(); return }
       Task { @MainActor in
+        guard self.interfaceController != nil else {
+          completion()
+          return
+        }
         if !isOfflineMode {
           do {
             try await selectedPlayable.fetch(

@@ -120,6 +120,7 @@ extension CarPlaySceneDelegate {
       guard let sectionToDisplay else { completion(); return }
 
       Task { @MainActor in
+        guard self.interfaceController != nil else { return }
         let _ = try? await interfaceController?
           .pushTemplate(sectionToDisplay, animated: true)
       }
@@ -239,6 +240,7 @@ extension CarPlaySceneDelegate {
       guard let self else { completion(); return }
 
       Task { @MainActor in
+        guard self.interfaceController != nil else { return }
         if quickActionItems[index].title == Self.switchAccountTitle {
           let _ = try? await interfaceController?
             .pushTemplate(accountSection, animated: true)

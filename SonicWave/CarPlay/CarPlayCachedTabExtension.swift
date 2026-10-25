@@ -95,6 +95,7 @@ extension CarPlaySceneDelegate {
       guard let sectionToDisplay else { completion(); return }
 
       Task { @MainActor in
+        guard self.interfaceController != nil else { return }
         let _ = try? await interfaceController?
           .pushTemplate(sectionToDisplay, animated: true)
       }

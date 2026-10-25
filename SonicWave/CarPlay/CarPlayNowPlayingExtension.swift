@@ -30,6 +30,7 @@ extension CarPlaySceneDelegate {
   )
 
   func updatePlayerQueueSection() {
+    guard interfaceController != nil else { return }
     playerQueueSection.updateSections(createPlayerQueueSections())
   }
 
@@ -104,6 +105,10 @@ extension CarPlaySceneDelegate {
 
   func displayNowPlaying(immediately: Bool = false, completion: @escaping (() -> ())) {
     configureNowPlayingTemplate()
+    guard interfaceController != nil else {
+      completion()
+      return
+    }
     if immediately {
       interfaceController?
         .pushTemplate(CPNowPlayingTemplate.shared, animated: false) { _, _ in }
@@ -123,7 +128,10 @@ extension CarPlaySceneDelegate {
 
 extension CarPlaySceneDelegate: CPNowPlayingTemplateObserver {
   nonisolated func nowPlayingTemplateUpNextButtonTapped(_ nowPlayingTemplate: CPNowPlayingTemplate) {
-    MainActor.assumeIsolated {
+    // the callback is not guaranteed to arrive on the main thread -> hop to
+    // the main actor instead of crashing via MainActor.assumeIsolated
+    Task { @MainActor in
+      guard self.interfaceController != nil else { return }
       self.interfaceController?.pushTemplate(playerQueueSection, animated: true, completion: nil)
     }
   }
@@ -131,10 +139,11 @@ extension CarPlaySceneDelegate: CPNowPlayingTemplateObserver {
   nonisolated func nowPlayingTemplateAlbumArtistButtonTapped(
     _ nowPlayingTemplate: CPNowPlayingTemplate
   ) {
-    MainActor.assumeIsolated {
+    Task { @MainActor in
+      guard self.interfaceController != nil else { return }
       guard let album = (appDelegate.player.currentlyPlaying as? Song)?.album else { return }
       let albumTemplate = createAlbumSongListTemplate(for: album, onlyCached: isOfflineMode)
-      interfaceController?.pushTemplate(albumTemplate, animated: true, completion: nil)
+      self.interfaceController?.pushTemplate(albumTemplate, animated: true, completion: nil)
     }
   }
 
@@ -218,6 +227,10 @@ extension CarPlaySceneDelegate: CPNowPlayingTemplateObserver {
       guard let self = self else { completion(); return }
       appDelegate.player.play(playerIndex: playerIndex)
       Task { @MainActor in
+        guard self.interfaceController != nil else {
+          completion()
+          return
+        }
         guard let _ = try? await interfaceController?.popTemplate(animated: true) else { return }
         completion()
       }

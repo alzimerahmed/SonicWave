@@ -49,12 +49,24 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
     appDelegate.storage.settings.user.isOfflineMode
   }
 
+  // the account settings getter decodes the whole AccountSettings JSON on
+  // every access -> cache the preference once per account per session
+  private var carPlayPreferenceCache = [AccountInfo: CarPlayShortPreference]()
+
   func getPreference(_ accountInfo: AccountInfo?) -> CarPlayShortPreference {
-    CarPlayShortPreference(
+    if let accountInfo,
+       let cachedPreference = carPlayPreferenceCache[accountInfo] {
+      return cachedPreference
+    }
+    let preference = CarPlayShortPreference(
       theme: appDelegate.storage.settings.accounts.getSetting(accountInfo).read.themePreference,
       artworkDisplayPreference: appDelegate.storage.settings.accounts.getSetting(accountInfo).read
         .artworkDisplayPreference
     )
+    if let accountInfo {
+      carPlayPreferenceCache[accountInfo] = preference
+    }
+    return preference
   }
 
   var activeAccountInfo: AccountInfo!
@@ -125,6 +137,7 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
           guard let self else { return }
           resetFetchController()
           activeAccountInfo = accountInfo
+          carPlayPreferenceCache = [:]
           guard let accountInfo else {
             os_log(
               "CarPlay: no account available -> display Disconnected",
@@ -199,6 +212,7 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
       activeAccount = nil
       activeAccountInfo = nil
       accountNotificationHandler = nil
+      carPlayPreferenceCache = [:]
     }
   }
 
@@ -586,7 +600,7 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
           )
         }
       }
-      listItemArtworkUpdate[downloadNotification.id] = targets
+      listItemArtworkUpdate[downloadNotification.id] = targets.isEmpty ? nil : targets
     }
   }
 
@@ -824,8 +838,11 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
 
 extension CarPlaySceneDelegate: @preconcurrency NSFetchedResultsControllerDelegate {
   func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
-    // fetch controller is created on Main thread -> Runtime Error if this function call is not on Main thread
-    MainActor.assumeIsolated {
+    // the callback is not guaranteed to arrive on the main thread -> hop to
+    // the main actor instead of crashing via MainActor.assumeIsolated
+    // (fetch controllers are main-actor objects -> safe to forward)
+    nonisolated(unsafe) let controller = controller
+    Task { @MainActor [self] in
       guard let templates = self.interfaceController?.templates else { return }
       if let root = self.interfaceController?.rootTemplate as? CPTabBarTemplate,
          root.selectedTemplate == playlistTab,
@@ -1082,6 +1099,7 @@ extension CarPlaySceneDelegate: @preconcurrency NSFetchedResultsControllerDelega
 extension CarPlaySceneDelegate: CPInterfaceControllerDelegate {
   nonisolated func templateWillAppear(_ aTemplate: CPTemplate, animated: Bool) {
     Task { @MainActor in
+      guard self.interfaceController != nil, self.activeAccount != nil else { return }
       if aTemplate == playerQueueSection {
         os_log("CarPlay: templateWillAppear playerQueueSection", log: self.log, type: .info)
         playerQueueSection.updateSections(createPlayerQueueSections())
@@ -1321,6 +1339,7 @@ extension CarPlaySceneDelegate: CPInterfaceControllerDelegate {
 
   nonisolated func templateDidDisappear(_ aTemplate: CPTemplate, animated: Bool) {
     Task { @MainActor in
+      guard self.interfaceController != nil else { return }
       if aTemplate == playlistDetailSection {
         os_log("CarPlay: templateDidDisappear playlistDetailSection", log: self.log, type: .info)
         playlistDetailFetchController = nil

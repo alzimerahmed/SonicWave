@@ -454,6 +454,9 @@ public class AudioPlayer: NSObject, BackendAudioPlayerNotifiable {
   var audioAnalyzer: AudioAnalyzer { backendAudioPlayer.audioAnalyzer }
 
   func addNotifier(notifier: MusicPlayable) {
+    // prevent duplicate registration of the same instance (e.g. long-lived
+    // objects like CarPlaySceneDelegate re-register on every connect)
+    guard !notifierList.contains(where: { $0.value === notifier }) else { return }
     notifierList.append(WeakMusicPlayable(notifier))
   }
 
