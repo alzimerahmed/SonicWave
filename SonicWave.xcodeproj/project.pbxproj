@@ -1673,10 +1673,9 @@
 				50C80F2726831DB40022F710 /* SsPodcastEpisodeParserDelegate.swift */,
 				50CEC6442D1F399700D0E696 /* SsRadioParserDelegate.swift */,
 				50E964A925E8E20E00E3210F /* SubsonicVersion.swift */,
-							8D15C801000000000000000011 /* SsDiscoveryParserDelegate.swift */,
+				8D15C801000000000000000011 /* SsDiscoveryParserDelegate.swift */,
 				8D15C801000000000000000013 /* NavidromeNativeApi.swift */,
-				8D15C801000000000000000015 /* AmpacheDiscoveryParserDelegate.swift */,
-);
+			);
 			path = Subsonic;
 			sourceTree = "<group>";
 		};
@@ -1939,6 +1938,7 @@
 				501A7D4A2681E6DD0055A51B /* PodcastEpisodeParserDelegate.swift */,
 				50CEC6462D1F405500D0E696 /* RadioParserDelegate.swift */,
 				7E8D2A01000000000000000D /* AmpacheLyricsParserDelegate.swift */,
+				8D15C801000000000000000015 /* AmpacheDiscoveryParserDelegate.swift */,
 			);
 			path = Ampache;
 			sourceTree = "<group>";
@@ -2581,21 +2581,7 @@
 				508385ED21C5965B00C4BB32 /* Main.storyboard in Resources */,
 				500B97D02B7C9555005554BF /* EntityPreviewVC.xib in Resources */,
 				50A30E642B756CF100722894 /* CurrentlyPlayingTableCell.xib in Resources */,
-							8D15C801000000000000000002 /* DiscoveryModels.swift in Sources */,
-				8D15C801000000000000000004 /* SmartPlaylistCriteria.swift in Sources */,
-				8D15C801000000000000000006 /* NspCriteriaParser.swift in Sources */,
-				8D15C801000000000000000008 /* SmartPlaylistEvaluator.swift in Sources */,
-				8D15C801000000000000000010 /* MixProvider.swift in Sources */,
-				8D15C801000000000000000012 /* SsDiscoveryParserDelegate.swift in Sources */,
-				8D15C801000000000000000014 /* NavidromeNativeApi.swift in Sources */,
-				8D15C801000000000000000016 /* AmpacheDiscoveryParserDelegate.swift in Sources */,
-				8D15C801000000000000000018 /* SsDiscoveryParserTest.swift in Sources */,
-				8D15C801000000000000000020 /* DiscoveryTest.swift in Sources */,
-				8D15C801000000000000000022 /* shares_example_1.xml in Resources */,
-				8D15C801000000000000000024 /* artistInfo2_example_1.xml in Resources */,
-				8D15C801000000000000000026 /* topSongs_example_1.xml in Resources */,
-				8D15C801000000000000000028 /* smartplaylist_example_1.json in Resources */,
-);
+			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		50C9D603284FA847007F18D0 /* Resources */ = {
@@ -2652,6 +2638,10 @@
 				50BE5D5B2850F4F600156FC6 /* musicFolders_example_1.xml in Resources */,
 				50BE5D622850F4F600156FC6 /* directory_example_1.xml in Resources */,
 				50BE5D5E2850F4F600156FC6 /* indexes_example_1.xml in Resources */,
+				8D15C801000000000000000022 /* shares_example_1.xml in Resources */,
+				8D15C801000000000000000024 /* artistInfo2_example_1.xml in Resources */,
+				8D15C801000000000000000026 /* topSongs_example_1.xml in Resources */,
+				8D15C801000000000000000028 /* smartplaylist_example_1.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2881,13 +2871,6 @@
 				50AB3B3C2F01D5AC00556CE4 /* OpenAppWithConfigurationIntent.swift in Sources */,
 				50C171482D10644600C0C53A /* PlaylistAddAlbumDetailVC.swift in Sources */,
 				50DE29EB2B8FCEB700ABA78E /* LibraryNavigatorConfigurator.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		50C9D601284FA847007F18D0 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
 				0D15C0DE0000000000000002 /* DiscoveryShelfCell.swift in Sources */,
 				0D15C0DE0000000000000004 /* SimilarArtistsShelfCell.swift in Sources */,
 				0D15C0DE0000000000000006 /* PlayableListVC.swift in Sources */,
@@ -2895,6 +2878,21 @@
 				0D15C0DE000000000000000A /* SmartPlaylistDetailVC.swift in Sources */,
 				0D15C0DE000000000000000C /* DecadeAlbumsVC.swift in Sources */,
 				0D15C0DE000000000000000E /* SharesSettingsView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		50C9D601284FA847007F18D0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8D15C801000000000000000002 /* DiscoveryModels.swift in Sources */,
+				8D15C801000000000000000004 /* SmartPlaylistCriteria.swift in Sources */,
+				8D15C801000000000000000006 /* NspCriteriaParser.swift in Sources */,
+				8D15C801000000000000000008 /* SmartPlaylistEvaluator.swift in Sources */,
+				8D15C801000000000000000010 /* MixProvider.swift in Sources */,
+				8D15C801000000000000000012 /* SsDiscoveryParserDelegate.swift in Sources */,
+				8D15C801000000000000000014 /* NavidromeNativeApi.swift in Sources */,
+				8D15C801000000000000000016 /* AmpacheDiscoveryParserDelegate.swift in Sources */,
 				50C9D68E284FAA6C007F18D0 /* MusicFolderMO+CoreDataClass.swift in Sources */,
 				50C9D684284FAA6C007F18D0 /* LogEntryMO+CoreDataClass.swift in Sources */,
 				50C9D6C9284FAB0C007F18D0 /* EventNotificationHandler.swift in Sources */,
@@ -3182,6 +3180,8 @@
 				7E8D2A010000000000000016 /* LrclibResponseParserTest.swift in Sources */,
 				7E8D2B010000000000000008 /* AlbumShuffleTest.swift in Sources */,
 				7E8D2B01000000000000000A /* SyncedLyricsTrackerTest.swift in Sources */,
+				8D15C801000000000000000018 /* SsDiscoveryParserTest.swift in Sources */,
+				8D15C801000000000000000020 /* DiscoveryTest.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
