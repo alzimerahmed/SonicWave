@@ -48,6 +48,13 @@ class PlaylistsDiffableDataSource: BasicUITableViewDiffableDataSource {
     return playlist
   }
 
+  // G8: server-managed (.nsp) smart playlists are read-only — deleting
+  // them locally would just resurrect on the next sync, so the swipe
+  // affordance is hidden per `isServerReadOnly`
+  override func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
+    !(playlistAt(indexPath: indexPath)?.isServerReadOnly ?? false)
+  }
+
   // Override to support editing the table view.
   override func tableView(
     _ tableView: UITableView,

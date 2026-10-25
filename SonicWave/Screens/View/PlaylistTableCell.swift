@@ -34,6 +34,7 @@ class PlaylistTableCell: BasicTableCell {
 
   private var playlist: Playlist?
   private var rootView: UITableViewController?
+  private var smartBadge: UIImageView?
 
   func display(playlist: Playlist, rootView: UITableViewController?) {
     self.playlist = playlist
@@ -44,6 +45,33 @@ class PlaylistTableCell: BasicTableCell {
         .themePreference,
       container: playlist
     )
+    // G8: smart playlists get a sparkles badge on the artwork corner —
+    // the affordance reads without color alone (glyph + VoiceOver label)
+    if playlist.isSmartPlaylist {
+      if smartBadge == nil {
+        let badge = UIImageView(image: .sparkles.withRenderingMode(.alwaysTemplate))
+        badge.translatesAutoresizingMaskIntoConstraints = false
+        badge.tintColor = .secondaryLabel
+        entityImage.addSubview(badge)
+        NSLayoutConstraint.activate([
+          badge.widthAnchor.constraint(equalToConstant: 14),
+          badge.heightAnchor.constraint(equalToConstant: 14),
+          badge.trailingAnchor.constraint(equalTo: entityImage.trailingAnchor, constant: -2),
+          badge.bottomAnchor.constraint(equalTo: entityImage.bottomAnchor, constant: -2),
+        ])
+        smartBadge = badge
+      }
+      smartBadge?.isHidden = false
+      accessibilityLabel = nameLabel.text.map {
+        $0 + ", " + NSLocalizedString(
+          "Smart playlist",
+          comment: "VoiceOver modifier for smart playlist rows"
+        )
+      }
+    } else {
+      smartBadge?.isHidden = true
+      accessibilityLabel = nameLabel.text
+    }
     infoLabel.text = playlist.info(
       for: playlist.account?.apiType.asServerApiType,
       details: DetailInfoType(type: .short, settings: appDelegate.storage.settings)
