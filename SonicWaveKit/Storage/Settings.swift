@@ -219,6 +219,17 @@ public struct UserSettings: Sendable, Codable {
     set { _isMusicHapticsActive = newValue }
   }
 
+  /// Live Activities (G13): shows the current track on the Lock Screen
+  /// and in the Dynamic Island while playing. Defaults ON (opt-out) —
+  /// progress inside the activity is `Date`-anchored so it costs no
+  /// extra updates.
+  // optional backing to stay decodable for settings stored before this key existed
+  private var _isLiveActivityEnabled: Bool? = nil
+  public var isLiveActivityEnabled: Bool {
+    get { _isLiveActivityEnabled ?? true }
+    set { _isLiveActivityEnabled = newValue }
+  }
+
   private var _isEqualizerEnabled: Bool = false
   public var isEqualizerEnabled: Bool {
     get { _isEqualizerEnabled }

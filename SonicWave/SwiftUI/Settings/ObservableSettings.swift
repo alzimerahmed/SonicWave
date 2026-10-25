@@ -108,6 +108,8 @@ final class Settings: ObservableObject {
   var blackModePreference: BlackModePreference = .defaultValue
   @Published
   var isMusicHapticsActive = false
+  @Published
+  var isLiveActivityEnabled = true
 
   @Published
   var artworkTintIntensity: ArtworkTintIntensity = .defaultValue
