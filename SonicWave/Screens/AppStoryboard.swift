@@ -172,8 +172,21 @@ enum AppStoryboard: String {
   }
 
   func segueToPlaylistDetail(account: Account, playlist: Playlist) -> UIViewController {
+    // G8: criteria-driven playlists get the read-only smart detail —
+    // single seam so every caller (lists, previews, Home) inherits it
+    if playlist.isSmartPlaylist {
+      return SmartPlaylistDetailVC(account: account, playlist: playlist)
+    }
     let playlistDetailVC = PlaylistDetailVC(account: account, playlist: playlist)
     return playlistDetailVC
+  }
+
+  func segueToMixes(account: Account) -> UIViewController {
+    MixesVC(account: account)
+  }
+
+  func segueToDecadeAlbums(account: Account) -> UIViewController {
+    DecadeAlbumsVC(account: account)
   }
 
   func segueToPodcastDetail(

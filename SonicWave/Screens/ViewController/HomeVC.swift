@@ -85,12 +85,23 @@ final class HomeVC: UICollectionViewController {
     }
 
     navigationController?.navigationBar.prefersLargeTitles = true
-    navigationItem.rightBarButtonItem = UIBarButtonItem(
-      title: "Edit",
-      style: .plain,
-      target: self,
-      action: #selector(editSectionsTapped)
-    )
+    navigationItem.rightBarButtonItems = [
+      UIBarButtonItem(
+        title: "Edit",
+        style: .plain,
+        target: self,
+        action: #selector(editSectionsTapped)
+      ),
+      UIBarButtonItem(
+        title: NSLocalizedString(
+          "Mixes",
+          comment: "Navigation button opening the mixes discovery screen"
+        ),
+        style: .plain,
+        target: self,
+        action: #selector(openMixes)
+      ),
+    ]
     configureCollectionView()
     configureDataSource()
     sharedHome.createFetchController()
@@ -253,6 +264,16 @@ final class HomeVC: UICollectionViewController {
   @objc
   private func editSectionsTapped() {
     presentSectionEditor()
+  }
+
+  /// G7: mixes discovery hub — pushed like any other detail surface
+  @objc
+  private func openMixes() {
+    navigationController?.pushViewController(
+      AppStoryboard.Main.segueToMixes(account: account),
+      animated: true
+    )
+    navigationController?.navigationBar.prefersLargeTitles = false
   }
 
   private func presentSectionEditor() {
