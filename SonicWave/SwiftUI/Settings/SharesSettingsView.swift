@@ -34,6 +34,9 @@ struct SharesSettingsView: View {
     case loading
     case loaded([ShareDescription])
     case notSupported
+    /// fetch threw — distinct from "no shares": a failed load must not
+    /// render the "No share links yet" empty state
+    case failed
   }
 
   let accountInfo: AccountInfo
@@ -55,7 +58,13 @@ struct SharesSettingsView: View {
   }
 
   private func reload() {
-    loadState = .loading
+    // keep prior content while refreshing — a failed refresh restores
+    // the previous list instead of flashing the failed state
+    let priorShares: [ShareDescription]? = {
+      if case .loaded(let shares) = loadState { return shares }
+      return nil
+    }()
+    if priorShares == nil { loadState = .loading }
     Task { @MainActor in
       do {
         switch try await backendApi.getShares() {
@@ -66,7 +75,7 @@ struct SharesSettingsView: View {
         }
       } catch {
         appDelegate.eventLogger.report(topic: "Shares", error: error)
-        loadState = .loaded([])
+        loadState = priorShares.map { .loaded($0) } ?? .failed
       }
     }
   }
@@ -126,6 +135,13 @@ struct SharesSettingsView: View {
             SecondaryText(String(
               localized: "Sharing is not supported by this server.",
               comment: "Manage Shares: shown when the backend has no share API"
+            ))
+          }
+        case .failed:
+          SettingsSection {
+            SecondaryText(String(
+              localized: "Couldn't load share links. Check the connection and try again.",
+              comment: "Manage Shares: shown when the share list fetch failed"
             ))
           }
         case .loaded(let shares):

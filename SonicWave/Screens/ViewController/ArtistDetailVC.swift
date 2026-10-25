@@ -44,6 +44,24 @@ class ArtistDetailVC: MultiSourceTableViewController {
   private var artistBio: String?
   private var enrichmentTask: Task<Void, Never>?
 
+  /// FRC-driven table sections: top spacer + albums + songs —
+  /// enrichment sections are appended after them
+  private static let frcSectionCount = 3
+  private static let similarArtistsFetchCount = 20
+  private static let topSongsFetchCount = 10
+
+  /// applied enrichment result per account+artist (`objectID` is
+  /// account-scoped) — return-navigation must not refire 3 endpoints
+  private struct ArtistEnrichment {
+    var bio: String?
+    var similarStubs: [ArtistStub]
+    var topSongs: [Song]
+  }
+  private static var enrichmentCache = [String: ArtistEnrichment]()
+  private var enrichmentCacheKey: String {
+    artist.managedObject.objectID.uriRepresentation().absoluteString
+  }
+
   private var visibleEnrichmentSections: [EnrichmentSection] {
     var sections = [EnrichmentSection]()
     if !similarArtistStubs.isEmpty { sections.append(.similarArtists) }
@@ -54,8 +72,8 @@ class ArtistDetailVC: MultiSourceTableViewController {
   /// FRC sections keep their historic indices (0 = top spacer, 1 = albums,
   /// 2 = songs); enrichment sections sit after them
   private func enrichmentSectionKind(for section: Int) -> EnrichmentSection? {
-    guard section > LibraryElement.Song.rawValue - 1 else { return nil }
-    return visibleEnrichmentSections.element(at: section - LibraryElement.Song.rawValue)
+    guard section >= Self.frcSectionCount else { return nil }
+    return visibleEnrichmentSections.element(at: section - Self.frcSectionCount)
   }
 
   init(account: Account, artist: Artist) {
@@ -121,6 +139,11 @@ class ArtistDetailVC: MultiSourceTableViewController {
     )
     detailOperationsView = GenericDetailTableHeader
       .createTableHeader(configuration: detailHeaderConfig)
+    // bio tap expands into the text sheet — install once; the recognizer
+    // stays inert until a bio enables interaction (`showFullBio` guards)
+    detailOperationsView?.descriptionLabel.addGestureRecognizer(
+      UITapGestureRecognizer(target: self, action: #selector(showFullBio))
+    )
 
     optionsButton = UIBarButtonItem.createOptionsBarButton()
     optionsButton.menu = UIMenu.lazyMenu {
@@ -249,57 +272,92 @@ class ArtistDetailVC: MultiSourceTableViewController {
       self.detailOperationsView?.refresh()
     }
     enrichmentTask?.cancel()
-    enrichmentTask = Task { @MainActor in
-      await self.loadEnrichment()
+    enrichmentTask = Task { @MainActor [weak self] in
+      await self?.loadEnrichment()
     }
   }
 
   /// G20: server-side enrichment (bio, similar artists, top songs).
   /// Every call is `BackendFeatureResult`-matched — `.notSupported` or an
   /// empty payload leaves the section hidden, it never shows "error".
+  /// Each endpoint degrades independently so one failure cannot suppress
+  /// the others; the completed result is cached per account+artist.
   private func loadEnrichment() async {
     guard appDelegate.storage.settings.user.isOnlineMode else { return }
+    if let cached = Self.enrichmentCache[enrichmentCacheKey] {
+      applyEnrichment(cached)
+      tableView.reloadData()
+      return
+    }
     let backendApi = appDelegate.getMeta(account.info).backendApi
+    var enrichment = ArtistEnrichment(similarStubs: [], topSongs: [])
+    var allEndpointsAnswered = true
     do {
       if case .supported(let info) = try await backendApi.getArtistInfo(artistId: artist.id) {
         if let bio = info.biography?.trimmingCharacters(in: .whitespacesAndNewlines),
            !bio.isEmpty {
-          artistBio = bio
-          detailOperationsView?.updateDescription(text: bio)
-          // collapsed bio in the header → tap expands into the text sheet
-          detailOperationsView?.descriptionLabel.isUserInteractionEnabled = true
-          detailOperationsView?.descriptionLabel.accessibilityTraits = .button
-          detailOperationsView?.descriptionLabel.accessibilityHint = NSLocalizedString(
-            "Shows the full biography",
-            comment: "VoiceOver hint on the collapsed artist bio"
-          )
-          detailOperationsView?.descriptionLabel.addGestureRecognizer(
-            UITapGestureRecognizer(target: self, action: #selector(showFullBio))
-          )
+          enrichment.bio = bio
         }
         if !info.similarArtists.isEmpty {
-          similarArtistStubs = info.similarArtists
+          enrichment.similarStubs = info.similarArtists
         }
       }
-      if similarArtistStubs.isEmpty,
-         case .supported(let stubs) = try await backendApi.getSimilarArtists(
-           artistId: artist.id,
-           count: 20
-         ) {
-        similarArtistStubs = stubs
+    } catch {
+      allEndpointsAnswered = false
+      appDelegate.eventLogger.report(topic: "Artist Enrichment", error: error)
+    }
+    guard !Task.isCancelled else { return }
+    if enrichment.similarStubs.isEmpty {
+      do {
+        if case .supported(let stubs) = try await backendApi.getSimilarArtists(
+          artistId: artist.id,
+          count: Self.similarArtistsFetchCount
+        ) {
+          enrichment.similarStubs = stubs
+        }
+      } catch {
+        allEndpointsAnswered = false
+        appDelegate.eventLogger.report(topic: "Artist Enrichment", error: error)
       }
+    }
+    guard !Task.isCancelled else { return }
+    do {
       if case .supported(let remoteSongs) = try await backendApi.getTopSongs(
         artistName: artist.name,
-        count: 10
+        count: Self.topSongsFetchCount
       ) {
-        topSongs = remoteSongs.compactMap {
+        enrichment.topSongs = remoteSongs.compactMap {
           appDelegate.storage.main.library.getSong(for: account, id: $0.id)
         }
       }
     } catch {
+      allEndpointsAnswered = false
       appDelegate.eventLogger.report(topic: "Artist Enrichment", error: error)
     }
+    guard !Task.isCancelled else { return }
+    // cache only fully-answered rounds — a transient failure retries on
+    // the next open instead of freezing a partial result forever
+    if allEndpointsAnswered {
+      Self.enrichmentCache[enrichmentCacheKey] = enrichment
+    }
+    applyEnrichment(enrichment)
     tableView.reloadData()
+  }
+
+  private func applyEnrichment(_ enrichment: ArtistEnrichment) {
+    if let bio = enrichment.bio {
+      artistBio = bio
+      detailOperationsView?.updateDescription(text: bio)
+      // collapsed bio in the header → tap expands into the text sheet
+      detailOperationsView?.descriptionLabel.isUserInteractionEnabled = true
+      detailOperationsView?.descriptionLabel.accessibilityTraits = .button
+      detailOperationsView?.descriptionLabel.accessibilityHint = NSLocalizedString(
+        "Shows the full biography",
+        comment: "VoiceOver hint on the collapsed artist bio"
+      )
+    }
+    similarArtistStubs = enrichment.similarStubs
+    topSongs = enrichment.topSongs
   }
 
   /// collapsed bio in the header expands into the plain-text sheet

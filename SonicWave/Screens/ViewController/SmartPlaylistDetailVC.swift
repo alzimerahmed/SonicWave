@@ -38,7 +38,7 @@ class SmartPlaylistDetailVC: BasicTableViewController {
   }
 
   let playlist: Playlist
-  private let criteria: SmartPlaylistCriteria?
+  private var criteria: SmartPlaylistCriteria?
   private var resolvedPlayables = [AbstractPlayable]()
   private var isPartiallyEvaluated = false
   private var criteriaLines = [String]()
@@ -101,7 +101,6 @@ class SmartPlaylistDetailVC: BasicTableViewController {
     detailOperationsView = GenericDetailTableHeader
       .createTableHeader(configuration: detailHeaderConfig)
 
-    buildCriteriaLines()
     resolveSongs()
 
     containableAtIndexPathCallback = { indexPath in
@@ -139,6 +138,13 @@ class SmartPlaylistDetailVC: BasicTableViewController {
       ))
     }
     updateContentUnavailable()
+
+    // lazy `.nsp` criteria path: playlists synced before this feature (or
+    // whose sync-time fetch failed) arrive with `smartCriteria == nil` —
+    // fetch the rules on first open instead of waiting for the next resync
+    if playlist.isServerReadOnly, playlist.smartCriteria == nil {
+      fetchCriteriaAsync()
+    }
   }
 
   override func viewWillAppear(_ animated: Bool) {
@@ -166,9 +172,35 @@ class SmartPlaylistDetailVC: BasicTableViewController {
       resolvedPlayables = playables
       isPartiallyEvaluated = partiallyEvaluated
     }
+    // criteria lines consume `isPartiallyEvaluated` — rebuild only
+    // after the resolution flag is set
+    buildCriteriaLines()
     tableView.reloadData()
     detailOperationsView?.refresh()
     updateContentUnavailable()
+  }
+
+  /// fetches `.nsp` rules for a server-readonly playlist that has no
+  /// persisted criteria yet, persists them, then re-resolves. Silent on
+  /// `.notSupported`/errors — the server-resolved list stays visible.
+  private func fetchCriteriaAsync() {
+    Task { @MainActor [weak self] in
+      guard let self else { return }
+      do {
+        let result = try await appDelegate.getMeta(self.account.info).backendApi
+          .getSmartPlaylistCriteria(playlistId: self.playlist.id)
+        guard !Task.isCancelled,
+              case .supported(let criteria) = result
+        else { return }
+        appDelegate.storage.main.perform { _ in
+          self.playlist.smartCriteria = criteria
+        }
+        self.criteria = criteria
+        self.resolveSongs()
+      } catch {
+        self.appDelegate.eventLogger.report(topic: "Smart Playlist", error: error)
+      }
+    }
   }
 
   private func updateContentUnavailable() {
@@ -197,9 +229,11 @@ class SmartPlaylistDetailVC: BasicTableViewController {
   private func buildCriteriaLines() {
     var lines = [String]()
     if playlist.isServerReadOnly {
+      // server-type agnostic — `.nsp` is Navidrome's marker today, but any
+      // backend reporting `readonly="true"` takes the same managed path
       badgeLine = NSLocalizedString(
-        "Smart playlist · Navidrome — managed by the server, read-only",
-        comment: "Badge line for server-managed .nsp smart playlists"
+        "Smart playlist · managed by the server, read-only",
+        comment: "Badge line for server-managed smart playlists"
       )
     } else if criteria?.isImportedFromServer == true {
       badgeLine = NSLocalizedString(

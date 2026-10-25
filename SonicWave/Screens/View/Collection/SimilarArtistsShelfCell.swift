@@ -98,9 +98,11 @@ extension SimilarArtistsShelfCell: UICollectionViewDataSource, UICollectionViewD
     guard let stub = stubs.element(at: indexPath.item), let account else { return cell }
     if let id = stub.id,
        let artist = appDelegate.storage.main.library.getArtist(for: account, id: id) {
-      cell.display(entity: artist, title: stub.name, subtitle: nil)
+      cell.display(entity: artist, title: stub.name, subtitle: nil, isInteractive: true)
     } else {
-      cell.display(artworkType: .artist, title: stub.name, subtitle: nil)
+      // unresolvable stubs are display-only — `didSelectItemAt` returns
+      // silently for them, so they are not buttons
+      cell.display(artworkType: .artist, title: stub.name, subtitle: nil, isInteractive: false)
     }
     return cell
   }

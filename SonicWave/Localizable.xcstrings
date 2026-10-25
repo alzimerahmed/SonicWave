@@ -1,6 +1,18 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%@ Blend" : {
+      "comment" : "Genre blend mix card title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ Blend"
+          }
+        }
+      }
+    },
     "%lds" : {
       "comment" : "Decade label (e.g. \"1980s\")",
       "extractionState" : "manual",
@@ -45,6 +57,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld visits"
+          }
+        }
+      }
+    },
+    "%llds Mix" : {
+      "comment" : "Decade mix card title (e.g. \"1980s Mix\")",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%llds Mix"
+          }
+        }
+      }
+    },
+    "A fresh pick from %@" : {
+      "comment" : "Genre blend mix card subtitle",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A fresh pick from %@"
           }
         }
       }
@@ -205,6 +241,18 @@
         }
       }
     },
+    "Couldn't load share links. Check the connection and try again." : {
+      "comment" : "Manage Shares: shown when the share list fetch failed",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't load share links. Check the connection and try again."
+          }
+        }
+      }
+    },
     "Create Share Link" : {
       "comment" : "Context menu action: create a public share link and copy it",
       "extractionState" : "manual",
@@ -273,6 +321,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Decade"
+          }
+        }
+      }
+    },
+    "Deep Cuts" : {
+      "comment" : "Deep cuts mix card title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deep Cuts"
           }
         }
       }
@@ -357,6 +417,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Favorite"
+          }
+        }
+      }
+    },
+    "Favorites and high-rated songs you barely play" : {
+      "comment" : "Deep cuts mix card subtitle",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favorites and high-rated songs you barely play"
+          }
+        }
+      }
+    },
+    "Favorites Radio" : {
+      "comment" : "Favorites radio mix card title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favorites Radio"
           }
         }
       }
@@ -889,6 +973,18 @@
         }
       }
     },
+    "Similar songs around your favorites" : {
+      "comment" : "Favorites radio mix card subtitle when online",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Similar songs around your favorites"
+          }
+        }
+      }
+    },
     "Smart playlist" : {
       "comment" : "Badge line for locally-authored smart playlists + VoiceOver modifier",
       "extractionState" : "manual",
@@ -897,18 +993,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Smart playlist"
-          }
-        }
-      }
-    },
-    "Smart playlist · Navidrome — managed by the server, read-only" : {
-      "comment" : "Badge line for server-managed .nsp smart playlists",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Smart playlist · Navidrome — managed by the server, read-only"
           }
         }
       }
@@ -925,6 +1009,18 @@
         }
       }
     },
+    "Smart playlist · managed by the server, read-only" : {
+      "comment" : "Badge line for server-managed smart playlists",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Smart playlist · managed by the server, read-only"
+          }
+        }
+      }
+    },
     "Songs" : {
       "comment" : "Section header for the resolved smart playlist song list",
       "extractionState" : "manual",
@@ -933,6 +1029,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Songs"
+          }
+        }
+      }
+    },
+    "Songs from the %llds" : {
+      "comment" : "Decade mix card subtitle (e.g. \"Songs from the 1980s\")",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Songs from the %llds"
           }
         }
       }
@@ -997,6 +1105,18 @@
         }
       }
     },
+    "This mix couldn't pick any songs right now — try again in a bit." : {
+      "comment" : "Empty state subtitle for a resolved mix with no songs",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This mix couldn't pick any songs right now — try again in a bit."
+          }
+        }
+      }
+    },
     "This mix has no songs right now." : {
       "comment" : "Toast when a mix resolves to an empty song list",
       "extractionState" : "manual",
@@ -1005,6 +1125,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This mix has no songs right now."
+          }
+        }
+      }
+    },
+    "Time Machine" : {
+      "comment" : "Time-of-day mix card title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Time Machine"
           }
         }
       }
@@ -1093,6 +1225,18 @@
         }
       }
     },
+    "What you usually play around now" : {
+      "comment" : "Time-of-day mix card subtitle",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What you usually play around now"
+          }
+        }
+      }
+    },
     "When the server has no synced lyrics, title, artist, album, and duration of the current track are sent to lrclib.net — only while online, never your account data." : {
       "comment" : "Settings footer under Synced Lyrics Online Lookup; 'lrclib.net' is a service name, keep it untranslated",
       "extractionState" : "manual",
@@ -1113,6 +1257,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Year"
+          }
+        }
+      }
+    },
+    "Your favorites, shuffled" : {
+      "comment" : "Favorites radio mix card subtitle when offline",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your favorites, shuffled"
           }
         }
       }

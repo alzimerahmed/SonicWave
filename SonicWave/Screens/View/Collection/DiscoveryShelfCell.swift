@@ -30,7 +30,6 @@ import UIKit
 /// (mix kinds, similar-artist stubs) via generated artwork placeholders.
 final class DiscoveryShelfCell: UICollectionViewCell {
   static let reuseID = "DiscoveryShelfCell"
-  static let artworkSize: CGFloat = 160.0
 
   private let entityImage = LibraryEntityImage(frame: .zero)
   private let titleLabel = UILabel()
@@ -86,27 +85,40 @@ final class DiscoveryShelfCell: UICollectionViewCell {
     subtitleLabel.text = nil
   }
 
-  /// a local-mirror entity with a real artwork lookup
-  func display(entity: AbstractLibraryEntity, title: String, subtitle: String?) {
+  /// a local-mirror entity with a real artwork lookup. `isInteractive`
+  /// must reflect whether a tap actually does something — a card whose
+  /// selection handler silently returns is not a button.
+  func display(
+    entity: AbstractLibraryEntity,
+    title: String,
+    subtitle: String?,
+    isInteractive: Bool
+  ) {
     entityImage.display(entity: entity)
     titleLabel.text = title
     subtitleLabel.text = subtitle
     subtitleLabel.isHidden = subtitle?.isEmpty != false
     isAccessibilityElement = true
     accessibilityLabel = subtitle.map { "\(title), \($0)" } ?? title
-    accessibilityTraits = .button
+    accessibilityTraits = isInteractive ? .button : []
   }
 
   /// no mirror entry — generated-artwork placeholder per `ArtworkType`
-  /// (G7 mix kinds, unsynced similar artists); never a gray box
-  func display(artworkType: ArtworkType, title: String, subtitle: String?) {
+  /// (G7 mix kinds, unsynced similar artists); never a gray box.
+  /// `isInteractive` semantics identical to `display(entity:…)`.
+  func display(
+    artworkType: ArtworkType,
+    title: String,
+    subtitle: String?,
+    isInteractive: Bool
+  ) {
     entityImage.display(artworkType: artworkType)
     titleLabel.text = title
     subtitleLabel.text = subtitle
     subtitleLabel.isHidden = subtitle?.isEmpty != false
     isAccessibilityElement = true
     accessibilityLabel = subtitle.map { "\(title), \($0)" } ?? title
-    accessibilityTraits = .button
+    accessibilityTraits = isInteractive ? .button : []
   }
 
   var isLoading: Bool {

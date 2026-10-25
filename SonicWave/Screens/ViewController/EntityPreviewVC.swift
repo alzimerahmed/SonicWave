@@ -405,6 +405,7 @@ class EntityPreviewActionBuilder {
     isGoToSiteUrl = false
     isShowPodcastDetails = false
     isShowSongDetails = false
+    isShareLinkable = appDelegate.storage.settings.user.isOnlineMode
   }
 
   private func configureFor(album: Album) {
@@ -962,6 +963,7 @@ class EntityPreviewActionBuilder {
       return .song
     }
     if entityContainer is Album { return .album }
+    if entityContainer is Artist { return .artist }
     if entityContainer is Playlist { return .playlist }
     return nil
   }
@@ -972,7 +974,7 @@ class EntityPreviewActionBuilder {
         "Create Share Link",
         comment: "Context menu action: create a public share link and copy it"
       ),
-      image: UIImage(systemName: "link")
+      image: .link
     ) { _ in
       guard let account = self.entityContainer.account else { return }
       Task { @MainActor in do {

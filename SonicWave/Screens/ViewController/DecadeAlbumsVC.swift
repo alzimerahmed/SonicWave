@@ -48,12 +48,20 @@ final class DecadeAlbumsVC: UICollectionViewController {
   private let decades: [Int]
 
   private static let itemWidth: CGFloat = 160.0
+  /// ~170pt target card width — same silhouette as the Home shelves
+  private static let targetCardWidth: CGFloat = 170.0
+  /// `getAlbumList2 type=byYear` page size — a catalog larger than this
+  /// per decade is silently capped (no pagination yet)
+  private static let albumFetchCount = 100
+  /// earliest decade offered in the picker — pre-1950 music is rare
+  /// enough in personal libraries to not warrant an entry
+  private static let earliestDecade = 1950
 
   init(account: Account, initialDecade: Int? = nil) {
     self.account = account
     let currentYear = Calendar.current.component(.year, from: Date())
     var list = [Int]()
-    var decade = 1950
+    var decade = Self.earliestDecade
     while decade <= currentYear {
       list.append(decade)
       decade += 10
@@ -77,7 +85,7 @@ final class DecadeAlbumsVC: UICollectionViewController {
       let item = NSCollectionLayoutItem(layoutSize: itemSize)
       let columnCount = max(
         2,
-        Int(layoutEnvironment.container.effectiveContentSize.width / 170.0)
+        Int(layoutEnvironment.container.effectiveContentSize.width / Self.targetCardWidth)
       )
       let groupSize = NSCollectionLayoutSize(
         widthDimension: .fractionalWidth(1.0),
@@ -134,7 +142,8 @@ final class DecadeAlbumsVC: UICollectionViewController {
           decade
         ),
         state: decade == self.selectedDecade ? .on : .off
-      ) { _ in
+      ) { [weak self] _ in
+        guard let self else { return }
         self.selectedDecade = decade
         self.setNavBarTitle(title: self.sceneTitle ?? "")
         self.navigationItem.rightBarButtonItem?.menu = self.createDecadeMenu()
@@ -163,7 +172,7 @@ final class DecadeAlbumsVC: UICollectionViewController {
             fromYear: self.selectedDecade,
             toYear: self.selectedDecade + 9,
             offset: 0,
-            count: 100
+            count: Self.albumFetchCount
           )
         switch result {
         case .supported(let remoteAlbums):

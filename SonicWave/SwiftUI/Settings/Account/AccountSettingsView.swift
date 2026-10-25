@@ -35,6 +35,10 @@ struct AccountSettingsView: View {
   var isShowResyncLibraryAlert = false
   @State
   private var publicUrlOverride: String = ""
+  /// the account `publicUrlOverride` was loaded for — a stale field value
+  /// must never be written into a freshly-switched account
+  @State
+  private var publicUrlOverrideAccountIdent: String?
   @EnvironmentObject
   var settings: Settings
 
@@ -85,8 +89,10 @@ struct AccountSettingsView: View {
   }
 
   /// G18: reverse-proxy base URL for share links — nil when blank so the
-  /// server-provided URL is used as-is (`ShareUrlRewriter`)
+  /// server-provided URL is used as-is (`ShareUrlRewriter`). Saves only
+  /// while the field still belongs to `accountInfo`.
   private func savePublicUrlOverride(accountInfo: AccountInfo) {
+    guard publicUrlOverrideAccountIdent == accountInfo.ident else { return }
     let trimmed = publicUrlOverride.trimmingCharacters(in: .whitespacesAndNewlines)
     appDelegate.storage.settings.accounts
       .updateSetting(accountInfo) { accountSettings in
@@ -282,10 +288,10 @@ struct AccountSettingsView: View {
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .keyboardType(.URL)
+                // save on submit/leave — a per-keystroke write rewrites
+                // the setting (and every share URL rewrite) mid-typing
                 .onSubmit { savePublicUrlOverride(accountInfo: activeAccountInfo) }
-                .onChange(of: publicUrlOverride) { _, _ in
-                  savePublicUrlOverride(accountInfo: activeAccountInfo)
-                }
+                .onDisappear { savePublicUrlOverride(accountInfo: activeAccountInfo) }
               }
               NavigationLink(destination: SharesSettingsView(accountInfo: activeAccountInfo)) {
                 Text("Manage Shares")
@@ -373,6 +379,12 @@ struct AccountSettingsView: View {
       if let accountInfo = settings.activeAccountInfo {
         publicUrlOverride = appDelegate.storage.settings.accounts
           .getSetting(accountInfo).read.publicUrlOverride ?? ""
+        publicUrlOverrideAccountIdent = accountInfo.ident
+      }
+    }
+    .onDisappear {
+      if let accountInfo = settings.activeAccountInfo {
+        savePublicUrlOverride(accountInfo: accountInfo)
       }
     }
   }
