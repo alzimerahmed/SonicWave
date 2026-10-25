@@ -57,7 +57,7 @@ final class NavidromeNativeApi: Sendable {
     urlCleanser: URLCleanser
   ) async throws
     -> Data? {
-    guard let token = try await authenticate(
+    guard let firstToken = try await authenticate(
       credentials: credentials,
       urlCleanser: urlCleanser
     ) else { return nil }
@@ -66,41 +66,59 @@ final class NavidromeNativeApi: Sendable {
       path: ["api", "playlist", playlistId]
     ) else { return nil }
 
-    var request = URLRequest(url: url)
-    request.setValue("Bearer \(token)", forHTTPHeaderField: "x-nd-authorization")
-    for (field, value) in credentials.httpHeaders {
-      request.setValue(value, forHTTPHeaderField: field)
-    }
-    let session = URLSession(
-      configuration: URLSessionConfiguration.default,
-      delegate: AccountSessionChallengeHandler(security: sessionSecurity),
-      delegateQueue: nil
-    )
-    defer { session.invalidateAndCancel() }
-
-    let (data, response) = try await session.data(for: request)
-    guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
-      os_log(
-        "Navidrome playlist rules fetch failed: %s",
-        log: log,
-        type: .info,
-        urlCleanser.cleanse(url: url).description
+    // a cached JWT can go stale (server restart, token expiry, credential
+    // change) — any non-200 drops it, and a 401 retries once with a fresh
+    // login before giving up
+    var token = firstToken
+    for attempt in 0 ... 1 {
+      var request = URLRequest(url: url)
+      request.setValue("Bearer \(token)", forHTTPHeaderField: "x-nd-authorization")
+      for (field, value) in credentials.httpHeaders {
+        request.setValue(value, forHTTPHeaderField: field)
+      }
+      let session = URLSession(
+        configuration: URLSessionConfiguration.default,
+        delegate: AccountSessionChallengeHandler(security: sessionSecurity),
+        delegateQueue: nil
       )
-      return nil
-    }
-    guard let json = try? JSONSerialization.jsonObject(with: data),
-          let playlist = json as? [String: Any],
-          let rules = playlist["rules"]
-    else { return nil }
+      defer { session.invalidateAndCancel() }
 
-    // `rules` is either a nested object or a JSON-encoded string depending
-    // on Navidrome version — normalize both to raw criteria JSON data
-    if let rulesDict = rules as? [String: Any],
-       let rulesData = try? JSONSerialization.data(withJSONObject: rulesDict) {
-      return rulesData
-    }
-    if let rulesString = rules as? String {
-      return rulesString.data(using: .utf8)
+      let (data, response) = try await session.data(for: request)
+      guard let http = response as? HTTPURLResponse else { return nil }
+      if http.statusCode != 200 {
+        jwtToken.wrappedValue = nil
+        if http.statusCode == 401, attempt == 0 {
+          guard let refreshed = try await authenticate(
+            credentials: credentials,
+            urlCleanser: urlCleanser
+          ) else { return nil }
+          token = refreshed
+          continue
+        }
+        os_log(
+          "Navidrome playlist rules fetch failed (status %ld): %s",
+          log: log,
+          type: .info,
+          http.statusCode,
+          urlCleanser.cleanse(url: url).description
+        )
+        return nil
+      }
+      guard let json = try? JSONSerialization.jsonObject(with: data),
+            let playlist = json as? [String: Any],
+            let rules = playlist["rules"]
+      else { return nil }
+
+      // `rules` is either a nested object or a JSON-encoded string depending
+      // on Navidrome version — normalize both to raw criteria JSON data
+      if let rulesDict = rules as? [String: Any],
+         let rulesData = try? JSONSerialization.data(withJSONObject: rulesDict) {
+        return rulesData
+      }
+      if let rulesString = rules as? String {
+        return rulesString.data(using: .utf8)
+      }
+      return nil
     }
     return nil
   }
@@ -139,6 +157,9 @@ final class NavidromeNativeApi: Sendable {
           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
           let token = json["token"] as? String
     else {
+      // a rejected login must not poison the cache either — make sure
+      // no stale token survives a failed re-auth
+      jwtToken.wrappedValue = nil
       os_log(
         "Navidrome native API login failed: %s",
         log: log,
@@ -151,7 +172,9 @@ final class NavidromeNativeApi: Sendable {
     return token
   }
 
-  /// clears the cached JWT — call when credentials change
+  /// clears the cached JWT — called from
+  /// `SubsonicServerApi.provideCredentials` so a credential/account change
+  /// never reuses the previous session's token
   func invalidateSession() {
     jwtToken.wrappedValue = nil
   }

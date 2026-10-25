@@ -282,6 +282,8 @@ final class SubsonicServerApi: URLCleanser, Sendable {
 
   public func provideCredentials(credentials: LoginCredentials) {
     self.credentials.wrappedValue = credentials
+    // the Navidrome JWT is bound to the previous credentials — drop it
+    navidromeNativeApi.invalidateSession()
   }
 
   public func cleanse(url: URL?) -> CleansedURL {
