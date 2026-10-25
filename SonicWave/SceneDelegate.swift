@@ -20,6 +20,7 @@
 //
 
 import SonicWaveKit
+import CoreSpotlight
 import OSLog
 import UIKit
 
@@ -125,6 +126,13 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     appDelegate.setAppAppearanceMode(style: appDelegate.storage.settings.user.appearanceMode)
     AmperfyAppShortcuts.updateAppShortcutParameters()
+
+    // G27: cold launch via a Spotlight result — `scene(_:continue:)` is
+    // not invoked for activities delivered in connection options
+    if let activity = connectionOptions.userActivities
+      .first(where: { $0.activityType == CSSearchableItemActionType }) {
+      continueSpotlightSearchItem(userActivity: activity)
+    }
   }
 
   func replaceMainRootViewController(vc: UIViewController) {
@@ -246,6 +254,70 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
       type: .info,
       userActivity.activityType
     )
+    if userActivity.activityType == CSSearchableItemActionType {
+      continueSpotlightSearchItem(userActivity: userActivity)
+    }
+  }
+
+  /// G27 Spotlight tap-through: decode the indexed identifier
+  /// (`<type>:<accountIdent>:<entityId>`), resolve the entity via the same
+  /// path `playID` deep links use (`IntentManager.getPlayableContainer`)
+  /// and display its detail page in the library tab.
+  private func continueSpotlightSearchItem(userActivity: NSUserActivity) {
+    guard appDelegate.isNormalInteraction,
+          let encodedIdentifier = userActivity.userInfo?[CSSearchableItemActivityIdentifier]
+          as? String,
+          let itemIdentifier = SpotlightItemIdentifier(encoded: encodedIdentifier),
+          let account = appDelegate.storage.main.library
+          .getAccount(ident: itemIdentifier.accountIdent),
+          let container = appDelegate.intentManager.getPlayableContainer(
+            account: account,
+            id: itemIdentifier.id,
+            libraryElementType: itemIdentifier.type.appEnumType
+          )
+    else { return }
+    displaySpotlightResult(container: container, account: account)
+  }
+
+  private func displaySpotlightResult(container: PlayableContainable, account: Account) {
+    switch container {
+    case let song as Song:
+      guard let album = song.album else { return }
+      appDelegate.displayInLibraryTab(vc: AppStoryboard.Main.segueToAlbumDetail(
+        account: account,
+        album: album,
+        songToScrollTo: song
+      ))
+    case let album as Album:
+      appDelegate.displayInLibraryTab(vc: AppStoryboard.Main.segueToAlbumDetail(
+        account: account,
+        album: album
+      ))
+    case let artist as Artist:
+      appDelegate.displayInLibraryTab(vc: AppStoryboard.Main.segueToArtistDetail(
+        account: account,
+        artist: artist
+      ))
+    case let playlist as Playlist:
+      appDelegate.displayInLibraryTab(vc: AppStoryboard.Main.segueToPlaylistDetail(
+        account: account,
+        playlist: playlist
+      ))
+    case let podcast as Podcast:
+      appDelegate.displayInLibraryTab(vc: AppStoryboard.Main.segueToPodcastDetail(
+        account: account,
+        podcast: podcast
+      ))
+    case let episode as PodcastEpisode:
+      guard let podcast = episode.podcast else { return }
+      appDelegate.displayInLibraryTab(vc: AppStoryboard.Main.segueToPodcastDetail(
+        account: account,
+        podcast: podcast,
+        episodeToScrollTo: episode
+      ))
+    default:
+      return
+    }
   }
 
   func scene(
@@ -258,5 +330,26 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
   func scene(_ scene: UIScene, didUpdate userActivity: NSUserActivity) {
     os_log("didUpdate userActivity: %s", log: self.log, type: .info, userActivity.activityType)
+  }
+}
+
+extension SpotlightItemType {
+  /// G27: map the kit-side index type onto the intent enum used by
+  /// `IntentManager.getPlayableContainer(account:id:libraryElementType:)`
+  var appEnumType: PlayableContainerTypeAppEnum {
+    switch self {
+    case .song:
+      return .song
+    case .podcastEpisode:
+      return .podcastEpisode
+    case .album:
+      return .album
+    case .artist:
+      return .artist
+    case .playlist:
+      return .playlist
+    case .podcast:
+      return .podcast
+    }
   }
 }

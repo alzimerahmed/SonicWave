@@ -73,6 +73,7 @@
 	<key>NSUserActivityTypes</key>
 	<array>
 		<string>INPlayMediaIntent</string>
+		<string>com.apple.corespotlightitem</string>
 	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
