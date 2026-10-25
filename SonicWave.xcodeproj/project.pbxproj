@@ -597,6 +597,25 @@
 		8D15C801000000000000000024 /* artistInfo2_example_1.xml in Resources */ = {isa = PBXBuildFile; fileRef = 8D15C801000000000000000023 /* artistInfo2_example_1.xml */; };
 		8D15C801000000000000000026 /* topSongs_example_1.xml in Resources */ = {isa = PBXBuildFile; fileRef = 8D15C801000000000000000025 /* topSongs_example_1.xml */; };
 		8D15C801000000000000000028 /* smartplaylist_example_1.json in Resources */ = {isa = PBXBuildFile; fileRef = 8D15C801000000000000000027 /* smartplaylist_example_1.json */; };
+		7ED1CB010000000000000001 /* SonicWaveWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 7ED1CA010000000000000001 /* SonicWaveWidgets.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7ED1CB010000000000000002 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7ED1CA010000000000000004 /* Assets.xcassets */; };
+		7ED1CB010000000000000003 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 7ED1CA010000000000000005 /* Localizable.xcstrings */; };
+		7ED1CB010000000000000004 /* SonicWaveWidgetsBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ED1CA010000000000000006 /* SonicWaveWidgetsBundle.swift */; };
+		7ED1CB010000000000000005 /* WidgetSharedModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ED1CA010000000000000007 /* WidgetSharedModels.swift */; };
+		7ED1CB010000000000000006 /* PlaybackActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ED1CA010000000000000008 /* PlaybackActivityAttributes.swift */; };
+		7ED1CB010000000000000007 /* WidgetIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ED1CA010000000000000009 /* WidgetIntents.swift */; };
+		7ED1CB010000000000000008 /* WidgetViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ED1CA01000000000000000A /* WidgetViews.swift */; };
+		7ED1CB010000000000000009 /* NowPlayingWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ED1CA01000000000000000B /* NowPlayingWidget.swift */; };
+		7ED1CB01000000000000000A /* RecentlyPlayedWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ED1CA01000000000000000C /* RecentlyPlayedWidget.swift */; };
+		7ED1CB01000000000000000B /* NowPlayingLockScreenWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ED1CA01000000000000000D /* NowPlayingLockScreenWidget.swift */; };
+		7ED1CB01000000000000000C /* PlaybackLiveActivityWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ED1CA01000000000000000E /* PlaybackLiveActivityWidget.swift */; };
+		7ED1CB01000000000000000D /* WidgetSharedModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ED1CA010000000000000007 /* WidgetSharedModels.swift */; };
+		7ED1CB01000000000000000E /* PlaybackActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ED1CA010000000000000008 /* PlaybackActivityAttributes.swift */; };
+		7ED1CB01000000000000000F /* WidgetIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ED1CA010000000000000009 /* WidgetIntents.swift */; };
+		7ED1CB010000000000000010 /* WidgetBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ED1CA01000000000000000F /* WidgetBridge.swift */; };
+		7ED1CB010000000000000011 /* WidgetStatePublisher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ED1CA010000000000000010 /* WidgetStatePublisher.swift */; };
+		7ED1CB010000000000000012 /* WidgetCommandConsumer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ED1CA010000000000000011 /* WidgetCommandConsumer.swift */; };
+		7ED1CB010000000000000013 /* LiveActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ED1CA010000000000000012 /* LiveActivityManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -621,6 +640,13 @@
 			remoteGlobalIDString = 50C9D604284FA847007F18D0;
 			remoteInfo = SonicWaveKit;
 		};
+		7ED1CE010000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 508385DC21C5965B00C4BB32 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7ED1CD010000000000000004;
+			remoteInfo = SonicWaveWidgets;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -630,6 +656,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
+				7ED1CB010000000000000001 /* SonicWaveWidgets.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1282,6 +1309,24 @@
 		8D15C801000000000000000023 /* artistInfo2_example_1.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = artistInfo2_example_1.xml; sourceTree = "<group>"; };
 		8D15C801000000000000000025 /* topSongs_example_1.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = topSongs_example_1.xml; sourceTree = "<group>"; };
 		8D15C801000000000000000027 /* smartplaylist_example_1.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = smartplaylist_example_1.json; sourceTree = "<group>"; };
+		7ED1CA010000000000000001 /* SonicWaveWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "com.apple.product-type.app-extension"; includeInIndex = 0; path = SonicWaveWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		7ED1CA010000000000000002 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		7ED1CA010000000000000003 /* SonicWaveWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SonicWaveWidgets.entitlements; sourceTree = "<group>"; };
+		7ED1CA010000000000000004 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		7ED1CA010000000000000005 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		7ED1CA010000000000000006 /* SonicWaveWidgetsBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SonicWaveWidgetsBundle.swift; sourceTree = "<group>"; };
+		7ED1CA010000000000000007 /* WidgetSharedModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSharedModels.swift; sourceTree = "<group>"; };
+		7ED1CA010000000000000008 /* PlaybackActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackActivityAttributes.swift; sourceTree = "<group>"; };
+		7ED1CA010000000000000009 /* WidgetIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetIntents.swift; sourceTree = "<group>"; };
+		7ED1CA01000000000000000A /* WidgetViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetViews.swift; sourceTree = "<group>"; };
+		7ED1CA01000000000000000B /* NowPlayingWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingWidget.swift; sourceTree = "<group>"; };
+		7ED1CA01000000000000000C /* RecentlyPlayedWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentlyPlayedWidget.swift; sourceTree = "<group>"; };
+		7ED1CA01000000000000000D /* NowPlayingLockScreenWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingLockScreenWidget.swift; sourceTree = "<group>"; };
+		7ED1CA01000000000000000E /* PlaybackLiveActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackLiveActivityWidget.swift; sourceTree = "<group>"; };
+		7ED1CA01000000000000000F /* WidgetBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetBridge.swift; sourceTree = "<group>"; };
+		7ED1CA010000000000000010 /* WidgetStatePublisher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetStatePublisher.swift; sourceTree = "<group>"; };
+		7ED1CA010000000000000011 /* WidgetCommandConsumer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetCommandConsumer.swift; sourceTree = "<group>"; };
+		7ED1CA010000000000000012 /* LiveActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1323,6 +1368,13 @@
 			files = (
 				502B8A4D2EE0CE40004CA3AD /* AudioStreaming in Frameworks */,
 				50C9D60F284FA847007F18D0 /* SonicWaveKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7ED1CD010000000000000002 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1583,6 +1635,7 @@
 				508385E621C5965B00C4BB32 /* SonicWave */,
 				50C9D606284FA847007F18D0 /* SonicWaveKit */,
 				50C9D614284FA847007F18D0 /* SonicWaveKitTests */,
+				7ED1CC010000000000000001 /* SonicWaveWidgets */,
 				508385E521C5965B00C4BB32 /* Products */,
 				5091857E23A753C800A8891E /* Frameworks */,
 			);
@@ -1594,6 +1647,7 @@
 				508385E421C5965B00C4BB32 /* SonicWave.app */,
 				50C9D605284FA847007F18D0 /* SonicWaveKit.framework */,
 				50C9D60E284FA847007F18D0 /* SonicWaveKitTests.xctest */,
+				7ED1CA010000000000000001 /* SonicWaveWidgets.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1623,6 +1677,7 @@
 				5EC0DE010000000000000008 /* PrivacyInfo.xcprivacy */,
 				50ACAF1327B277B50039913C /* SonicWave.entitlements */,
 				641708582C13BF5100BA2619 /* Haptics.swift */,
+				7ED1CC010000000000000002 /* Widgets */,
 			);
 			path = SonicWave;
 			sourceTree = "<group>";
@@ -2390,6 +2445,37 @@
 			path = Discovery;
 			sourceTree = "<group>";
 		};
+		7ED1CC010000000000000001 /* SonicWaveWidgets */ = {
+			isa = PBXGroup;
+			children = (
+				7ED1CA010000000000000006 /* SonicWaveWidgetsBundle.swift */,
+				7ED1CA010000000000000007 /* WidgetSharedModels.swift */,
+				7ED1CA010000000000000008 /* PlaybackActivityAttributes.swift */,
+				7ED1CA010000000000000009 /* WidgetIntents.swift */,
+				7ED1CA01000000000000000A /* WidgetViews.swift */,
+				7ED1CA01000000000000000B /* NowPlayingWidget.swift */,
+				7ED1CA01000000000000000C /* RecentlyPlayedWidget.swift */,
+				7ED1CA01000000000000000D /* NowPlayingLockScreenWidget.swift */,
+				7ED1CA01000000000000000E /* PlaybackLiveActivityWidget.swift */,
+				7ED1CA010000000000000004 /* Assets.xcassets */,
+				7ED1CA010000000000000005 /* Localizable.xcstrings */,
+				7ED1CA010000000000000002 /* Info.plist */,
+				7ED1CA010000000000000003 /* SonicWaveWidgets.entitlements */,
+			);
+			path = SonicWaveWidgets;
+			sourceTree = "<group>";
+		};
+		7ED1CC010000000000000002 /* Widgets */ = {
+			isa = PBXGroup;
+			children = (
+				7ED1CA01000000000000000F /* WidgetBridge.swift */,
+				7ED1CA010000000000000010 /* WidgetStatePublisher.swift */,
+				7ED1CA010000000000000011 /* WidgetCommandConsumer.swift */,
+				7ED1CA010000000000000012 /* LiveActivityManager.swift */,
+			);
+			path = Widgets;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -2419,6 +2505,7 @@
 			);
 			dependencies = (
 				50C9D619284FA847007F18D0 /* PBXTargetDependency */,
+				7ED1CE010000000000000002 /* PBXTargetDependency */,
 			);
 			name = SonicWave;
 			packageProductDependencies = (
@@ -2485,6 +2572,23 @@
 			productReference = 50C9D60E284FA847007F18D0 /* SonicWaveKitTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		7ED1CD010000000000000004 /* SonicWaveWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7ED1CF010000000000000003 /* Build configuration list for PBXNativeTarget "SonicWaveWidgets" */;
+			buildPhases = (
+				7ED1CD010000000000000001 /* Sources */,
+				7ED1CD010000000000000002 /* Frameworks */,
+				7ED1CD010000000000000003 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SonicWaveWidgets;
+			productName = SonicWaveWidgets;
+			productReference = 7ED1CA010000000000000001 /* SonicWaveWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -2514,6 +2618,9 @@
 					50C9D60D284FA847007F18D0 = {
 						CreatedOnToolsVersion = 13.3.1;
 						TestTargetID = 508385E321C5965B00C4BB32;
+					};
+					7ED1CD010000000000000004 = {
+						CreatedOnToolsVersion = 26.0;
 					};
 				};
 			};
@@ -2545,6 +2652,7 @@
 				508385E321C5965B00C4BB32 /* SonicWave */,
 				50C9D604284FA847007F18D0 /* SonicWaveKit */,
 				50C9D60D284FA847007F18D0 /* SonicWaveKitTests */,
+				7ED1CD010000000000000004 /* SonicWaveWidgets */,
 			);
 		};
 /* End PBXProject section */
@@ -2645,6 +2753,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		7ED1CD010000000000000003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7ED1CB010000000000000002 /* Assets.xcassets in Resources */,
+				7ED1CB010000000000000003 /* Localizable.xcstrings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
@@ -2675,6 +2792,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				638920F02C8C8E9000932EE8 /* SettingsList.swift in Sources */,
+				7ED1CB01000000000000000D /* WidgetSharedModels.swift in Sources */,
+				7ED1CB01000000000000000E /* PlaybackActivityAttributes.swift in Sources */,
+				7ED1CB01000000000000000F /* WidgetIntents.swift in Sources */,
+				7ED1CB010000000000000010 /* WidgetBridge.swift in Sources */,
+				7ED1CB010000000000000011 /* WidgetStatePublisher.swift in Sources */,
+				7ED1CB010000000000000012 /* WidgetCommandConsumer.swift in Sources */,
+				7ED1CB010000000000000013 /* LiveActivityManager.swift in Sources */,
 				50B136FA2EFC36D500738475 /* PlayableContainerTypeAppEnum.swift in Sources */,
 				50B136FB2EFC36D500738475 /* PlayIDIntent.swift in Sources */,
 				50B136FC2EFC36D500738475 /* PlayRandomSongsIntent.swift in Sources */,
@@ -3185,6 +3309,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		7ED1CD010000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7ED1CB010000000000000004 /* SonicWaveWidgetsBundle.swift in Sources */,
+				7ED1CB010000000000000005 /* WidgetSharedModels.swift in Sources */,
+				7ED1CB010000000000000006 /* PlaybackActivityAttributes.swift in Sources */,
+				7ED1CB010000000000000007 /* WidgetIntents.swift in Sources */,
+				7ED1CB010000000000000008 /* WidgetViews.swift in Sources */,
+				7ED1CB010000000000000009 /* NowPlayingWidget.swift in Sources */,
+				7ED1CB01000000000000000A /* RecentlyPlayedWidget.swift in Sources */,
+				7ED1CB01000000000000000B /* NowPlayingLockScreenWidget.swift in Sources */,
+				7ED1CB01000000000000000C /* PlaybackLiveActivityWidget.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -3202,6 +3342,11 @@
 			isa = PBXTargetDependency;
 			target = 50C9D604284FA847007F18D0 /* SonicWaveKit */;
 			targetProxy = 50C9D618284FA847007F18D0 /* PBXContainerItemProxy */;
+		};
+		7ED1CE010000000000000002 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7ED1CD010000000000000004 /* SonicWaveWidgets */;
+			targetProxy = 7ED1CE010000000000000001 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -3593,6 +3738,92 @@
 			};
 			name = Release;
 		};
+		7ED1CF010000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = SonicWaveWidgets/SonicWaveWidgets.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = SonicWaveWidgets/Info.plist;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Alzimer Ahmed. All rights reserved.";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 2.1.1;
+				"MARKETING_VERSION[sdk=macosx*]" = 2.1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.alzimerahmed.SonicWave.Widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = YES;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_UPCOMING_FEATURE_CONCISE_MAGIC_FILE = YES;
+				SWIFT_UPCOMING_FEATURE_DEPRECATE_APPLICATION_MAIN = YES;
+				SWIFT_UPCOMING_FEATURE_DISABLE_OUTWARD_ACTOR_ISOLATION = YES;
+				SWIFT_UPCOMING_FEATURE_FORWARD_TRAILING_CLOSURES = YES;
+				SWIFT_UPCOMING_FEATURE_GLOBAL_CONCURRENCY = YES;
+				SWIFT_UPCOMING_FEATURE_IMPLICIT_OPEN_EXISTENTIALS = YES;
+				SWIFT_UPCOMING_FEATURE_IMPORT_OBJC_FORWARD_DECLS = YES;
+				SWIFT_UPCOMING_FEATURE_INFER_SENDABLE_FROM_CAPTURES = YES;
+				SWIFT_UPCOMING_FEATURE_ISOLATED_DEFAULT_VALUES = YES;
+				SWIFT_UPCOMING_FEATURE_REGION_BASED_ISOLATION = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2,6";
+			};
+			name = Debug;
+		};
+		7ED1CF010000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = SonicWaveWidgets/SonicWaveWidgets.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = SonicWaveWidgets/Info.plist;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Alzimer Ahmed. All rights reserved.";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 2.1.1;
+				"MARKETING_VERSION[sdk=macosx*]" = 2.1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.alzimerahmed.SonicWave.Widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = YES;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_UPCOMING_FEATURE_CONCISE_MAGIC_FILE = YES;
+				SWIFT_UPCOMING_FEATURE_DEPRECATE_APPLICATION_MAIN = YES;
+				SWIFT_UPCOMING_FEATURE_DISABLE_OUTWARD_ACTOR_ISOLATION = YES;
+				SWIFT_UPCOMING_FEATURE_FORWARD_TRAILING_CLOSURES = YES;
+				SWIFT_UPCOMING_FEATURE_GLOBAL_CONCURRENCY = YES;
+				SWIFT_UPCOMING_FEATURE_IMPLICIT_OPEN_EXISTENTIALS = YES;
+				SWIFT_UPCOMING_FEATURE_IMPORT_OBJC_FORWARD_DECLS = YES;
+				SWIFT_UPCOMING_FEATURE_INFER_SENDABLE_FROM_CAPTURES = YES;
+				SWIFT_UPCOMING_FEATURE_ISOLATED_DEFAULT_VALUES = YES;
+				SWIFT_UPCOMING_FEATURE_REGION_BASED_ISOLATION = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2,6";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -3628,6 +3859,15 @@
 			buildConfigurations = (
 				50C9D620284FA847007F18D0 /* Debug */,
 				50C9D621284FA847007F18D0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		7ED1CF010000000000000003 /* Build configuration list for PBXNativeTarget "SonicWaveWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7ED1CF010000000000000001 /* Debug */,
+				7ED1CF010000000000000002 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -1,0 +1,198 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Artwork for %@" : {
+      "comment" : "VoiceOver label for album artwork, %@ is the track title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Artwork for %@"
+          }
+        }
+      }
+    },
+    "Current track with playback controls." : {
+      "comment" : "Now Playing widget description",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current track with playback controls."
+          }
+        }
+      }
+    },
+    "Downloaded" : {
+      "comment" : "VoiceOver label for the cached/downloaded badge",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downloaded"
+          }
+        }
+      }
+    },
+    "Jump back into recently played tracks." : {
+      "comment" : "Recently Played widget description",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jump back into recently played tracks."
+          }
+        }
+      }
+    },
+    "LIVE" : {
+      "comment" : "Radio live badge",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LIVE"
+          }
+        }
+      }
+    },
+    "Next track" : {
+      "comment" : "VoiceOver label for the next-track transport button",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next track"
+          }
+        }
+      }
+    },
+    "No music playing" : {
+      "comment" : "Empty state shown when nothing is playing",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No music playing"
+          }
+        }
+      }
+    },
+    "Nothing played yet" : {
+      "comment" : "Recently Played empty state",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing played yet"
+          }
+        }
+      }
+    },
+    "Now Playing" : {
+      "comment" : "Widget display name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Now Playing"
+          }
+        }
+      }
+    },
+    "Open SonicWave to start playback" : {
+      "comment" : "Empty-state hint in the medium Now Playing widget",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open SonicWave to start playback"
+          }
+        }
+      }
+    },
+    "Pause" : {
+      "comment" : "VoiceOver label for the pause transport button",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pause"
+          }
+        }
+      }
+    },
+    "Play" : {
+      "comment" : "VoiceOver label for the play transport button",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play"
+          }
+        }
+      }
+    },
+    "Playback progress" : {
+      "comment" : "VoiceOver label for the progress bar",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Playback progress"
+          }
+        }
+      }
+    },
+    "Plays this item" : {
+      "comment" : "VoiceOver hint on a recently-played row",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plays this item"
+          }
+        }
+      }
+    },
+    "Previous track" : {
+      "comment" : "VoiceOver label for the previous-track transport button",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previous track"
+          }
+        }
+      }
+    },
+    "Recently Played" : {
+      "comment" : "Widget display name and shelf header",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recently Played"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

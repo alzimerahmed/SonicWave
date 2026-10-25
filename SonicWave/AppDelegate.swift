@@ -87,6 +87,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     AmperKit.shared.localNotificationManager
   }()
 
+  /// widget/live-activity bridge (G12+G13) — retains the state publisher,
+  /// command consumer and Live Activity manager; `start()` is idempotent
+  /// and safe to call from both manager-start seams below
+  public lazy var widgetBridge = {
+    WidgetBridge(player: player, storage: storage)
+  }()
+
   public func getMeta(_ accountInfo: AccountInfo) -> MetaManager {
     AmperKit.shared.getMeta(accountInfo)
   }
@@ -308,6 +315,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
       isAlreadyRegisteredToPlayer = true
       player.addNotifier(notifier: self)
     }
+    widgetBridge.start()
   }
 
   func startManagerForNormalOperation() {
@@ -319,6 +327,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
     isAlreadyRegisteredToPlayer = true
     player.addNotifier(notifier: self)
+    widgetBridge.start()
   }
 
   func setAppTheme(color: UIColor) {
