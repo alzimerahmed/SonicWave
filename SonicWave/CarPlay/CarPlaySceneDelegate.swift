@@ -74,6 +74,8 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
   ) {
     Task { @MainActor in
       os_log("CarPlay: didConnect", log: self.log, type: .info)
+      resetFetchController()
+      resetTemplates()
       appDelegate.notificationHandler.register(
         self,
         selector: #selector(refreshSort),
@@ -167,73 +169,86 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
   ) {
     Task { @MainActor in
       os_log("CarPlay: didDisconnect", log: self.log, type: .info)
-      guard activeAccountInfo != nil, activeAccount != nil else {
-        os_log("CarPlay: no account available -> do nothing", log: self.log, type: .info)
-        return
-      }
+      // Teardown is unconditional: observers, fetch controllers and templates
+      // must be released even when no account is active, otherwise they keep
+      // firing callbacks into the next CarPlay session.
       self.interfaceController = nil
       appDelegate.notificationHandler.remove(self, name: .fetchControllerSortChanged, object: nil)
       appDelegate.notificationHandler.remove(self, name: .offlineModeChanged, object: nil)
-      accountNotificationHandler?.performOnAllRegisteredAccounts { [weak self] accountInfo in
-        guard let self else { return }
-        let meta = appDelegate.getMeta(accountInfo)
-        appDelegate.notificationHandler.remove(
-          self,
-          name: .downloadFinishedSuccess,
-          object: meta.artworkDownloadManager
-        )
-        appDelegate.notificationHandler.remove(
-          self,
-          name: .downloadFinishedSuccess,
-          object: meta.playableDownloadManager
-        )
-      }
-
+      appDelegate.notificationHandler.remove(self, name: .downloadFinishedSuccess, object: nil)
       CPNowPlayingTemplate.shared.remove(self)
 
       resetFetchController()
+      resetTemplates()
+
+      sharedHome = nil
+      activeAccount = nil
+      activeAccountInfo = nil
+      accountNotificationHandler = nil
     }
   }
 
-  lazy var playerQueueSection = {
-    let queueTemplate = CPListTemplate(title: Self.queueButtonText, sections: [CPListSection]())
-    return queueTemplate
-  }()
+  // CarPlay templates must never be re-pushed onto a different
+  // `CPInterfaceController`. They are therefore kept in resettable storage
+  // instead of `lazy var` and are invalidated by `resetTemplates()` on every
+  // disconnect; each access lazily recreates a fresh template.
+  private var _playerQueueSection: CPListTemplate?
+  var playerQueueSection: CPListTemplate {
+    if let template = _playerQueueSection { return template }
+    let template = CPListTemplate(title: Self.queueButtonText, sections: [CPListSection]())
+    _playerQueueSection = template
+    return template
+  }
 
-  lazy var disconnectedTemplate = {
-    let disconnectedList = CPListTemplate(title: "Disconnected", sections: [])
-    return disconnectedList
-  }()
+  private var _disconnectedTemplate: CPListTemplate?
+  var disconnectedTemplate: CPListTemplate {
+    if let template = _disconnectedTemplate { return template }
+    let template = CPListTemplate(title: "Disconnected", sections: [])
+    _disconnectedTemplate = template
+    return template
+  }
 
-  lazy var rootBarTemplate = {
-    let bar = CPTabBarTemplate(templates: [
+  private var _rootBarTemplate: CPTabBarTemplate?
+  var rootBarTemplate: CPTabBarTemplate {
+    if let template = _rootBarTemplate { return template }
+    let template = CPTabBarTemplate(templates: [
       homeTab,
       libraryTab,
       cachedTab,
       playlistTab,
     ].prefix(upToAsArray: CPTabBarTemplate.maximumTabCount))
-    return bar
-  }()
+    _rootBarTemplate = template
+    return template
+  }
 
-  lazy var playlistTab = {
-    let playlistTab = CPListTemplate(title: "Playlists", sections: [CPListSection]())
-    playlistTab.tabImage = UIImage.playlist
-    return playlistTab
-  }()
+  private var _playlistTab: CPListTemplate?
+  var playlistTab: CPListTemplate {
+    if let template = _playlistTab { return template }
+    let template = CPListTemplate(title: "Playlists", sections: [CPListSection]())
+    template.tabImage = UIImage.playlist
+    _playlistTab = template
+    return template
+  }
 
-  lazy var libraryTab = {
-    let libraryTab = CPListTemplate(title: "Library", sections: createLibrarySections())
-    libraryTab.tabImage = UIImage.musicLibrary
-    libraryTab.assistantCellConfiguration = CarPlaySceneDelegate.assistantConfig
-    return libraryTab
-  }()
+  private var _libraryTab: CPListTemplate?
+  var libraryTab: CPListTemplate {
+    if let template = _libraryTab { return template }
+    let template = CPListTemplate(title: "Library", sections: createLibrarySections())
+    template.tabImage = UIImage.musicLibrary
+    template.assistantCellConfiguration = CarPlaySceneDelegate.assistantConfig
+    _libraryTab = template
+    return template
+  }
 
-  lazy var homeTab = {
-    let homeTab = CPListTemplate(title: "Home", sections: [])
-    homeTab.tabImage = UIImage.home
-    homeTab.assistantCellConfiguration = CarPlaySceneDelegate.assistantConfig
-    return homeTab
-  }()
+  private var _homeTab: CPListTemplate?
+  var homeTab: CPListTemplate {
+    if let template = _homeTab { return template }
+    let template = CPListTemplate(title: "Home", sections: [])
+    template.tabImage = UIImage.home
+    template.assistantCellConfiguration = CarPlaySceneDelegate.assistantConfig
+    _homeTab = template
+    return template
+  }
 
   struct EntityImageRowContainer {
     let entity: AbstractLibraryEntity
@@ -246,151 +261,105 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
   var homeRowData: [HomeSection: [HomeItem]] = [:]
   var homeArtworkUpdate: [String: EntityImageRowContainer] = [:] // String is Artwork.uniqueID
 
-  lazy var cachedTab = {
-    let cachedTab = CPListTemplate(title: "Cached", sections: createCachedSections())
-    cachedTab.tabImage = UIImage.cache
-    return cachedTab
-  }()
+  private var _cachedTab: CPListTemplate?
+  var cachedTab: CPListTemplate {
+    if let template = _cachedTab { return template }
+    let template = CPListTemplate(title: "Cached", sections: createCachedSections())
+    template.tabImage = UIImage.cache
+    _cachedTab = template
+    return template
+  }
 
-  lazy var accountSection = {
-    let template = CPListTemplate(title: "Switch Account", sections: [
+  private var _sectionTemplates = [String: CPListTemplate]()
+
+  private func sectionTemplate(title: String) -> CPListTemplate {
+    if let template = _sectionTemplates[title] { return template }
+    let template = CPListTemplate(title: title, sections: [
       CPListSection(items: [CPListTemplateItem]()),
     ])
+    _sectionTemplates[title] = template
     return template
-  }()
+  }
 
-  lazy var podcastSection = {
-    let template = CPListTemplate(title: "Podcasts", sections: [
-      CPListSection(items: [CPListTemplateItem]()),
-    ])
-    return template
-  }()
+  var accountSection: CPListTemplate {
+    sectionTemplate(title: "Switch Account")
+  }
 
-  lazy var podcastCachedSection = {
-    let template = CPListTemplate(title: "Cached Podcasts", sections: [
-      CPListSection(items: [CPListTemplateItem]()),
-    ])
-    return template
-  }()
+  var podcastSection: CPListTemplate {
+    sectionTemplate(title: "Podcasts")
+  }
 
-  lazy var genresSection = {
-    let template = CPListTemplate(title: "Genres", sections: [
-      CPListSection(items: [CPListTemplateItem]()),
-    ])
-    return template
-  }()
+  var podcastCachedSection: CPListTemplate {
+    sectionTemplate(title: "Cached Podcasts")
+  }
 
-  lazy var genresCachedSection = {
-    let template = CPListTemplate(title: "Cached Genres", sections: [
-      CPListSection(items: [CPListTemplateItem]()),
-    ])
-    return template
-  }()
+  var genresSection: CPListTemplate {
+    sectionTemplate(title: "Genres")
+  }
 
-  lazy var artistsSection = {
-    let template = CPListTemplate(title: "Artists", sections: [
-      CPListSection(items: [CPListTemplateItem]()),
-    ])
-    return template
-  }()
+  var genresCachedSection: CPListTemplate {
+    sectionTemplate(title: "Cached Genres")
+  }
 
-  lazy var artistsCachedSection = {
-    let template = CPListTemplate(title: "Cached Artists", sections: [
-      CPListSection(items: [CPListTemplateItem]()),
-    ])
-    return template
-  }()
+  var artistsSection: CPListTemplate {
+    sectionTemplate(title: "Artists")
+  }
 
-  lazy var artistsFavoriteSection = {
-    let template = CPListTemplate(title: "Favorite Artists", sections: [
-      CPListSection(items: [CPListTemplateItem]()),
-    ])
-    return template
-  }()
+  var artistsCachedSection: CPListTemplate {
+    sectionTemplate(title: "Cached Artists")
+  }
 
-  lazy var artistsFavoriteCachedSection = {
-    let template = CPListTemplate(title: "Favorite Cached Artists", sections: [
-      CPListSection(items: [CPListTemplateItem]()),
-    ])
-    return template
-  }()
+  var artistsFavoriteSection: CPListTemplate {
+    sectionTemplate(title: "Favorite Artists")
+  }
 
-  lazy var albumsSection = {
-    let template = CPListTemplate(title: "Albums", sections: [
-      CPListSection(items: [CPListTemplateItem]()),
-    ])
-    return template
-  }()
+  var artistsFavoriteCachedSection: CPListTemplate {
+    sectionTemplate(title: "Favorite Cached Artists")
+  }
 
-  lazy var albumsCachedSection = {
-    let template = CPListTemplate(title: "Cached Albums", sections: [
-      CPListSection(items: [CPListTemplateItem]()),
-    ])
-    return template
-  }()
+  var albumsSection: CPListTemplate {
+    sectionTemplate(title: "Albums")
+  }
 
-  lazy var albumsFavoriteSection = {
-    let template = CPListTemplate(title: "Favorite Albums", sections: [
-      CPListSection(items: [CPListTemplateItem]()),
-    ])
-    return template
-  }()
+  var albumsCachedSection: CPListTemplate {
+    sectionTemplate(title: "Cached Albums")
+  }
 
-  lazy var albumsFavoriteCachedSection = {
-    let template = CPListTemplate(title: "Favorite Cached Albums", sections: [
-      CPListSection(items: [CPListTemplateItem]()),
-    ])
-    return template
-  }()
+  var albumsFavoriteSection: CPListTemplate {
+    sectionTemplate(title: "Favorite Albums")
+  }
 
-  lazy var albumsNewestSection = {
-    let template = CPListTemplate(title: "Newest Albums", sections: [
-      CPListSection(items: [CPListTemplateItem]()),
-    ])
-    return template
-  }()
+  var albumsFavoriteCachedSection: CPListTemplate {
+    sectionTemplate(title: "Favorite Cached Albums")
+  }
 
-  lazy var albumsNewestCachedSection = {
-    let template = CPListTemplate(title: "Newest Cached Albums", sections: [
-      CPListSection(items: [CPListTemplateItem]()),
-    ])
-    return template
-  }()
+  var albumsNewestSection: CPListTemplate {
+    sectionTemplate(title: "Newest Albums")
+  }
 
-  lazy var albumsRecentSection = {
-    let template = CPListTemplate(title: "Recently Played Albums", sections: [
-      CPListSection(items: [CPListTemplateItem]()),
-    ])
-    return template
-  }()
+  var albumsNewestCachedSection: CPListTemplate {
+    sectionTemplate(title: "Newest Cached Albums")
+  }
 
-  lazy var albumsRecentCachedSection = {
-    let template = CPListTemplate(title: "Recently Played Cached Albums", sections: [
-      CPListSection(items: [CPListTemplateItem]()),
-    ])
-    return template
-  }()
+  var albumsRecentSection: CPListTemplate {
+    sectionTemplate(title: "Recently Played Albums")
+  }
 
-  lazy var songsFavoriteSection = {
-    let template = CPListTemplate(title: "Favorite Songs", sections: [
-      CPListSection(items: [CPListTemplateItem]()),
-    ])
-    return template
-  }()
+  var albumsRecentCachedSection: CPListTemplate {
+    sectionTemplate(title: "Recently Played Cached Albums")
+  }
 
-  lazy var songsFavoriteCachedSection = {
-    let template = CPListTemplate(title: "Favorite Cached Songs", sections: [
-      CPListSection(items: [CPListTemplateItem]()),
-    ])
-    return template
-  }()
+  var songsFavoriteSection: CPListTemplate {
+    sectionTemplate(title: "Favorite Songs")
+  }
 
-  lazy var radioSection = {
-    let template = CPListTemplate(title: "Radios", sections: [
-      CPListSection(items: [CPListTemplateItem]()),
-    ])
-    return template
-  }()
+  var songsFavoriteCachedSection: CPListTemplate {
+    sectionTemplate(title: "Favorite Cached Songs")
+  }
+
+  var radioSection: CPListTemplate {
+    sectionTemplate(title: "Radios")
+  }
 
   var playlistDetailSection: CPListTemplate?
   var podcastDetailSection: CPListTemplate?
@@ -467,6 +436,25 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
     playlistDetailFetchController = nil
     podcastDetailFetchController?.delegate = nil
     podcastDetailFetchController = nil
+  }
+
+  /// Drops every cached CarPlay template instance so templates are never
+  /// re-pushed across `CPInterfaceController`s (known frozen/blank-UI pitfall
+  /// on newer iOS). Templates are recreated lazily on next access.
+  private func resetTemplates() {
+    _playerQueueSection = nil
+    _disconnectedTemplate = nil
+    _rootBarTemplate = nil
+    _playlistTab = nil
+    _libraryTab = nil
+    _homeTab = nil
+    _cachedTab = nil
+    _sectionTemplates = [:]
+    playlistDetailSection = nil
+    podcastDetailSection = nil
+    homeImageRows = [:]
+    homeRowData = [:]
+    homeArtworkUpdate = [:]
   }
 
   @objc
