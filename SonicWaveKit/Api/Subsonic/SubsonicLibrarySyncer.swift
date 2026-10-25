@@ -1655,7 +1655,11 @@ class SubsonicLibrarySyncer: CommonLibrarySyncer, LibrarySyncer {
       )
       for playlist in asyncCompanion.library.getPlaylists(for: accountAsync)
       where readonlyPlaylistIds.contains(playlist.id) {
-        playlist.smartCriteria = criteriaByPlaylistId[playlist.id]
+        // failed/absent fetches keep prior criteria — a nil-assign would wipe
+        // good rules (and via the setter also clear isSmartPlaylist)
+        if let criteria = criteriaByPlaylistId[playlist.id] {
+          playlist.smartCriteria = criteria
+        }
       }
     }
   }
