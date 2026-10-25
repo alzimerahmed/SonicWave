@@ -72,6 +72,8 @@ class EntityPreviewActionBuilder {
   private var isShowSongDetails = false
   private var isInstantMix = false
   private var isShareable = false
+  private var isDislikable = false
+  private var isShareLinkable = false
 
   init(
     container: PlayableContainable,
@@ -150,6 +152,9 @@ class EntityPreviewActionBuilder {
        appDelegate.storage.settings.user.isOnlineMode {
       ratingFavActions.append(createRatingMenu(libraryEntity: libraryEntity))
     }
+    if isDislikable, let song = (entityContainer as? AbstractPlayable)?.asSong {
+      ratingFavActions.append(createDislikeAction(song: song))
+    }
     if !ratingFavActions.isEmpty {
       menuActions.append(UIMenu(options: .displayInline, children: ratingFavActions))
     }
@@ -170,6 +175,9 @@ class EntityPreviewActionBuilder {
     }
     if isShareable, let playable = entityContainer as? AbstractPlayable {
       elementHandlingActions.append(createShareAction(playable: playable))
+    }
+    if isShareLinkable, let shareableType = shareableTypeForContainer {
+      elementHandlingActions.append(createShareLinkAction(shareableType: shareableType))
     }
     if isGoToSiteUrl, let url = (entityContainer as? AbstractPlayable)?.asRadio?.siteURL {
       elementHandlingActions.append(createGoToSiteUrl(url: url))
@@ -274,6 +282,9 @@ class EntityPreviewActionBuilder {
     isShowSongDetails = true
     isInstantMix = appDelegate.storage.settings.user.isOnlineMode
     isShareable = song.isCached || appDelegate.storage.settings.user.isOnlineMode
+    // dislike is a local-only flag (#587) — allowed offline, unlike favorite
+    isDislikable = true
+    isShareLinkable = appDelegate.storage.settings.user.isOnlineMode
   }
 
   private func configureFor(podcastEpisode: PodcastEpisode) {
@@ -335,6 +346,7 @@ class EntityPreviewActionBuilder {
     isGoToSiteUrl = false
     isShowPodcastDetails = false
     isShowSongDetails = false
+    isShareLinkable = appDelegate.storage.settings.user.isOnlineMode
   }
 
   private func configureFor(genre: Genre) {
@@ -413,6 +425,7 @@ class EntityPreviewActionBuilder {
     isGoToSiteUrl = false
     isShowPodcastDetails = false
     isShowSongDetails = false
+    isShareLinkable = appDelegate.storage.settings.user.isOnlineMode
   }
 
   private func configureFor(directory: Directory) {
@@ -899,6 +912,101 @@ class EntityPreviewActionBuilder {
         presenter: self.rootView,
         downloadManagerProvider: downloadManagerProvider
       )
+    }
+  }
+
+  /// dislike (#587): thumbs-down next to favorite/rating — LOCAL-only flag
+  /// on both shipped backends (`setDislike`/`clearDislike` resolve to
+  /// `.localOnly`; the API call stays so future backends can sync it).
+  /// Allowed offline — the flag never needed a server round-trip.
+  private func createDislikeAction(song: Song) -> UIAction {
+    UIAction(
+      title: song.isDisliked
+        ? NSLocalizedString(
+          "Remove Dislike",
+          comment: "Context menu action: clear the local thumbs-down flag on a song"
+        )
+        : NSLocalizedString(
+          "Dislike",
+          comment: "Context menu action: mark a song with the local thumbs-down flag"
+        ),
+      image: song.isDisliked ? .thumbsDownFill : .thumbsDown,
+      state: song.isDisliked ? .on : .off
+    ) { _ in
+      self.toggleDislike(song: song)
+    }
+  }
+
+  private func toggleDislike(song: Song) {
+    guard let account = song.account else { return }
+    let isDisliked = !song.isDisliked
+    appDelegate.storage.main.library.setDisliked(isDisliked, for: song)
+    Task { @MainActor in do {
+      if isDisliked {
+        _ = try await self.appDelegate.getMeta(account.info).backendApi
+          .setDislike(playableInfo: song.info)
+      } else {
+        _ = try await self.appDelegate.getMeta(account.info).backendApi
+          .clearDislike(playableInfo: song.info)
+      }
+    } catch {
+      self.appDelegate.eventLogger.report(topic: "Dislike Sync", error: error)
+    }}
+    self.reloadRootView()
+  }
+
+  /// G18: `createShare` entity mapping — songs, albums and playlists can
+  /// be shared; `.notSupported` is reported as info, never an error.
+  private var shareableTypeForContainer: ShareableType? {
+    if let playable = entityContainer as? AbstractPlayable, playable.asSong != nil {
+      return .song
+    }
+    if entityContainer is Album { return .album }
+    if entityContainer is Playlist { return .playlist }
+    return nil
+  }
+
+  private func createShareLinkAction(shareableType: ShareableType) -> UIAction {
+    UIAction(
+      title: NSLocalizedString(
+        "Create Share Link",
+        comment: "Context menu action: create a public share link and copy it"
+      ),
+      image: UIImage(systemName: "link")
+    ) { _ in
+      guard let account = self.entityContainer.account else { return }
+      Task { @MainActor in do {
+        let result = try await self.appDelegate.getMeta(account.info).backendApi
+          .createShare(
+            shareableType: shareableType,
+            shareableId: self.entityContainer.id,
+            description: nil,
+            expiresInDays: nil
+          )
+        switch result {
+        case .supported(let share):
+          UIPasteboard.general.string = share.url
+          self.appDelegate.eventLogger.info(
+            topic: "Share Link",
+            message: NSLocalizedString(
+              "Share link copied to clipboard.",
+              comment: "Toast shown after a public share link is created"
+            ),
+            displayPopup: true
+          )
+        case .notSupported:
+          self.appDelegate.eventLogger.info(
+            topic: "Share Link",
+            message: NSLocalizedString(
+              "Sharing is not supported by this server.",
+              comment: "Toast shown when the server cannot create share links"
+            ),
+            displayPopup: true
+          )
+        }
+      } catch {
+        self.appDelegate.eventLogger.report(topic: "Share Link", error: error)
+      }}
     }
   }
 

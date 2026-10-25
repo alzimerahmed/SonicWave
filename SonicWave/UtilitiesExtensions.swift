@@ -636,6 +636,13 @@ extension UIImage {
   }
 }
 
+extension UIImage {
+  /// dislike / thumbs-down (#587) — app-side symbols; the kit image
+  /// table stays untouched. SF Symbols: `hand.thumbsdown[.fill]`
+  static let thumbsDown = UIImage(systemName: "hand.thumbsdown") ?? UIImage()
+  static let thumbsDownFill = UIImage(systemName: "hand.thumbsdown.fill") ?? UIImage()
+}
+
 extension UICollectionViewLayout {
   static var verticalLayout: UICollectionViewFlowLayout {
     let layout = UICollectionViewFlowLayout()

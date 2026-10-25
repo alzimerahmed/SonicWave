@@ -392,8 +392,21 @@ class PlayableTableCell: BasicTableCell {
 
   func refreshCacheAndDuration() {
     guard let playable = playable else { return }
-    favoriteIconImage.isHidden = !playable.isFavorite
-    favoriteIconImage.tintColor = .red
+    favoriteIconImage.isHidden = !(playable.isFavorite || playable.isDisliked)
+    // dislike (#587): the local thumbs-down shares the favorite badge slot —
+    // dislike wins over heart when both flags are set (stronger signal)
+    if playable.isDisliked {
+      favoriteIconImage.image = .thumbsDownFill
+      favoriteIconImage.tintColor = .secondaryLabelColor
+      favoriteIconImage.accessibilityLabel = NSLocalizedString(
+        "Disliked",
+        comment: "VoiceOver label for the thumbs-down badge on a song row"
+      )
+    } else {
+      favoriteIconImage.image = .heartFill
+      favoriteIconImage.tintColor = .red
+      favoriteIconImage.accessibilityLabel = nil
+    }
 
     let isDurationVisible = !playable.isRadio &&
       (
