@@ -68,6 +68,22 @@ struct PlayerSettingsView: View {
     settings.cacheTranscodingFormatPreference = format
   }
 
+  /// crossfade menu values — deliberately coarse presets; `0` disables
+  /// crossfading (the gapless queue preload stays active instead)
+  private static let crossfadePresets = [0, 2, 4, 6, 8, 10, 12]
+
+  private func crossfadeDurationDescription(_ seconds: Int) -> String {
+    seconds <= 0
+      ? String(localized: "Off", comment: "Crossfade menu option: crossfade disabled")
+      : String(
+        format: String(
+          localized: "%lld Seconds",
+          comment: "Crossfade menu option: overlap duration in seconds"
+        ),
+        seconds
+      )
+  }
+
   var body: some View {
     ZStack {
       SettingsList {
@@ -127,6 +143,42 @@ struct PlayerSettingsView: View {
             )
           },
           footer: "When the queue ends, automatically continue playback using Instant Mix to find similar songs."
+        )
+
+        SettingsSection(
+          content: {
+            SettingsRow(title: String(localized: "Crossfade")) {
+              Menu(crossfadeDurationDescription(settings.crossfadeDurationInSec)) {
+                ForEach(Self.crossfadePresets, id: \.self) { seconds in
+                  Button {
+                    settings.crossfadeDurationInSec = seconds
+                  } label: {
+                    if settings.crossfadeDurationInSec == seconds {
+                      Label(
+                        crossfadeDurationDescription(seconds),
+                        systemImage: "checkmark"
+                      )
+                    } else {
+                      Text(crossfadeDurationDescription(seconds))
+                    }
+                  }
+                }
+              }
+            }
+          },
+          footer:
+          String(localized: "Crossfade fades the ending track into the next over the selected duration. Off keeps gapless playback. Radios and streams that cannot seek never crossfade.")
+        )
+
+        SettingsSection(
+          content: {
+            SettingsCheckBoxRow(
+              title: String(localized: "Skip Silence"),
+              isOn: $settings.isSkipSilenceEnabled
+            )
+          },
+          footer:
+          String(localized: "Speeds up silent passages while listening to podcasts. Music is never sped up.")
         )
 
         if settings.activeAccountInfo != nil {

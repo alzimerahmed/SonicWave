@@ -202,6 +202,26 @@ class SettingsHostVC: UIViewController {
       self.appDelegate.storage.settings.user.isAutoplayEnabled = newValue
     }))
 
+    settings.crossfadeDurationInSec = appDelegate.player.crossfadeDurationInSec
+    changesAgent.append(settings.$crossfadeDurationInSec.sink(receiveValue: { newValue in
+      // guarded: the sink fires on the initial assignment too — only
+      // persist + re-apply on a real user change
+      let hasValueChanged = self.appDelegate.player.crossfadeDurationInSec != newValue
+      guard hasValueChanged else { return }
+      // the facade setter persists `user.crossfadeDurationSeconds` and
+      // pushes the duration to the engine in one call
+      self.appDelegate.player.crossfadeDurationInSec = newValue
+    }))
+
+    settings.isSkipSilenceEnabled = appDelegate.player.isSkipSilenceEnabled
+    changesAgent.append(settings.$isSkipSilenceEnabled.sink(receiveValue: { newValue in
+      let hasValueChanged = self.appDelegate.player.isSkipSilenceEnabled != newValue
+      guard hasValueChanged else { return }
+      // persists the flag; `SkipSilenceService` re-evaluates it on its
+      // 1s tick and only ever engages in `.podcast` player mode
+      self.appDelegate.player.isSkipSilenceEnabled = newValue
+    }))
+
     settings.swipeActionSettings = appDelegate.storage.settings.user.swipeActionSettings
 
     settings.isReplayGainEnabled = appDelegate.storage.settings.user.isReplayGainEnabled
