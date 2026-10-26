@@ -147,6 +147,7 @@ struct RecentlyPlayedWidgetView: View {
     // radios have no `deepLinkURL` — an unconditional play glyph + "plays"
     // hint would be a false affordance on an inert row
     let canPlay = item.deepLinkURL != nil
+    let hint = canPlay ? "Plays this item" : "Opens SonicWave"
     let content = HStack(spacing: 10) {
       WidgetArtworkView(
         fileName: item.artworkFileName,
@@ -174,7 +175,7 @@ struct RecentlyPlayedWidgetView: View {
     }
     .accessibilityElement(children: .combine)
     .accessibilityLabel("\(item.title), \(item.artist)")
-    .accessibilityHint(canPlay ? "Plays this item" : "Opens SonicWave")
+    .accessibilityHint(hint)
 
     if let url = item.deepLinkURL {
       Link(destination: url) {
