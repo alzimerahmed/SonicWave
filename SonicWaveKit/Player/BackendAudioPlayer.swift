@@ -937,7 +937,8 @@ class BackendAudioPlayer: NSObject {
         return try await backendApi.generateUrl(
           forStreamingPlayable: playable.info,
           maxBitrate: streamingMaxBitrate,
-          formatPreference: streamingTranscodingFormat
+          formatPreference: streamingTranscodingFormat,
+          timeOffset: nil
         )
       }
     }

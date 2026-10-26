@@ -536,14 +536,20 @@ extension BackendProxy: BackendApi {
   public func generateUrl(
     forStreamingPlayable playableInfo: AbstractPlayableInfo,
     maxBitrate: StreamingMaxBitratePreference,
-    formatPreference: StreamingFormatPreference
+    formatPreference: StreamingFormatPreference,
+    timeOffset: Int? = nil
   ) async throws
     -> URL {
     try await activeApi.generateUrl(
       forStreamingPlayable: playableInfo,
       maxBitrate: maxBitrate,
-      formatPreference: formatPreference
+      formatPreference: formatPreference,
+      timeOffset: timeOffset
     )
+  }
+
+  public func isTranscodeOffsetSeekSupported() async -> Bool {
+    await activeApi.isTranscodeOffsetSeekSupported()
   }
 
   public func generateUrl(forArtwork artwork: Artwork) async throws -> URL {

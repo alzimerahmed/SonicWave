@@ -70,9 +70,13 @@ final class AmpacheApi: BackendApi {
   func generateUrl(
     forStreamingPlayable playableInfo: AbstractPlayableInfo,
     maxBitrate: StreamingMaxBitratePreference,
-    formatPreference: StreamingFormatPreference
+    formatPreference: StreamingFormatPreference,
+    timeOffset: Int? = nil
   ) async throws
     -> URL {
+    // Ampache `stream` has no documented time-offset parameter —
+    // `.notSupported` semantics: the caller keeps its engine-side seek,
+    // nothing is emitted here (G17)
     try await ampacheXmlServerApi.generateUrlForStreamingPlayable(
       isSong: playableInfo.type == .song,
       id: playableInfo.id,
@@ -80,6 +84,9 @@ final class AmpacheApi: BackendApi {
       formatPreference: formatPreference
     )
   }
+
+  /// Ampache `stream` cannot be restarted at an arbitrary offset (G17)
+  func isTranscodeOffsetSeekSupported() async -> Bool { false }
 
   func generateUrl(forArtwork artwork: Artwork) async throws -> URL {
     try await ampacheXmlServerApi.generateUrlForArtwork(artworkRemoteInfo: artwork.remoteInfo)

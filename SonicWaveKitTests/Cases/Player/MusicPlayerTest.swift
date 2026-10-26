@@ -251,9 +251,15 @@ final class MOCK_BackendApi: BackendApi {
   func generateUrl(
     forStreamingPlayable playableInfo: AbstractPlayableInfo,
     maxBitrate: StreamingMaxBitratePreference,
-    formatPreference: StreamingFormatPreference
+    formatPreference: StreamingFormatPreference,
+    timeOffset: Int? = nil
   ) async throws
     -> URL { Helper.testURL }
+
+  var isTranscodeOffsetSeekSupportedResult: Bool = false
+  func isTranscodeOffsetSeekSupported() async -> Bool {
+    isTranscodeOffsetSeekSupportedResult
+  }
 
   func generateUrl(forArtwork artwork: Artwork) async throws -> URL { Helper.testURL }
   func checkForErrorResponse(response: APIDataResponse) -> ResponseError? { nil }

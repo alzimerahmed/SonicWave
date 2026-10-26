@@ -66,6 +66,7 @@ extension ResponseError {
 
 enum OpenSubsonicExtension: String {
   case songLyrics
+  case transcodeOffset
 }
 
 // MARK: - OpenSubsonicExtensionsSupport
@@ -378,15 +379,43 @@ final class SubsonicServerApi: URLCleanser, Sendable {
     }
   }
 
+  /// `timeOffset` (seconds) restarts the transcode pipeline at that
+  /// position — OpenSubsonic `transcodeOffset` extension (G17). It is
+  /// emitted only for transcoding preferences (`.raw` serves the
+  /// original file, where an offset would corrupt the byte stream) and
+  /// only when the server advertised the extension.
   public func generateUrl(
     forStreamingPlayableId apiId: String,
     maxBitrate: StreamingMaxBitratePreference,
-    formatPreference: StreamingFormatPreference
+    formatPreference: StreamingFormatPreference,
+    timeOffset: Int? = nil
   ) async throws
     -> URL {
     let version = try await determineApiVersionToUse()
     var urlComp = try createAuthApiUrlComponent(version: version, forAction: "stream", id: apiId)
 
+    let isTranscodeOffsetSupported = timeOffset != nil &&
+      await isOpenSubsonicExtensionSupported(extension: .transcodeOffset)
+    Self.appendStreamQueryItems(
+      to: &urlComp,
+      maxBitrate: maxBitrate,
+      formatPreference: formatPreference,
+      timeOffset: timeOffset,
+      isTranscodeOffsetSupported: isTranscodeOffsetSupported
+    )
+    return try createUrl(from: urlComp)
+  }
+
+  /// extracted for testability — `timeOffset` is emitted only on a
+  /// transcoding format preference and only when the server reported
+  /// `transcodeOffset` support via `getOpenSubsonicExtensions`
+  static func appendStreamQueryItems(
+    to urlComp: inout URLComponents,
+    maxBitrate: StreamingMaxBitratePreference,
+    formatPreference: StreamingFormatPreference,
+    timeOffset: Int?,
+    isTranscodeOffsetSupported: Bool
+  ) {
     switch formatPreference {
     case .mp3:
       urlComp.addQueryItem(name: "format", value: "mp3")
@@ -401,7 +430,9 @@ final class SubsonicServerApi: URLCleanser, Sendable {
     default:
       urlComp.addQueryItem(name: "maxBitRate", value: maxBitrate.rawValue)
     }
-    return try createUrl(from: urlComp)
+    if formatPreference != .raw, isTranscodeOffsetSupported, let timeOffset {
+      urlComp.addQueryItem(name: "timeOffset", value: timeOffset)
+    }
   }
 
   public func generateUrl(forArtworkId id: String) async throws -> URL {

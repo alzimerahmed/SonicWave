@@ -83,15 +83,23 @@ extension SubsonicApi: BackendApi {
   func generateUrl(
     forStreamingPlayable playableInfo: AbstractPlayableInfo,
     maxBitrate: StreamingMaxBitratePreference,
-    formatPreference: StreamingFormatPreference
+    formatPreference: StreamingFormatPreference,
+    timeOffset: Int? = nil
   ) async throws
     -> URL {
     let apiId = playableInfo.streamId ?? playableInfo.id
     return try await subsonicServerApi.generateUrl(
       forStreamingPlayableId: apiId,
       maxBitrate: maxBitrate,
-      formatPreference: formatPreference
+      formatPreference: formatPreference,
+      timeOffset: timeOffset
     )
+  }
+
+  /// G17 — the server itself advertises `transcodeOffset` support via
+  /// `getOpenSubsonicExtensions`
+  func isTranscodeOffsetSeekSupported() async -> Bool {
+    await subsonicServerApi.isOpenSubsonicExtensionSupported(extension: .transcodeOffset)
   }
 
   func generateUrl(forArtwork artwork: Artwork) async throws -> URL {

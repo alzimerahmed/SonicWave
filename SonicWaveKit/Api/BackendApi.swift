@@ -326,11 +326,22 @@ public protocol BackendApi: URLCleanser, Sendable {
   func provideCredentials(credentials: LoginCredentials)
   func isAuthenticationValid(credentials: LoginCredentials) async throws
   func generateUrl(forDownloadingPlayable playableInfo: AbstractPlayableInfo) async throws -> URL
+  /// `timeOffset` (seconds) restarts a transcoded stream at that
+  /// position (G17; Subsonic emits `timeOffset` — OpenSubsonic
+  /// `transcodeOffset` extension — Ampache `stream` has no documented
+  /// offset and drops the parameter). `nil` builds the regular
+  /// start-of-track stream URL.
   func generateUrl(
     forStreamingPlayable playableInfo: AbstractPlayableInfo,
     maxBitrate: StreamingMaxBitratePreference,
-    formatPreference: StreamingFormatPreference
+    formatPreference: StreamingFormatPreference,
+    timeOffset: Int?
   ) async throws -> URL
+  /// G17: true when the backend can restart a transcoded stream at an
+  /// arbitrary offset — Subsonic reports it via the advertised
+  /// `transcodeOffset` OpenSubsonic extension, other backends do not
+  /// support it and keep the engine-side seek.
+  func isTranscodeOffsetSeekSupported() async -> Bool
   func generateUrl(forArtwork artwork: Artwork) async throws -> URL
   func checkForErrorResponse(response: APIDataResponse) -> ResponseError?
   @MainActor
