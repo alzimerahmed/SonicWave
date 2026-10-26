@@ -112,6 +112,26 @@ class BackendAudioPlayer: NSObject {
   /// a queued preload goes stale the moment the queue it was resolved
   /// from is mutated, so adoption must be refused
   private var isPreloadedNextStale = false
+  /// playable the engine currently renders — needed to rebuild the
+  /// stream URL for a transcode-offset seek restart (G17)
+  private var currentPlayable: AbstractPlayable?
+  /// seconds the active transcoded stream was restarted at — the
+  /// engine clock restarts at zero on every `timeOffset` restart, so
+  /// elapsed/duration reporting adds this base back on top (G17)
+  private var transcodeSeekBaseOffsetInSec: Double = 0
+  /// backend offset-seek capability of the ACTIVE entry — cached at
+  /// insert because the OpenSubsonic extension check is async;
+  /// `isPreloadTranscodeOffsetSeekSupported` is adopted with the rest
+  /// of the `perloaded*`/`preload*` bookkeeping (G17)
+  private var isTranscodeOffsetSeekSupported = false
+  private var isPreloadTranscodeOffsetSeekSupported = false
+  /// a `timeOffset` stream restart is in flight — a further seek
+  /// restarts again at the new absolute offset instead of scheduling
+  /// an engine seek that would resolve against the wrong base (G17)
+  private var isTranscodeSeekRestartInFlight = false
+  /// the engine start callback pauses again instead of resuming when a
+  /// transcode-offset restart was issued while paused (G17)
+  private var seekRestartResumePlayback: Bool?
   private var isPreviousPlaylableFinshed = true
   private var isAutoStartPlayback = true
   private var seekTimeWhenStarted: Double?
@@ -241,11 +261,14 @@ class BackendAudioPlayer: NSObject {
   }
 
   var elapsedTime: Double {
-    player?.elapsedTime() ?? 0.0
+    transcodeSeekBaseOffsetInSec + (player?.elapsedTime() ?? 0.0)
   }
 
   var duration: Double {
-    player?.duration ?? 0.0
+    let engineDuration = player?.duration ?? 0.0
+    // a `timeOffset` stream only serves the remainder of the track —
+    // the offset base restores the full span for the UI (G17)
+    return engineDuration > 0 ? engineDuration + transcodeSeekBaseOffsetInSec : 0.0
   }
 
   var playbackRate: PlaybackRate {
@@ -520,6 +543,7 @@ class BackendAudioPlayer: NSObject {
     perloadedPlayType = nil
     perloadedStreamingBitrate = nil
     preloadTranscodingFormat = nil
+    isPreloadTranscodeOffsetSeekSupported = false
   }
 
   @MainActor
@@ -549,6 +573,12 @@ class BackendAudioPlayer: NSObject {
     perloadedStreamingBitrate = nil
     activeTranscodingFormat = nil
     preloadTranscodingFormat = nil
+    isTranscodeOffsetSeekSupported = false
+    isPreloadTranscodeOffsetSeekSupported = false
+    currentPlayable = nil
+    transcodeSeekBaseOffsetInSec = 0
+    isTranscodeSeekRestartInFlight = false
+    seekRestartResumePlayback = nil
     restartPlayer()
     eventLogger.report(topic: "Player Status", error: error)
     responder?.notifyErrorOccurred(error: error)
@@ -590,9 +620,20 @@ class BackendAudioPlayer: NSObject {
   }
 
   /// false while the playing entry does not support seeking (Ogg Vorbis
-  /// streams, live radio) — engine-side seeks on those silently no-op
+  /// streams, live radio) — engine-side seeks on those silently no-op.
+  /// A transcoded stream stays seekable by restarting it at the target
+  /// offset when the backend advertises `transcodeOffset` (G17).
   var isSeekable: Bool {
-    player?.isSeekable ?? true
+    guard let player, !player.isSeekable else { return true }
+    return isActiveStreamTranscoded && isTranscodeOffsetSeekSupported
+  }
+
+  /// true while the playing entry is a server-transcoded stream —
+  /// byte offsets do not map to time in transcode output, so an engine
+  /// seek is meaningless regardless of reported seekability (G17)
+  private var isActiveStreamTranscoded: Bool {
+    playType == .stream &&
+      activeTranscodingFormat != nil && activeTranscodingFormat != .raw
   }
 
   /// skip-silence (G26) — `SkipSilenceService` drives this: a temporary
@@ -615,6 +656,16 @@ class BackendAudioPlayer: NSObject {
   }
 
   func seek(toSecond: Double) {
+    if isActiveStreamTranscoded, isTranscodeOffsetSeekSupported,
+       currentPlayUrl != "" || isTranscodeSeekRestartInFlight ||
+       currentPreparedUrl != "" {
+      // G17 — a transcoded stream cannot be byte-seeked; restart it at
+      // the target offset instead (server-side `transcodeOffset`)
+      Task { @MainActor in
+        await self.restartTranscodedStreamForSeek(toSecond: toSecond)
+      }
+      return
+    }
     if currentPlayUrl != "", let player, !player.isSeekable {
       os_log(.default, "Seek ignored: current entry is not seekable")
       return
@@ -630,6 +681,57 @@ class BackendAudioPlayer: NSObject {
     } else {
       seekTimeWhenStarted = toSecond
     }
+  }
+
+  /// G17 — seek inside a transcoded stream: the stream is restarted at
+  /// `timeOffset` (OpenSubsonic `transcodeOffset`); progress reporting
+  /// keeps its absolute base via `transcodeSeekBaseOffsetInSec`. This
+  /// is a seek, not a track change: no `playedSong` statistics and no
+  /// `notifyItemPreparationFinished`, so scrobble/now-playing do not
+  /// see a second start event.
+  private func restartTranscodedStreamForSeek(toSecond: Double) async {
+    guard let playable = currentPlayable, !playable.isRadio,
+          let accountInfo = playable.account?.info
+    else { return }
+    let backendApi = getBackendApiCB(accountInfo)
+    // rebuild the URL with the parameters of the ACTIVE stream — a
+    // settings change mid-play must not silently re-encode this entry
+    let streamingMaxBitrate = activeStreamingBitrate ??
+      streamingMaxBitrates.getActive(networkMonitor: networkMonitor)
+    let streamingTranscodingFormat = activeTranscodingFormat ??
+      streamingTranscodings.getActive(networkMonitor: networkMonitor)
+    // negative offsets (skipBackward below zero) clamp to track start
+    let targetSecond = max(0, toSecond)
+    let url: URL
+    do {
+      url = try await backendApi.generateUrl(
+        forStreamingPlayable: playable.info,
+        maxBitrate: streamingMaxBitrate,
+        formatPreference: streamingTranscodingFormat,
+        timeOffset: Int(targetSecond)
+      )
+    } catch {
+      eventLogger.report(topic: "Player", error: error)
+      return
+    }
+    // the queue may have advanced while the URL was rebuilt (track
+    // finished, manual skip) — the restart must not resurrect it
+    guard currentPlayable == playable, isActiveStreamTranscoded else { return }
+    // the queued preload belongs to the old stream position — same
+    // invalidation as a queue mutation
+    abortCrossfade()
+    invalidatePreloadedNext()
+    seekRestartResumePlayback = isPlaying
+    isTranscodeSeekRestartInFlight = true
+    transcodeSeekBaseOffsetInSec = targetSecond
+    // the superseded entry's finish callback must not advance the queue
+    currentPlayUrl = ""
+    insert(
+      playable: playable,
+      withUrl: url,
+      queueType: .play,
+      httpHeaders: backendApi.httpHeaders
+    )
   }
 
   private func restartPlayer() {
@@ -739,6 +841,12 @@ class BackendAudioPlayer: NSObject {
       perloadedStreamingBitrate = nil
       activeTranscodingFormat = preloadTranscodingFormat
       preloadTranscodingFormat = nil
+      isTranscodeOffsetSeekSupported = isPreloadTranscodeOffsetSeekSupported
+      isPreloadTranscodeOffsetSeekSupported = false
+      currentPlayable = playable
+      transcodeSeekBaseOffsetInSec = 0
+      isTranscodeSeekRestartInFlight = false
+      seekRestartResumePlayback = nil
       isPreviousPlaylableFinshed = false
       if isCrossfading {
         // G3 — the incoming track already renders on the spare engine;
@@ -765,6 +873,12 @@ class BackendAudioPlayer: NSObject {
       perloadedStreamingBitrate = nil
       activeTranscodingFormat = nil
       preloadTranscodingFormat = nil
+      isTranscodeOffsetSeekSupported = false
+      isPreloadTranscodeOffsetSeekSupported = false
+      currentPlayable = playable
+      transcodeSeekBaseOffsetInSec = 0
+      isTranscodeSeekRestartInFlight = false
+      seekRestartResumePlayback = nil
       guard playable.isPlayableOniOS else {
         reactToIncompatibleContentType(
           contentType: playable.fileContentType ?? "",
@@ -787,6 +901,12 @@ class BackendAudioPlayer: NSObject {
       perloadedStreamingBitrate = nil
       activeTranscodingFormat = nil
       preloadTranscodingFormat = nil
+      isTranscodeOffsetSeekSupported = false
+      isPreloadTranscodeOffsetSeekSupported = false
+      currentPlayable = playable
+      transcodeSeekBaseOffsetInSec = 0
+      isTranscodeSeekRestartInFlight = false
+      seekRestartResumePlayback = nil
       guard playable.isPlayableOniOS || streamingTranscodings
         .isTranscodingActive(networkMonitor: networkMonitor) else {
         reactToIncompatibleContentType(
@@ -865,6 +985,12 @@ class BackendAudioPlayer: NSObject {
     perloadedStreamingBitrate = nil
     activeTranscodingFormat = nil
     preloadTranscodingFormat = nil
+    isTranscodeOffsetSeekSupported = false
+    isPreloadTranscodeOffsetSeekSupported = false
+    currentPlayable = nil
+    transcodeSeekBaseOffsetInSec = 0
+    isTranscodeSeekRestartInFlight = false
+    seekRestartResumePlayback = nil
     seekTimeWhenStarted = nil
     isPlaying = false
     playType = nil
@@ -912,8 +1038,10 @@ class BackendAudioPlayer: NSObject {
         if queueType == .play {
           playType = .stream
           perloadedPlayType = nil
+          isTranscodeOffsetSeekSupported = false
         } else {
           perloadedPlayType = .stream
+          isPreloadTranscodeOffsetSeekSupported = false
         }
         return streamUrl
       } else {
@@ -924,6 +1052,7 @@ class BackendAudioPlayer: NSObject {
           perloadedStreamingBitrate = nil
           activeTranscodingFormat = streamingTranscodingFormat
           preloadTranscodingFormat = nil
+          isPreloadTranscodeOffsetSeekSupported = false
         } else {
           perloadedPlayType = .stream
           perloadedStreamingBitrate = streamingMaxBitrate
@@ -934,6 +1063,15 @@ class BackendAudioPlayer: NSObject {
         }
         let backendApi = getBackendApiCB(accountInfo)
         httpHeaders = backendApi.httpHeaders
+        // G17 — cache the backend's offset-seek capability alongside
+        // the bitrate/transcoding bookkeeping so a later seek knows
+        // whether a stream restart can serve it
+        let isOffsetSeekSupported = await backendApi.isTranscodeOffsetSeekSupported()
+        if queueType == .play {
+          isTranscodeOffsetSeekSupported = isOffsetSeekSupported
+        } else {
+          isPreloadTranscodeOffsetSeekSupported = isOffsetSeekSupported
+        }
         return try await backendApi.generateUrl(
           forStreamingPlayable: playable.info,
           maxBitrate: streamingMaxBitrate,
@@ -1165,7 +1303,13 @@ extension BackendAudioPlayer: AudioStreaming.AudioPlayerDelegate {
 
       currentPreparedUrl = ""
       currentPlayUrl = url
-      if shouldPlaybackStart {
+      isTranscodeSeekRestartInFlight = false
+      // a transcode-offset seek restart keeps the pre-restart play
+      // state — a paused player stays paused instead of following the
+      // regular `shouldPlaybackStart` resume (G17)
+      let shouldResume = seekRestartResumePlayback ?? shouldPlaybackStart
+      seekRestartResumePlayback = nil
+      if shouldResume {
         continuePlay()
         audioAnalyzer.play()
       } else {
