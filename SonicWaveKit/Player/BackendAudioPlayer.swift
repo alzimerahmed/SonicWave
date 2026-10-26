@@ -98,6 +98,12 @@ class BackendAudioPlayer: NSObject {
   private var currentPlayUrl: String = ""
   private var nextPreloadedPlayable: AbstractPlayable?
   private var nextPreloadedUrl: String = ""
+  /// a stream preload was resolved but its async `insertStreamPlayable`
+  /// (generateUrl may re-authenticate) has not queued the entry yet —
+  /// `nextPreloadedPlayable` is only assigned once the insert completes so
+  /// an early `playNext` takes the normal branch instead of adopting a
+  /// not-yet-queued entry
+  private var isPreloadInsertPending = false
   private var isPreviousPlaylableFinshed = true
   private var isAutoStartPlayback = true
   private var seekTimeWhenStarted: Double?
@@ -250,26 +256,30 @@ class BackendAudioPlayer: NSObject {
 
   private func checkForPreloadNextPlayerItem() {
     guard isAutoStartPlayback else { return }
-    if nextPreloadedPlayable == nil, elapsedTime.isFinite, elapsedTime > 0, duration.isFinite,
-       duration > 0 {
+    if nextPreloadedPlayable == nil, !isPreloadInsertPending, elapsedTime.isFinite,
+       elapsedTime > 0, duration.isFinite, duration > 0 {
       let remainingTime = duration - elapsedTime
       if remainingTime > 0, remainingTime < 10 {
-        nextPreloadedPlayable = nextPlayablePreloadCB?()
-        guard let nextPreloadedPlayable = nextPreloadedPlayable else { return }
-        os_log(.default, "Preloading: %s", nextPreloadedPlayable.displayString)
-        if nextPreloadedPlayable.isCached {
-          insertCachedPlayable(playable: nextPreloadedPlayable, queueType: .queue)
-        } else if !isOfflineMode {
+        guard let nextPlayable = nextPlayablePreloadCB?() else { return }
+        os_log(.default, "Preloading: %s", nextPlayable.displayString)
+        if nextPlayable.isCached,
+           cacheProxy.getFileURL(forPlayable: nextPlayable) != nil {
+          insertCachedPlayable(playable: nextPlayable, queueType: .queue)
+          nextPreloadedPlayable = nextPlayable
+        } else if !isOfflineMode, !nextPlayable.isCached {
+          isPreloadInsertPending = true
           Task { @MainActor in
             do {
-              try await insertStreamPlayable(playable: nextPreloadedPlayable, queueType: .queue)
-              if self.isAutoCachePlayedItems, nextPreloadedPlayable.isDownloadAvailable,
-                 let accountInfo = nextPreloadedPlayable.account?.info {
+              try await insertStreamPlayable(playable: nextPlayable, queueType: .queue)
+              self.isPreloadInsertPending = false
+              self.nextPreloadedPlayable = nextPlayable
+              if self.isAutoCachePlayedItems, nextPlayable.isDownloadAvailable,
+                 let accountInfo = nextPlayable.account?.info {
                 self.getPlayableDownloaderCB(accountInfo)
-                  .download(object: nextPreloadedPlayable, asTier: .cache)
+                  .download(object: nextPlayable, asTier: .cache)
               }
             } catch {
-              self.nextPreloadedPlayable = nil
+              self.isPreloadInsertPending = false
               self.eventLogger.report(topic: "Player", error: error)
             }
           }
@@ -510,6 +520,7 @@ class BackendAudioPlayer: NSObject {
     currentPlayUrl = ""
     nextPreloadedPlayable = nil
     nextPreloadedUrl = ""
+    isPreloadInsertPending = false
     playType = nil
     perloadedPlayType = nil
     activeStreamingBitrate = nil
