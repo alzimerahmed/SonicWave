@@ -23,6 +23,60 @@ import Combine
 import Foundation
 import os.log
 
+// MARK: - SkipSilenceDecider
+
+/// Pure decision core of `SkipSilenceService` — extracted so the
+/// silence→boost state machine is unit-testable without a running
+/// engine or a live `AudioAnalyzer` feed (G26).
+struct SkipSilenceDecider {
+  /// linear RMS below ≈ -40 dBFS counts as silence
+  static let rmsThreshold: Float = 0.01
+  /// boost only after a sustained silence — shorter gaps are speech rhythm
+  static let minSilenceDurationInSec: TimeInterval = 0.4
+
+  /// the engagement gate: podcast mode only — quiet intros/interludes
+  /// are part of music and must never be boosted through
+  static func isEngagementAllowed(
+    isEnabled: Bool,
+    playerMode: PlayerMode,
+    isPlaying: Bool
+  ) -> Bool {
+    isEnabled && playerMode == .podcast && isPlaying
+  }
+
+  /// uptime when the level first dipped below threshold — the boost
+  /// only engages after a sustained silence
+  private(set) var silenceBeganUptime: TimeInterval?
+  /// true once a sustained silence latched the boost on — stays
+  /// latched until the first non-silent buffer or a `reset`
+  private(set) var isBoosting = false
+
+  /// feed one RMS sample taken at `uptime`; returns the boost state —
+  /// a change versus the previous call means the engine rate must be
+  /// rewritten
+  @discardableResult
+  mutating func process(rms: Float, at uptime: TimeInterval) -> Bool {
+    if rms < Self.rmsThreshold {
+      if silenceBeganUptime == nil {
+        silenceBeganUptime = uptime
+      } else if !isBoosting,
+                uptime - silenceBeganUptime! >= Self.minSilenceDurationInSec {
+        isBoosting = true
+      }
+    } else {
+      silenceBeganUptime = nil
+      isBoosting = false
+    }
+    return isBoosting
+  }
+
+  /// track change / disengage — drop the boost latch and the silence clock
+  mutating func reset() {
+    silenceBeganUptime = nil
+    isBoosting = false
+  }
+}
+
 // MARK: - SkipSilenceService
 
 /// Skip-silence (G26): speeds through silent stretches of podcast
@@ -30,9 +84,9 @@ import os.log
 ///
 /// The service observes `AudioAnalyzer.rms` — a linear RMS amplitude
 /// published by the FFT tap that already feeds the visualizers and
-/// `MusicHapticsService`. When the level stays below
-/// `silenceRmsThreshold` (≈ -40 dBFS) for at least
-/// `silenceMinDurationInSec`, the backend boosts the engine rate to
+/// `MusicHapticsService`. `SkipSilenceDecider` owns the state machine:
+/// when the level stays below `rmsThreshold` (≈ -40 dBFS) for at least
+/// `minSilenceDurationInSec`, the backend boosts the engine rate to
 /// `min(userRate * 3, 4.0)`; the first non-silent buffer restores the
 /// user's configured rate.
 ///
@@ -67,14 +121,8 @@ public final class SkipSilenceService: ObservableObject {
   private let settings: AmperfySettings
   private var rmsCancellable: AnyCancellable?
   private var isEngaged = false
-  /// uptime when the level first dipped below threshold — the boost only
-  /// engages after a sustained silence so brief pauses in speech are kept
-  private var silenceBeganUptime: TimeInterval?
-
-  /// linear RMS below ≈ -40 dBFS counts as silence
-  private static let silenceRmsThreshold: Float = 0.01
-  /// boost only after a sustained silence — shorter gaps are speech rhythm
-  private static let silenceMinDurationInSec: TimeInterval = 0.4
+  /// the silence→boost state machine — `isBoosting` mirrors its latch
+  private var decider = SkipSilenceDecider()
 
   init(
     player: PlayerFacade,
@@ -87,9 +135,11 @@ public final class SkipSilenceService: ObservableObject {
   }
 
   private func reevaluateEngagement() {
-    let shouldEngage = settings.user.isSkipSilenceEnabled &&
-      player.playerMode == .podcast &&
-      player.isPlaying
+    let shouldEngage = SkipSilenceDecider.isEngagementAllowed(
+      isEnabled: settings.user.isSkipSilenceEnabled,
+      playerMode: player.playerMode,
+      isPlaying: player.isPlaying
+    )
     if shouldEngage, !isEngaged {
       engage()
     } else if !shouldEngage, isEngaged {
@@ -99,7 +149,7 @@ public final class SkipSilenceService: ObservableObject {
 
   private func engage() {
     isEngaged = true
-    silenceBeganUptime = nil
+    decider.reset()
     audioAnalyzer.requestActivation(for: .skipSilence)
     rmsCancellable = audioAnalyzer.$rms.sink { [weak self] rms in
       Task { @MainActor in
@@ -113,31 +163,27 @@ public final class SkipSilenceService: ObservableObject {
     rmsCancellable = nil
     audioAnalyzer.releaseActivation(for: .skipSilence)
     isEngaged = false
-    silenceBeganUptime = nil
     restoreRateIfNeeded()
+    decider.reset()
   }
 
   private func processRms(_ rms: Float) {
     guard isEngaged else { return }
-    let now = ProcessInfo.processInfo.systemUptime
-    if rms < Self.silenceRmsThreshold {
-      if silenceBeganUptime == nil {
-        silenceBeganUptime = now
-      } else if !isBoosting,
-                now - silenceBeganUptime! >= Self.silenceMinDurationInSec {
-        os_log(
-          "skip-silence boost engaged (base rate %.2fx)",
-          log: self.log,
-          type: .debug,
-          player.playbackRate.asDouble
-        )
-        player.setSkipSilenceBoost(isActive: true)
-        isBoosting = true
-      }
-    } else {
-      silenceBeganUptime = nil
-      restoreRateIfNeeded()
+    let shouldBoost = decider.process(
+      rms: rms,
+      at: ProcessInfo.processInfo.systemUptime
+    )
+    guard shouldBoost != isBoosting else { return }
+    if shouldBoost {
+      os_log(
+        "skip-silence boost engaged (base rate %.2fx)",
+        log: self.log,
+        type: .debug,
+        player.playbackRate.asDouble
+      )
     }
+    player.setSkipSilenceBoost(isActive: shouldBoost)
+    isBoosting = shouldBoost
   }
 
   private func restoreRateIfNeeded() {

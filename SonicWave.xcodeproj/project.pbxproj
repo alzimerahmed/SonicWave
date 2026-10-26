@@ -78,6 +78,7 @@
 		7E8D2D010000000000000004 /* AutoEqProfileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E8D2D010000000000000003 /* AutoEqProfileStore.swift */; };
 		7E8D2D010000000000000006 /* AutoEqProfiles.json in Resources */ = {isa = PBXBuildFile; fileRef = 7E8D2D010000000000000005 /* AutoEqProfiles.json */; };
 		7E8D2D010000000000000008 /* ParametricEQTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E8D2D010000000000000007 /* ParametricEQTest.swift */; };
+		7E8D2E010000000000000002 /* SkipSilenceServiceTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E8D2E010000000000000001 /* SkipSilenceServiceTest.swift */; };
 		7E8D2B010000000000000006 /* SyncedLyricsTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E8D2B010000000000000005 /* SyncedLyricsTracker.swift */; };
 		7E8D2B010000000000000008 /* AlbumShuffleTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E8D2B010000000000000007 /* AlbumShuffleTest.swift */; };
 		7E8D2B01000000000000000A /* SyncedLyricsTrackerTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E8D2B010000000000000009 /* SyncedLyricsTrackerTest.swift */; };
@@ -840,6 +841,7 @@
 		7E8D2D010000000000000003 /* AutoEqProfileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoEqProfileStore.swift; sourceTree = "<group>"; };
 		7E8D2D010000000000000005 /* AutoEqProfiles.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = AutoEqProfiles.json; sourceTree = "<group>"; };
 		7E8D2D010000000000000007 /* ParametricEQTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParametricEQTest.swift; sourceTree = "<group>"; };
+		7E8D2E010000000000000001 /* SkipSilenceServiceTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkipSilenceServiceTest.swift; sourceTree = "<group>"; };
 		7E8D2B010000000000000005 /* SyncedLyricsTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncedLyricsTracker.swift; sourceTree = "<group>"; };
 		7E8D2B010000000000000007 /* AlbumShuffleTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumShuffleTest.swift; sourceTree = "<group>"; };
 		7E8D2B010000000000000009 /* SyncedLyricsTrackerTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncedLyricsTrackerTest.swift; sourceTree = "<group>"; };
@@ -1858,6 +1860,7 @@
 				6AC5D101000000000000000B /* PlayQueueSyncPolicyTest.swift */,
 				7E8D2B010000000000000008 /* AlbumShuffleTest.swift */,
 				7E8D2D010000000000000007 /* ParametricEQTest.swift */,
+				7E8D2E010000000000000001 /* SkipSilenceServiceTest.swift */,
 			);
 			path = Player;
 			sourceTree = "<group>";
@@ -3394,6 +3397,7 @@
 				7E8D2B010000000000000008 /* AlbumShuffleTest.swift in Sources */,
 				7E8D2B01000000000000000A /* SyncedLyricsTrackerTest.swift in Sources */,
 				7E8D2D010000000000000008 /* ParametricEQTest.swift in Sources */,
+				7E8D2E010000000000000002 /* SkipSilenceServiceTest.swift in Sources */,
 				8D15C801000000000000000018 /* SsDiscoveryParserTest.swift in Sources */,
 				8D15C801000000000000000020 /* DiscoveryTest.swift in Sources */,
 			);
