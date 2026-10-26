@@ -454,6 +454,8 @@ class PlayerFacadeImpl: PlayerFacade {
     // flipping the song-level shuffle in either direction ends an album
     // radio session — album order in the queue is no longer guaranteed
     musicPlayer.albumShuffleHandler.reset()
+    // a reshuffle re-picks the next track — any queued preload is stale
+    backendAudioPlayer.invalidatePreloadedNext()
     musicPlayer.notifyShuffleUpdated()
     musicPlayer.notifyPlaylistUpdated()
   }
@@ -474,6 +476,9 @@ class PlayerFacadeImpl: PlayerFacade {
 
   func setRepeatMode(_ newValue: RepeatMode) {
     playerStatus.setRepeatMode(newValue)
+    // the repeat mode decides what "next" is — a preload resolved under
+    // the old mode (or none, under .single) is stale
+    backendAudioPlayer.invalidatePreloadedNext()
     musicPlayer.notifyRepeatUpdated()
   }
 
@@ -484,7 +489,12 @@ class PlayerFacadeImpl: PlayerFacade {
 
   var isShouldPauseAfterFinishedPlaying: Bool {
     get { musicPlayer.isShouldPauseAfterFinishedPlaying }
-    set { musicPlayer.isShouldPauseAfterFinishedPlaying = newValue }
+    set {
+      musicPlayer.isShouldPauseAfterFinishedPlaying = newValue
+      // a preload resolved before the sleep-timer flag went on would
+      // auto-advance past it — refuse its adoption
+      backendAudioPlayer.invalidatePreloadedNext()
+    }
   }
 
   var isAutoCachePlayedItems: Bool {
@@ -556,43 +566,55 @@ class PlayerFacadeImpl: PlayerFacade {
     }
   }
 
+  // every next-affecting queue mutation marks a queued preload stale —
+  // the engine cannot dequeue mid-entry, but `removeFromQueue` drops the
+  // still-pending entry before the boundary can adopt it
+
   func insertContextQueue(playables: [AbstractPlayable]) {
     queueHandler.insertContextQueue(playables: playables)
+    backendAudioPlayer.invalidatePreloadedNext()
     musicPlayer.notifyPlaylistUpdated()
   }
 
   func appendContextQueue(playables: [AbstractPlayable]) {
     queueHandler.appendContextQueue(playables: playables)
+    backendAudioPlayer.invalidatePreloadedNext()
     musicPlayer.notifyPlaylistUpdated()
   }
 
   func insertUserQueue(playables: [AbstractPlayable]) {
     queueHandler.insertUserQueue(playables: playables)
+    backendAudioPlayer.invalidatePreloadedNext()
     musicPlayer.notifyPlaylistUpdated()
   }
 
   func appendUserQueue(playables: [AbstractPlayable]) {
     queueHandler.appendUserQueue(playables: playables)
+    backendAudioPlayer.invalidatePreloadedNext()
     musicPlayer.notifyPlaylistUpdated()
   }
 
   func insertPodcastQueue(playables: [AbstractPlayable]) {
     queueHandler.insertPodcastQueue(playables: playables)
+    backendAudioPlayer.invalidatePreloadedNext()
     musicPlayer.notifyPlaylistUpdated()
   }
 
   func appendPodcastQueue(playables: [AbstractPlayable]) {
     queueHandler.appendPodcastQueue(playables: playables)
+    backendAudioPlayer.invalidatePreloadedNext()
     musicPlayer.notifyPlaylistUpdated()
   }
 
   func removePlayable(at: PlayerIndex) {
     queueHandler.removePlayable(at: at)
+    backendAudioPlayer.invalidatePreloadedNext()
     musicPlayer.invalidateAlbumPlaythroughCache()
   }
 
   func movePlayable(from: PlayerIndex, to: PlayerIndex) {
     queueHandler.movePlayable(from: from, to: to)
+    backendAudioPlayer.invalidatePreloadedNext()
     // a reorder can change the contiguous album run without touching
     // the cache key's counts — drop the verdict explicitly
     musicPlayer.invalidateAlbumPlaythroughCache()
@@ -600,10 +622,12 @@ class PlayerFacadeImpl: PlayerFacade {
 
   func clearUserQueue() {
     queueHandler.clearUserQueue()
+    backendAudioPlayer.invalidatePreloadedNext()
   }
 
   func clearContextQueue() {
     musicPlayer.albumShuffleHandler.reset()
+    backendAudioPlayer.invalidatePreloadedNext()
     if !queueHandler.isUserQueuePlaying {
       if queueHandler.userQueueCount == 0 {
         musicPlayer.stop()

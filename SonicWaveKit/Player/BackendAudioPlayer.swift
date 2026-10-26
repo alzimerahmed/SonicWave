@@ -104,6 +104,10 @@ class BackendAudioPlayer: NSObject {
   /// an early `playNext` takes the normal branch instead of adopting a
   /// not-yet-queued entry
   private var isPreloadInsertPending = false
+  /// set by every queue mutation that can change which playable is next —
+  /// a queued preload goes stale the moment the queue it was resolved
+  /// from is mutated, so adoption must be refused
+  private var isPreloadedNextStale = false
   private var isPreviousPlaylableFinshed = true
   private var isAutoStartPlayback = true
   private var seekTimeWhenStarted: Double?
@@ -261,6 +265,7 @@ class BackendAudioPlayer: NSObject {
       let remainingTime = duration - elapsedTime
       if remainingTime > 0, remainingTime < 10 {
         guard let nextPlayable = nextPlayablePreloadCB?() else { return }
+        isPreloadedNextStale = false
         os_log(.default, "Preloading: %s", nextPlayable.displayString)
         if nextPlayable.isCached,
            cacheProxy.getFileURL(forPlayable: nextPlayable) != nil {
@@ -272,7 +277,14 @@ class BackendAudioPlayer: NSObject {
             do {
               try await insertStreamPlayable(playable: nextPlayable, queueType: .queue)
               self.isPreloadInsertPending = false
-              self.nextPreloadedPlayable = nextPlayable
+              if self.isPreloadedNextStale {
+                // the queue mutated during the async insert — the just-
+                // queued entry is already stale; drop it from the engine
+                // queue instead of adopting it at the boundary
+                self.invalidatePreloadedNext()
+              } else {
+                self.nextPreloadedPlayable = nextPlayable
+              }
               if self.isAutoCachePlayedItems, nextPlayable.isDownloadAvailable,
                  let accountInfo = nextPlayable.account?.info {
                 self.getPlayableDownloaderCB(accountInfo)
@@ -308,6 +320,7 @@ class BackendAudioPlayer: NSObject {
     pause()
     nextPreloadedPlayable = nil
     nextPreloadedUrl = ""
+    isPreloadedNextStale = true
     isPreviousPlaylableFinshed = true
     activeStreamingBitrate = nil
     perloadedStreamingBitrate = nil
@@ -407,8 +420,25 @@ class BackendAudioPlayer: NSObject {
     handleRequest(playable: playable)
   }
 
+  /// G-1a — the engine queue may still hold a preloaded entry that went
+  /// stale (queue mutation, sleep-timer toggle, repeat-mode flip). Drop
+  /// the engine-side entry via `removeFromQueue` and refuse adoption.
+  /// `removeFromQueue` also stops playback when the entry is already the
+  /// playing one, so it is skipped while the preloaded URL is still the
+  /// playing URL (repeat-single queues the same URL).
+  func invalidatePreloadedNext() {
+    isPreloadedNextStale = true
+    if !nextPreloadedUrl.isEmpty, nextPreloadedUrl != currentPlayUrl,
+       let url = URL(string: nextPreloadedUrl) {
+      player?.removeFromQueue(url: url)
+    }
+    nextPreloadedPlayable = nil
+    nextPreloadedUrl = ""
+  }
+
   private func handleRequest(playable: AbstractPlayable) {
-    if isPreviousPlaylableFinshed, let nextPreloadedPlayable = nextPreloadedPlayable,
+    if isPreviousPlaylableFinshed, !isPreloadedNextStale,
+       let nextPreloadedPlayable = nextPreloadedPlayable,
        nextPreloadedPlayable == playable {
       // Do nothing next preloaded playable has already been queued to player
       os_log(.default, "Play Preloaded: %s", nextPreloadedPlayable.displayString)
@@ -428,9 +458,9 @@ class BackendAudioPlayer: NSObject {
       responder?.notifyItemPreparationFinished()
     } else if let relFilePath = playable.relFilePath,
               fileManager.fileExits(relFilePath: relFilePath) {
+      // any still-queued preload is superseded by this explicit request
+      invalidatePreloadedNext()
       currentPlayUrl = ""
-      nextPreloadedPlayable = nil
-      nextPreloadedUrl = ""
       activeStreamingBitrate = nil
       perloadedStreamingBitrate = nil
       activeTranscodingFormat = nil
@@ -448,9 +478,9 @@ class BackendAudioPlayer: NSObject {
       isPlaying = shouldPlaybackStart
       responder?.notifyItemPreparationFinished()
     } else if !isOfflineMode {
+      // any still-queued preload is superseded by this explicit request
+      invalidatePreloadedNext()
       currentPlayUrl = ""
-      nextPreloadedPlayable = nil
-      nextPreloadedUrl = ""
       activeStreamingBitrate = nil
       perloadedStreamingBitrate = nil
       activeTranscodingFormat = nil
@@ -525,6 +555,7 @@ class BackendAudioPlayer: NSObject {
     nextPreloadedPlayable = nil
     nextPreloadedUrl = ""
     isPreloadInsertPending = false
+    isPreloadedNextStale = true
     playType = nil
     perloadedPlayType = nil
     activeStreamingBitrate = nil
