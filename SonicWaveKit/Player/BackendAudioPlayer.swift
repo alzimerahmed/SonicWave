@@ -195,6 +195,14 @@ class BackendAudioPlayer: NSObject {
   /// G22 — the active parametric profile; nil → the legacy
   /// `currentEqualizerSetting` graphic curve applies instead
   private var currentParametricEQSetting: ParametricEQSetting?
+  /// G22 — resolved per-output overrides (routeKey → profile), pushed
+  /// in already-resolved form by the facade — the engine never sees
+  /// the persisted name map
+  private var routeEqualizerOverrides: [String: EqualizerProfile] = [:]
+  /// G22 — stable identity (portType:uid) of the output the route
+  /// currently feeds — published by `AudioSessionHandler`; nil until
+  /// the audio session reports a route
+  private(set) var currentOutputRouteKey: String?
 
   public var isOfflineMode: Bool = false
   public var isAutoCachePlayedItems: Bool = true
@@ -308,6 +316,7 @@ class BackendAudioPlayer: NSObject {
 
     super.init()
 
+    currentOutputRouteKey = audioSessionHandler.currentRouteKey
     initAudioStreamingPlayerAndNodes()
   }
 
@@ -1206,9 +1215,33 @@ class BackendAudioPlayer: NSObject {
     applyEqualizerToActiveContent()
   }
 
-  /// the profile the engines should currently run: an active
-  /// parametric profile wins, else the legacy graphic setting
+  /// G22 — resolved per-route overrides, pushed in by the facade.
+  /// Re-applies immediately: a route-keyed profile with a different
+  /// band count rebuilds the engines' EQ nodes mid-stream, which can
+  /// click briefly — accepted, changing the route map is deliberate.
+  func updateRouteEqualizerOverrides(_ overrides: [String: EqualizerProfile]) {
+    routeEqualizerOverrides = overrides
+    applyEqualizerToActiveContent()
+  }
+
+  /// G22 — output identity published by `AudioSessionHandler` on every
+  /// route change; a changed key re-evaluates the per-route override
+  /// mid-play (same node-swap caveat as `updateRouteEqualizerOverrides`)
+  func updateOutputRoute(key: String?) {
+    guard key != currentOutputRouteKey else { return }
+    currentOutputRouteKey = key
+    os_log(.debug, "Audio output route changed to %s", key ?? "unknown")
+    applyEqualizerToActiveContent()
+  }
+
+  /// the profile the engines should currently run: a per-route
+  /// override wins, then an active parametric profile, else the
+  /// legacy graphic setting
   private var effectiveEqualizerProfile: EqualizerProfile {
+    if let currentOutputRouteKey,
+       let override = routeEqualizerOverrides[currentOutputRouteKey] {
+      return override
+    }
     if let currentParametricEQSetting {
       return .parametric(currentParametricEQSetting)
     }

@@ -101,6 +101,9 @@ final class Settings: ObservableObject {
   var activeParametricEqualizerSetting: ParametricEQSetting?
   @Published
   var parametricEqualizerSettings: [ParametricEQSetting] = []
+  /// per-output routing (G22): routeKey → profile name
+  @Published
+  var routeEqualizerProfileNames: [String: String] = [:]
 
   @Published
   var isReplayGainEnabled = true

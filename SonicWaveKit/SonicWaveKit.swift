@@ -205,6 +205,11 @@ public class AmperKit {
     playerAudioSessionHandler!.musicPlayer = curPlayer
     playerAudioSessionHandler!.eventLogger = eventLogger
     playerAudioSessionHandler!.configureObserverForAudioSessionInterruption()
+    // G22 — feed output-identity changes to the engine so per-route EQ
+    // overrides re-apply mid-play
+    playerAudioSessionHandler!.outputRouteChangeCB = { [weak backendAudioPlayer] routeKey in
+      backendAudioPlayer?.updateOutputRoute(key: routeKey)
+    }
     backendAudioPlayer.triggerReinsertPlayableCB = curPlayer.play
     curPlayer.autoplayCB = { [weak self] song in
       guard let self, let accountInfo = song.account?.info else { return [] }
@@ -246,6 +251,8 @@ public class AmperKit {
     backendAudioPlayer.crossfadeDurationInSec = Double(
       storage.settings.user.crossfadeDurationSeconds
     )
+    // G22 — restore persisted per-output EQ overrides
+    facadeImpl.reapplyRouteEqualizerOverrides()
 
     playerNowPlayingInfoCenterHandler = NowPlayingInfoCenterHandler(
       musicPlayer: curPlayer,

@@ -275,6 +275,39 @@ public struct UserSettings: Sendable, Codable {
     set { _parametricEqualizerSettings = newValue }
   }
 
+  /// per-output EQ routing (G22): JSON `[routeKey: profileName]` blob —
+  /// Codable-JSON-in-a-string, the same precedent the legacy
+  /// `LegacySettings` EQ keys established
+  // optional backing to stay decodable for settings stored before this key existed
+  private var _routeEqualizerMapJson: String? = nil
+  public var routeEqualizerMapJson: String? {
+    get { _routeEqualizerMapJson }
+    set { _routeEqualizerMapJson = newValue }
+  }
+
+  /// typed view over `routeEqualizerMapJson` — decode failures and an
+  /// empty map collapse to `[:]`/`nil`, so a corrupt blob can never
+  /// wedge EQ resolution
+  public var routeEqualizerProfileMap: [String: String] {
+    get {
+      guard let json = _routeEqualizerMapJson,
+            let data = json.data(using: .utf8),
+            let map = try? JSONDecoder().decode([String: String].self, from: data)
+      else { return [:] }
+      return map
+    }
+    set {
+      guard !newValue.isEmpty,
+            let data = try? JSONEncoder().encode(newValue),
+            let json = String(data: data, encoding: .utf8)
+      else {
+        _routeEqualizerMapJson = nil
+        return
+      }
+      _routeEqualizerMapJson = json
+    }
+  }
+
   private var _isReplayGainEnabled: Bool = true
   public var isReplayGainEnabled: Bool {
     get { _isReplayGainEnabled }

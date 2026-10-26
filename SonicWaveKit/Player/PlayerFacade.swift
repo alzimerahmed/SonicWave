@@ -255,6 +255,16 @@ public protocol PlayerFacade {
 
   func updateEqualizerEnabled(isEnabled: Bool)
   func updateEqualizerSetting(eqSetting: EqualizerSetting)
+  /// stable identity (portType:uid, G22) of the audio output the route
+  /// currently feeds — the key `setRouteEqualizerProfile` maps profile
+  /// names to; nil while the session reports no route
+  var currentOutputRouteKey: String? { get }
+  /// routeKey → EQ profile name — the persisted per-output overrides
+  var routeEqualizerProfileNames: [String: String] { get }
+  /// sets (non-nil name) or clears (nil) a route's EQ profile override
+  /// and persists the name map; the name resolves against user
+  /// parametric profiles, the AutoEQ bundle, then legacy settings
+  func setRouteEqualizerProfile(_: String?, forRouteKey: String)
   func updateReplayGainEnabled(isEnabled: Bool)
 }
 
@@ -590,6 +600,54 @@ class PlayerFacadeImpl: PlayerFacade {
 
   public func updateEqualizerSetting(eqSetting: EqualizerSetting) {
     backendAudioPlayer.updateEqualizerSetting(eqSetting: eqSetting)
+  }
+
+  var currentOutputRouteKey: String? {
+    backendAudioPlayer.currentOutputRouteKey
+  }
+
+  var routeEqualizerProfileNames: [String: String] {
+    settings.user.routeEqualizerProfileMap
+  }
+
+  func setRouteEqualizerProfile(_ profileName: String?, forRouteKey routeKey: String) {
+    var map = settings.user.routeEqualizerProfileMap
+    if let profileName, !profileName.isEmpty {
+      map[routeKey] = profileName
+    } else {
+      map.removeValue(forKey: routeKey)
+    }
+    settings.user.routeEqualizerProfileMap = map
+    pushRouteEqualizerOverrides(from: map)
+  }
+
+  /// resolves the persisted name map into engine-ready profiles and
+  /// pushes them — called on map changes and once at player creation
+  func reapplyRouteEqualizerOverrides() {
+    pushRouteEqualizerOverrides(from: settings.user.routeEqualizerProfileMap)
+  }
+
+  private func pushRouteEqualizerOverrides(from map: [String: String]) {
+    backendAudioPlayer.updateRouteEqualizerOverrides(
+      map.compactMapValues { resolveEqualizerProfile(named: $0) }
+    )
+  }
+
+  /// names are the route map's stable identity — resolve them against
+  /// user parametric profiles first, then the AutoEQ bundle, then the
+  /// legacy graphic settings; unresolvable names drop out
+  private func resolveEqualizerProfile(named name: String) -> EqualizerProfile? {
+    if let parametric = settings.user.parametricEqualizerSettings
+      .first(where: { $0.name == name }) {
+      return .parametric(parametric)
+    }
+    if let autoEq = AutoEqProfileStore.profiles.first(where: { $0.name == name }) {
+      return .parametric(autoEq)
+    }
+    if let graphic = settings.user.equalizerSettings.first(where: { $0.name == name }) {
+      return .graphic(graphic)
+    }
+    return nil
   }
 
   public func updateReplayGainEnabled(isEnabled: Bool) {

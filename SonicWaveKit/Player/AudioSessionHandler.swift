@@ -28,6 +28,27 @@ public class AudioSessionHandler {
   var musicPlayer: AudioPlayer?
   var eventLogger: EventLogger?
 
+  /// G22 — fired on every route change with the new output's route
+  /// key; the player re-evaluates per-output EQ overrides on it
+  var outputRouteChangeCB: ((String?) -> ())?
+
+  /// G22 — stable key identifying an audio output for per-route EQ:
+  /// port type + port uid (the uid is unique and stable per device,
+  /// unlike `portName` which is localizable presentation text)
+  nonisolated public static func routeKey(
+    for output: AVAudioSessionPortDescription
+  ) -> String {
+    "\(output.portType.rawValue):\(output.uid)"
+  }
+
+  /// the current output's route key — reads `AVAudioSession` directly,
+  /// so it is callable off-actor and before the session is configured
+  /// (the built-in route still reports one)
+  nonisolated public var currentRouteKey: String? {
+    AVAudioSession.sharedInstance().currentRoute.outputs.first
+      .map { Self.routeKey(for: $0) }
+  }
+
   func configureObserverForAudioSessionInterruption() {
     NotificationCenter.default.addObserver(
       self,
@@ -85,6 +106,13 @@ public class AudioSessionHandler {
           let reasonValue = userInfo[AVAudioSessionRouteChangeReasonKey] as? UInt,
           let reason = AVAudioSession.RouteChangeReason(rawValue: reasonValue) else {
       return
+    }
+
+    // G22 — republish the output identity on every route change so
+    // per-output EQ overrides re-apply mid-play
+    let routeKey = currentRouteKey
+    Task { @MainActor in
+      self.outputRouteChangeCB?(routeKey)
     }
 
     switch reason {
