@@ -37,8 +37,7 @@ import Foundation
   /// which is why the app does NOT declare
   /// `NSSupportsLiveActivitiesFrequentUpdates`.
   struct PlaybackActivityAttributes: ActivityAttributes {
-    public struct ContentState: Codable, Hashable, Sendable {
-      public var playableId: String
+    public struct ContentState: Codable, Hashable, Sendable, ElapsedProgress {
       public var title: String
       public var artist: String
       public var album: String
@@ -53,7 +52,6 @@ import Foundation
       public var playbackRate: Double
 
       public init(
-        playableId: String,
         title: String,
         artist: String,
         album: String,
@@ -66,7 +64,6 @@ import Foundation
         duration: Double,
         playbackRate: Double
       ) {
-        self.playableId = playableId
         self.title = title
         self.artist = artist
         self.album = album
@@ -78,26 +75,6 @@ import Foundation
         self.elapsedSeconds = elapsedSeconds
         self.duration = duration
         self.playbackRate = playbackRate
-      }
-
-      /// wall-clock interval covering the whole track, playback-rate aware —
-      /// feeds `ProgressView(timerInterval:)` for zero-update progress
-      var progressTimerInterval: ClosedRange<Date> {
-        let clampedRate = max(playbackRate, 0.01)
-        let start = elapsedAnchor
-          .addingTimeInterval(-elapsedSeconds / clampedRate)
-        let end = elapsedAnchor
-          .addingTimeInterval((duration - elapsedSeconds) / clampedRate)
-        return start ... max(start, end)
-      }
-
-      /// remaining wall-clock interval (for countdown displays) —
-      /// `upperBound` is clamped to `elapsedAnchor` so an elapsed overrun
-      /// (elapsed > duration / clock skew) can't form an inverted
-      /// `ClosedRange`, which traps at runtime
-      var remainingTimerInterval: ClosedRange<Date> {
-        let range = progressTimerInterval
-        return elapsedAnchor ... max(elapsedAnchor, range.upperBound)
       }
     }
 

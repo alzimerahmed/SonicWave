@@ -45,6 +45,20 @@ enum WidgetTheme {
       return .blue
     }
   }
+
+  /// Contrast-safe tint for icon-only interactive glyphs (transport
+  /// buttons). The raw theme colors fail the 3:1 non-text contrast bar
+  /// on the light `WidgetBackground` (#F2F2F7) — .yellow 1.6:1,
+  /// .orange 2.0:1, .green 2.2:1 — so interactive controls fall back to
+  /// `.primary` in light appearance; the dark background (#1C1C1E) is
+  /// fine and keeps the theme accent. Decorative tints keep using
+  /// `color(name:)`.
+  static func interactiveColor(
+    name: String?,
+    for colorScheme: ColorScheme
+  ) -> Color {
+    colorScheme == .light ? .primary : color(name: name)
+  }
 }
 
 // MARK: - WidgetMetrics
@@ -56,6 +70,22 @@ enum WidgetMetrics {
   static let cellGutter: CGFloat = 16
   /// ≥44pt interactive targets (design-system §8.6)
   static let transportTarget: CGFloat = 44
+  /// safety-net timeline refresh while the app is alive — the state's
+  /// `Date` anchors keep progress ticking between publishes
+  static let timelineReloadInterval: TimeInterval = 30 * 60
+  /// artwork edge sizes per surface
+  /// systemMedium Now Playing widget
+  static let artworkMedium: CGFloat = 56
+  /// Live Activity Lock Screen card
+  static let artworkLockScreen: CGFloat = 52
+  /// Dynamic Island expanded region
+  static let artworkIslandExpanded: CGFloat = 48
+  /// systemSmall Now Playing widget + empty states
+  static let artworkSmall: CGFloat = 44
+  /// Recently Played rows + empty state
+  static let artworkRow: CGFloat = 40
+  /// Dynamic Island compact region
+  static let artworkIslandCompact: CGFloat = 20
 }
 
 // MARK: - WidgetArtworkView
@@ -106,14 +136,5 @@ extension WidgetNowPlaying {
       return parts.joined(separator: " — ")
     }
     return contextName
-  }
-
-  /// static "m:ss" for the paused state (timerInterval views handle the
-  /// playing case locally)
-  var remainingTimeDescription: String {
-    let remaining = max(duration - elapsedSeconds, 0)
-    let minutes = Int(remaining) / 60
-    let seconds = Int(remaining) % 60
-    return String(format: "%d:%02d", minutes, seconds)
   }
 }

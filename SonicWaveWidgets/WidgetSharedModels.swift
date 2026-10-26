@@ -70,37 +70,24 @@ enum WidgetLibraryElementType: String, Codable, Sendable {
   }
 }
 
-// MARK: - WidgetNowPlaying
+// MARK: - ElapsedProgress
 
-/// Snapshot of the player's current track. `elapsedAnchor` + `elapsedSeconds`
-/// + `playbackRate` let widget/Live Activity progress views run on
-/// `timerInterval:`/`ProgressView(timerInterval:)` anchors — no per-second
-/// timeline reloads, no `NSSupportsLiveActivitiesFrequentUpdates`.
-struct WidgetNowPlaying: Codable, Sendable {
-  var id: String
-  var libraryElementType: WidgetLibraryElementType
-  var title: String
-  var artist: String
-  var album: String
-  /// file name inside `widget-art/` in the App Group container
-  var artworkFileName: String?
-  var isPlaying: Bool
-  var isCached: Bool
-  /// queue/context name (playlist/album/…), empty for loose queues
-  var contextName: String
-  var elapsedAnchor: Date
-  var elapsedSeconds: Double
-  var duration: Double
-  var playbackRate: Double
-  /// `ThemePreference` lowercased description — app settings are
-  /// app-private, so the theme accent travels inside the state file.
-  var themeName: String
-  var updatedAt: Date
+/// Shared elapsed/duration progress math for `WidgetNowPlaying` and
+/// `PlaybackActivityAttributes.ContentState` — both snapshots carry the
+/// same anchor/seconds/rate fields and were duplicating the interval
+/// math, so it lives here once. All wall-clock interpolation feeds
+/// `ProgressView(timerInterval:)`/`Text(timerInterval:)` anchors so
+/// surfaces tick locally without per-second timeline reloads.
+protocol ElapsedProgress {
+  var isPlaying: Bool { get }
+  var isCached: Bool { get }
+  var elapsedAnchor: Date { get }
+  var elapsedSeconds: Double { get }
+  var duration: Double { get }
+  var playbackRate: Double { get }
+}
 
-  var isRadio: Bool {
-    libraryElementType == .radio
-  }
-
+extension ElapsedProgress {
   /// progress fraction `[0,1]` at an arbitrary instant, rate-aware
   func progressFraction(at date: Date) -> Double {
     guard duration > 0 else { return 0 }
@@ -127,6 +114,70 @@ struct WidgetNowPlaying: Codable, Sendable {
   var remainingTimerInterval: ClosedRange<Date> {
     let range = progressTimerInterval
     return elapsedAnchor ... max(elapsedAnchor, range.upperBound)
+  }
+
+  /// static "m:ss" for the paused state (timerInterval views handle the
+  /// playing case locally)
+  var remainingTimeDescription: String {
+    Self.mmss(duration - elapsedSeconds)
+  }
+
+  /// VoiceOver value for a progress row — folds playing state, position
+  /// and the cached badge into one announcement
+  /// ("Playing, 1:24 of 3:51, downloaded")
+  func progressAccessibilityValue(at date: Date) -> String {
+    var parts = [isPlaying ? "Playing" : "Paused"]
+    if duration > 0 {
+      let rawElapsed = isPlaying
+        ? elapsedSeconds
+          + date.timeIntervalSince(elapsedAnchor) * playbackRate
+        : elapsedSeconds
+      let clampedElapsed = min(max(rawElapsed, 0), duration)
+      parts.append(
+        "\(Self.mmss(clampedElapsed)) of \(Self.mmss(duration))"
+      )
+    }
+    if isCached {
+      parts.append("downloaded")
+    }
+    return parts.joined(separator: ", ")
+  }
+
+  private static func mmss(_ interval: TimeInterval) -> String {
+    let clamped = Int(max(interval, 0))
+    return String(format: "%d:%02d", clamped / 60, clamped % 60)
+  }
+}
+
+// MARK: - WidgetNowPlaying
+
+/// Snapshot of the player's current track. `elapsedAnchor` + `elapsedSeconds`
+/// + `playbackRate` let widget/Live Activity progress views run on
+/// `timerInterval:`/`ProgressView(timerInterval:)` anchors — no per-second
+/// timeline reloads, no `NSSupportsLiveActivitiesFrequentUpdates`.
+struct WidgetNowPlaying: Codable, Sendable, ElapsedProgress {
+  var id: String
+  var libraryElementType: WidgetLibraryElementType
+  var title: String
+  var artist: String
+  var album: String
+  /// file name inside `widget-art/` in the App Group container
+  var artworkFileName: String?
+  var isPlaying: Bool
+  var isCached: Bool
+  /// queue/context name (playlist/album/…), empty for loose queues
+  var contextName: String
+  var elapsedAnchor: Date
+  var elapsedSeconds: Double
+  var duration: Double
+  var playbackRate: Double
+  /// `ThemePreference` lowercased description — app settings are
+  /// app-private, so the theme accent travels inside the state file.
+  var themeName: String
+  var updatedAt: Date
+
+  var isRadio: Bool {
+    libraryElementType == .radio
   }
 }
 

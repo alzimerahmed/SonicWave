@@ -203,7 +203,6 @@ final class LiveActivityManager: MusicPlayable {
     ) -> PlaybackActivityAttributes.ContentState {
       let radioInfo = playable.isRadio ? player.currentRadioNowPlaying : nil
       return PlaybackActivityAttributes.ContentState(
-        playableId: playable.id,
         title: radioInfo?.title ?? playable.title,
         artist: playable.isRadio
           ? (radioInfo?.artist ?? "")

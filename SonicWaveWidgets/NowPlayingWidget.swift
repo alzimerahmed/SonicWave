@@ -52,7 +52,9 @@ struct NowPlayingTimelineProvider: TimelineProvider {
   ) {
     let timeline = Timeline(
       entries: [entry()],
-      policy: .after(Date().addingTimeInterval(30 * 60))
+      policy: .after(
+        Date().addingTimeInterval(WidgetMetrics.timelineReloadInterval)
+      )
     )
     completion(timeline)
   }
@@ -90,10 +92,20 @@ struct NowPlayingWidget: Widget {
 
 struct NowPlayingWidgetView: View {
   @Environment(\.widgetFamily) private var family
+  @Environment(\.colorScheme) private var colorScheme
   let entry: NowPlayingEntry
 
   private var themeColor: Color {
     WidgetTheme.color(name: entry.nowPlaying?.themeName)
+  }
+
+  /// contrast-safe tint for the icon-only transport glyphs — the raw
+  /// theme color fails 3:1 on the light widget background
+  private var transportColor: Color {
+    WidgetTheme.interactiveColor(
+      name: entry.nowPlaying?.themeName,
+      for: colorScheme
+    )
   }
 
   var body: some View {
@@ -120,7 +132,10 @@ struct NowPlayingWidgetView: View {
         fileName: nowPlaying.artworkFileName,
         themeColor: themeColor
       )
-      .frame(width: 56, height: 56)
+      .frame(
+        width: WidgetMetrics.artworkMedium,
+        height: WidgetMetrics.artworkMedium
+      )
       .accessibilityLabel("Artwork for \(nowPlaying.title)")
 
       VStack(alignment: .leading, spacing: 2) {
@@ -173,7 +188,7 @@ struct NowPlayingWidgetView: View {
       .accessibilityElement(children: .ignore)
       .accessibilityLabel("Playback progress")
       .accessibilityValue(
-        nowPlaying.isPlaying ? "Playing" : "Paused"
+        nowPlaying.progressAccessibilityValue(at: entry.date)
       )
     }
   }
@@ -190,7 +205,7 @@ struct NowPlayingWidgetView: View {
           .contentShape(Rectangle())
       }
       .buttonStyle(.plain)
-      .tint(themeColor)
+      .tint(transportColor)
       .accessibilityLabel("Previous track")
 
       Button(intent: TogglePlayPauseWidgetIntent()) {
@@ -205,7 +220,7 @@ struct NowPlayingWidgetView: View {
         .contentShape(Rectangle())
       }
       .buttonStyle(.plain)
-      .tint(themeColor)
+      .tint(transportColor)
       .accessibilityLabel(nowPlaying.isPlaying ? "Pause" : "Play")
 
       Button(intent: NextTrackWidgetIntent()) {
@@ -218,7 +233,7 @@ struct NowPlayingWidgetView: View {
           .contentShape(Rectangle())
       }
       .buttonStyle(.plain)
-      .tint(themeColor)
+      .tint(transportColor)
       .accessibilityLabel("Next track")
     }
   }
@@ -232,7 +247,10 @@ struct NowPlayingWidgetView: View {
           fileName: nowPlaying.artworkFileName,
           themeColor: themeColor
         )
-        .frame(width: 44, height: 44)
+        .frame(
+          width: WidgetMetrics.artworkSmall,
+          height: WidgetMetrics.artworkSmall
+        )
         .accessibilityLabel("Artwork for \(nowPlaying.title)")
         Spacer()
         Button(intent: TogglePlayPauseWidgetIntent()) {
@@ -247,7 +265,7 @@ struct NowPlayingWidgetView: View {
           .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .tint(themeColor)
+        .tint(transportColor)
         .accessibilityLabel(nowPlaying.isPlaying ? "Pause" : "Play")
       }
       Text(nowPlaying.title)
@@ -265,7 +283,10 @@ struct NowPlayingWidgetView: View {
   private var emptyLayout: some View {
     VStack(spacing: 8) {
       WidgetArtworkView(fileName: nil, themeColor: themeColor)
-        .frame(width: 44, height: 44)
+        .frame(
+          width: WidgetMetrics.artworkSmall,
+          height: WidgetMetrics.artworkSmall
+        )
       Text("No music playing")
         .font(.subheadline)
       if family == .systemMedium {

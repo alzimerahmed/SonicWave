@@ -69,7 +69,9 @@ struct RecentlyPlayedTimelineProvider: TimelineProvider {
   ) {
     let timeline = Timeline(
       entries: [entry()],
-      policy: .after(Date().addingTimeInterval(30 * 60))
+      policy: .after(
+        Date().addingTimeInterval(WidgetMetrics.timelineReloadInterval)
+      )
     )
     completion(timeline)
   }
@@ -142,12 +144,18 @@ struct RecentlyPlayedWidgetView: View {
 
   @ViewBuilder
   private func row(_ item: WidgetRecentItem) -> some View {
+    // radios have no `deepLinkURL` — an unconditional play glyph + "plays"
+    // hint would be a false affordance on an inert row
+    let canPlay = item.deepLinkURL != nil
     let content = HStack(spacing: 10) {
       WidgetArtworkView(
         fileName: item.artworkFileName,
         themeColor: themeColor
       )
-      .frame(width: 40, height: 40)
+      .frame(
+        width: WidgetMetrics.artworkRow,
+        height: WidgetMetrics.artworkRow
+      )
       VStack(alignment: .leading, spacing: 1) {
         Text(item.title)
           .font(.subheadline.weight(.medium))
@@ -159,12 +167,14 @@ struct RecentlyPlayedWidgetView: View {
       }
       .layoutPriority(1)
       Spacer(minLength: 4)
-      Image(systemName: "play.circle")
-        .foregroundStyle(.secondary)
+      if canPlay {
+        Image(systemName: "play.circle")
+          .foregroundStyle(.secondary)
+      }
     }
     .accessibilityElement(children: .combine)
     .accessibilityLabel("\(item.title), \(item.artist)")
-    .accessibilityHint("Plays this item")
+    .accessibilityHint(canPlay ? "Plays this item" : "Opens SonicWave")
 
     if let url = item.deepLinkURL {
       Link(destination: url) {
@@ -179,7 +189,10 @@ struct RecentlyPlayedWidgetView: View {
   private var emptyLayout: some View {
     VStack(spacing: 8) {
       WidgetArtworkView(fileName: nil, themeColor: themeColor)
-        .frame(width: 40, height: 40)
+        .frame(
+          width: WidgetMetrics.artworkRow,
+          height: WidgetMetrics.artworkRow
+        )
       Text("Nothing played yet")
         .font(.subheadline)
         .foregroundStyle(.secondary)

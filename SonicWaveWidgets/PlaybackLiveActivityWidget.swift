@@ -49,7 +49,10 @@
                 name: context.attributes.themeName
               )
             )
-            .frame(width: 48, height: 48)
+            .frame(
+              width: WidgetMetrics.artworkIslandExpanded,
+              height: WidgetMetrics.artworkIslandExpanded
+            )
             .accessibilityLabel("Artwork for \(context.state.title)")
           }
           DynamicIslandExpandedRegion(.center) {
@@ -64,17 +67,13 @@
             }
           }
           DynamicIslandExpandedRegion(.trailing) {
-            Button(intent: TogglePlayPauseWidgetIntent()) {
-              Image(
-                systemName: context.state.isPlaying
-                  ? "pause.fill" : "play.fill"
-              )
-              .font(.title2)
-            }
-            .buttonStyle(.plain)
-            .tint(WidgetTheme.color(name: context.attributes.themeName))
-            .accessibilityLabel(
-              context.state.isPlaying ? "Pause" : "Play"
+            LiveActivityTransportButton(
+              intent: TogglePlayPauseWidgetIntent(),
+              systemName: context.state.isPlaying
+                ? "pause.fill" : "play.fill",
+              label: context.state.isPlaying ? "Pause" : "Play",
+              themeName: context.attributes.themeName,
+              font: .title2
             )
           }
           DynamicIslandExpandedRegion(.bottom) {
@@ -85,22 +84,30 @@
             fileName: context.state.artworkFileName,
             themeColor: WidgetTheme.color(name: context.attributes.themeName)
           )
-          .frame(width: 20, height: 20)
+          .frame(
+            width: WidgetMetrics.artworkIslandCompact,
+            height: WidgetMetrics.artworkIslandCompact
+          )
           .accessibilityHidden(true)
         } compactTrailing: {
-          if context.state.isRadio {
-            Text("LIVE")
-              .font(.caption2.weight(.semibold).monospacedDigit())
-          } else if context.state.isPlaying {
-            Text(
-              timerInterval: context.state.remainingTimerInterval,
-              countsDown: true
-            )
-            .font(.caption2.monospacedDigit())
-          } else {
-            Text(context.state.remainingTimeDescription)
+          Group {
+            if context.state.isRadio {
+              Text("LIVE")
+                .font(.caption2.weight(.semibold).monospacedDigit())
+            } else if context.state.isPlaying {
+              Text(
+                timerInterval: context.state.remainingTimerInterval,
+                countsDown: true
+              )
               .font(.caption2.monospacedDigit())
+            } else {
+              Text(context.state.remainingTimeDescription)
+                .font(.caption2.monospacedDigit())
+            }
           }
+          // the compact regions carry no track context on their own —
+          // a bare countdown reads as noise to VoiceOver
+          .accessibilityLabel(compactTrailingLabel(context))
         } minimal: {
           Image(
             systemName: context.state.isPlaying ? "play.fill" : "pause.fill"
@@ -131,14 +138,17 @@
             timerInterval: context.state.progressTimerInterval,
             countsDown: false
           )
+          .accessibilityLabel("Playback progress")
+          .accessibilityValue(
+            context.state.progressAccessibilityValue(at: Date())
+          )
         } else {
           ProgressView(
-            value: context.state.duration > 0
-              ? min(
-                max(context.state.elapsedSeconds / context.state.duration, 0),
-                1
-              )
-              : 0
+            value: context.state.progressFraction(at: Date())
+          )
+          .accessibilityLabel("Playback progress")
+          .accessibilityValue(
+            context.state.progressAccessibilityValue(at: Date())
           )
         }
         transport(context)
@@ -146,34 +156,90 @@
       .accessibilityElement(children: .contain)
     }
 
+    private func compactTrailingLabel(
+      _ context: ActivityViewContext<PlaybackActivityAttributes>
+    ) -> String {
+      if context.state.isRadio {
+        return "\(context.state.title), live"
+      }
+      return "\(context.state.title), "
+        + "\(context.state.remainingTimeDescription) remaining"
+    }
+
     private func transport(
       _ context: ActivityViewContext<PlaybackActivityAttributes>
     ) -> some View {
       HStack(spacing: 8) {
-        Button(intent: PreviousTrackWidgetIntent()) {
-          Image(systemName: "backward.fill")
-            .font(.body)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Previous track")
-        Button(intent: NextTrackWidgetIntent()) {
-          Image(systemName: "forward.fill")
-            .font(.body)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Next track")
+        LiveActivityTransportButton(
+          intent: PreviousTrackWidgetIntent(),
+          systemName: "backward.fill",
+          label: "Previous track",
+          themeName: context.attributes.themeName,
+          font: .body,
+          enforceTapTarget: true
+        )
+        LiveActivityTransportButton(
+          intent: NextTrackWidgetIntent(),
+          systemName: "forward.fill",
+          label: "Next track",
+          themeName: context.attributes.themeName,
+          font: .body,
+          enforceTapTarget: true
+        )
       }
-      .tint(WidgetTheme.color(name: context.attributes.themeName))
+    }
+  }
+
+  // MARK: - LiveActivityTransportButton
+
+  /// Icon-only transport button. Owns its `colorScheme` lookup — the
+  /// raw theme accents fail the 3:1 non-text contrast bar on light
+  /// surfaces, so interactive glyphs fall back to `.primary` there
+  /// (`WidgetTheme.interactiveColor`).
+  private struct LiveActivityTransportButton<I: AppIntent>: View {
+    @Environment(\.colorScheme) private var colorScheme
+    let intent: I
+    let systemName: String
+    let label: String
+    let themeName: String
+    let font: Font
+    var enforceTapTarget = false
+
+    var body: some View {
+      Button(intent: intent) {
+        Image(systemName: systemName)
+          .font(font)
+          .frame(
+            width: enforceTapTarget ? WidgetMetrics.transportTarget : nil,
+            height: enforceTapTarget ? WidgetMetrics.transportTarget : nil
+          )
+          .contentShape(Rectangle())
+      }
+      .buttonStyle(.plain)
+      .tint(
+        WidgetTheme.interactiveColor(name: themeName, for: colorScheme)
+      )
+      .accessibilityLabel(label)
     }
   }
 
   // MARK: - PlaybackLockScreenView
 
   struct PlaybackLockScreenView: View {
+    @Environment(\.colorScheme) private var colorScheme
     let context: ActivityViewContext<PlaybackActivityAttributes>
 
     private var themeColor: Color {
       WidgetTheme.color(name: context.attributes.themeName)
+    }
+
+    /// contrast-safe tint for the icon-only transport glyphs — the raw
+    /// theme color fails 3:1 on the light Lock Screen background
+    private var transportColor: Color {
+      WidgetTheme.interactiveColor(
+        name: context.attributes.themeName,
+        for: colorScheme
+      )
     }
 
     var body: some View {
@@ -182,7 +248,10 @@
           fileName: context.state.artworkFileName,
           themeColor: themeColor
         )
-        .frame(width: 52, height: 52)
+        .frame(
+          width: WidgetMetrics.artworkLockScreen,
+          height: WidgetMetrics.artworkLockScreen
+        )
         .accessibilityLabel("Artwork for \(context.state.title)")
 
         VStack(alignment: .leading, spacing: 2) {
@@ -193,32 +262,42 @@
             .font(.caption)
             .foregroundStyle(.secondary)
             .lineLimit(1)
-          if context.state.isRadio {
-            Label(
-              "LIVE",
-              systemImage: "antenna.radiowaves.left.and.right"
-            )
-            .font(.caption2)
-            .foregroundStyle(.secondary)
-          } else if context.state.isPlaying {
-            ProgressView(
-              timerInterval: context.state.progressTimerInterval,
-              countsDown: false
-            )
-            .tint(themeColor)
-          } else {
-            ProgressView(
-              value: context.state.duration > 0
-                ? min(
-                  max(
-                    context.state.elapsedSeconds / context.state.duration,
-                    0
-                  ),
-                  1
-                )
-                : 0
-            )
-            .tint(themeColor)
+          HStack(spacing: 6) {
+            if context.state.isRadio {
+              Label(
+                "LIVE",
+                systemImage: "antenna.radiowaves.left.and.right"
+              )
+              .font(.caption2)
+              .foregroundStyle(.secondary)
+            } else if context.state.isPlaying {
+              ProgressView(
+                timerInterval: context.state.progressTimerInterval,
+                countsDown: false
+              )
+              .tint(themeColor)
+              .accessibilityLabel("Playback progress")
+              .accessibilityValue(
+                context.state.progressAccessibilityValue(at: Date())
+              )
+            } else {
+              ProgressView(
+                value: context.state.progressFraction(at: Date())
+              )
+              .tint(themeColor)
+              .accessibilityLabel("Playback progress")
+              .accessibilityValue(
+                context.state.progressAccessibilityValue(at: Date())
+              )
+            }
+            // matches the Now Playing widget's downloaded badge so the
+            // `isCached` state isn't a write-only field
+            if context.state.isCached {
+              Image(systemName: "arrow.down.circle")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .accessibilityLabel("Downloaded")
+            }
           }
         }
         .layoutPriority(1)
@@ -236,7 +315,7 @@
               .contentShape(Rectangle())
           }
           .buttonStyle(.plain)
-          .tint(themeColor)
+          .tint(transportColor)
           .accessibilityLabel("Previous track")
 
           Button(intent: TogglePlayPauseWidgetIntent()) {
@@ -252,7 +331,7 @@
             .contentShape(Rectangle())
           }
           .buttonStyle(.plain)
-          .tint(themeColor)
+          .tint(transportColor)
           .accessibilityLabel(context.state.isPlaying ? "Pause" : "Play")
 
           Button(intent: NextTrackWidgetIntent()) {
@@ -265,7 +344,7 @@
               .contentShape(Rectangle())
           }
           .buttonStyle(.plain)
-          .tint(themeColor)
+          .tint(transportColor)
           .accessibilityLabel("Next track")
         }
       }
@@ -279,18 +358,6 @@
         return parts.joined(separator: " — ")
       }
       return context.attributes.contextName
-    }
-  }
-
-  // MARK: - static remaining helper
-
-  extension PlaybackActivityAttributes.ContentState {
-    /// paused-state "m:ss" — `timerInterval:` views cover the playing case
-    var remainingTimeDescription: String {
-      let remaining = max(duration - elapsedSeconds, 0)
-      let minutes = Int(remaining) / 60
-      let seconds = Int(remaining) % 60
-      return String(format: "%d:%02d", minutes, seconds)
     }
   }
 #endif

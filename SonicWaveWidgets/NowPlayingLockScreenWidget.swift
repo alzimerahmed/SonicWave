@@ -42,7 +42,11 @@ struct NowPlayingLockScreenWidget: Widget {
     }
     .configurationDisplayName("Now Playing")
     .description("Current track on the Lock Screen.")
-    .supportedFamilies([.accessoryRectangular, .accessoryCircular])
+    .supportedFamilies([
+      .accessoryRectangular,
+      .accessoryCircular,
+      .accessoryInline,
+    ])
   }
 }
 
@@ -58,6 +62,8 @@ struct NowPlayingLockScreenView: View {
         switch family {
         case .accessoryCircular:
           circularLayout(nowPlaying)
+        case .accessoryInline:
+          inlineLayout(nowPlaying)
         default:
           rectangularLayout(nowPlaying)
         }
@@ -103,6 +109,18 @@ struct NowPlayingLockScreenView: View {
     .accessibilityLabel(
       "\(nowPlaying.title), \(nowPlaying.metadataSubtitle), "
         + (nowPlaying.isPlaying ? "playing" : "paused")
+    )
+  }
+
+  private func inlineLayout(_ nowPlaying: WidgetNowPlaying) -> some View {
+    Label(
+      nowPlaying.title,
+      systemImage: nowPlaying.isPlaying ? "play.fill" : "pause.fill"
+    )
+    .accessibilityLabel(
+      nowPlaying.isPlaying
+        ? "Playing \(nowPlaying.title)"
+        : "Paused \(nowPlaying.title)"
     )
   }
 
