@@ -160,10 +160,11 @@
       _ context: ActivityViewContext<PlaybackActivityAttributes>
     ) -> String {
       if context.state.isRadio {
-        return "\(context.state.title), live"
+        return String(localized: "\(context.state.title), live")
       }
-      return "\(context.state.title), "
-        + "\(context.state.remainingTimeDescription) remaining"
+      return String(
+        localized: "\(context.state.title), \(context.state.remainingTimeDescription) remaining"
+      )
     }
 
     private func transport(

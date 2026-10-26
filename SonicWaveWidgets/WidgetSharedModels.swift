@@ -124,9 +124,12 @@ extension ElapsedProgress {
 
   /// VoiceOver value for a progress row — folds playing state, position
   /// and the cached badge into one announcement
-  /// ("Playing, 1:24 of 3:51, downloaded")
+  /// ("Playing, 1:24 of 3:51, downloaded"). `String(localized:)` keeps
+  /// the parts resolvable through the extension's string catalog.
   func progressAccessibilityValue(at date: Date) -> String {
-    var parts = [isPlaying ? "Playing" : "Paused"]
+    var parts = [
+      isPlaying ? String(localized: "Playing") : String(localized: "Paused"),
+    ]
     if duration > 0 {
       let rawElapsed = isPlaying
         ? elapsedSeconds
@@ -134,11 +137,13 @@ extension ElapsedProgress {
         : elapsedSeconds
       let clampedElapsed = min(max(rawElapsed, 0), duration)
       parts.append(
-        "\(Self.mmss(clampedElapsed)) of \(Self.mmss(duration))"
+        String(
+          localized: "\(Self.mmss(clampedElapsed)) of \(Self.mmss(duration))"
+        )
       )
     }
     if isCached {
-      parts.append("downloaded")
+      parts.append(String(localized: "downloaded"))
     }
     return parts.joined(separator: ", ")
   }
