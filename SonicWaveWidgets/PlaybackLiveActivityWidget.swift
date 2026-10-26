@@ -93,8 +93,7 @@
               .font(.caption2.weight(.semibold).monospacedDigit())
           } else if context.state.isPlaying {
             Text(
-              timerInterval: context.state.elapsedAnchor
-                ... context.state.progressTimerInterval.upperBound,
+              timerInterval: context.state.remainingTimerInterval,
               countsDown: true
             )
             .font(.caption2.monospacedDigit())

@@ -90,6 +90,15 @@ import Foundation
           .addingTimeInterval((duration - elapsedSeconds) / clampedRate)
         return start ... max(start, end)
       }
+
+      /// remaining wall-clock interval (for countdown displays) —
+      /// `upperBound` is clamped to `elapsedAnchor` so an elapsed overrun
+      /// (elapsed > duration / clock skew) can't form an inverted
+      /// `ClosedRange`, which traps at runtime
+      var remainingTimerInterval: ClosedRange<Date> {
+        let range = progressTimerInterval
+        return elapsedAnchor ... max(elapsedAnchor, range.upperBound)
+      }
     }
 
     /// queue/context name (static for the life of the activity)

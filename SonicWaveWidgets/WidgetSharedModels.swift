@@ -120,10 +120,13 @@ struct WidgetNowPlaying: Codable, Sendable {
     return start ... max(start, end)
   }
 
-  /// remaining wall-clock interval (for countdown displays)
+  /// remaining wall-clock interval (for countdown displays) —
+  /// `upperBound` is clamped to `elapsedAnchor` so an elapsed overrun
+  /// (elapsed > duration / clock skew) can't form an inverted
+  /// `ClosedRange`, which traps at runtime
   var remainingTimerInterval: ClosedRange<Date> {
     let range = progressTimerInterval
-    return elapsedAnchor ... range.upperBound
+    return elapsedAnchor ... max(elapsedAnchor, range.upperBound)
   }
 }
 
