@@ -70,6 +70,11 @@ public class LibraryUpdater {
           asyncCompanion.library.cleanStorageOfObsoleteAccountEntries(account: obsoleteAccount)
           asyncCompanion.library.deleteAccount(account: obsoleteAccount)
         }
+        // purge the account's CoreSpotlight domain (`domainIdentifier` =
+        // `accountIdent` = serverHash-userHash) — the entity-level
+        // deletes above may have raced the indexer's save observer
+        await AmperKit.shared.spotlightIndexer
+          .deleteItems(forAccountIdent: obsoleteAccountInfo.ident)
         os_log(
           "Delete obsolete account (DONE): %s",
           log: log,

@@ -125,6 +125,13 @@ struct AccountSettingsView: View {
 
     // delete cached files
     CacheFileManager.shared.deleteAccountCache(accountInfo: accountInfo)
+    // purge the account's Spotlight index domain now — its CoreData rows
+    // are only removed by the next-launch cleanup, so entity-level
+    // deletes can't carry this
+    Task {
+      await AmperKit.shared.spotlightIndexer
+        .deleteItems(forAccountIdent: accountInfo.ident)
+    }
     // reset login credentials -> at new start the login view is presented to auth and resync library
     appDelegate.storage.settings.accounts.logout(accountInfo)
     appDelegate.notificationHandler.post(name: .accountDeleted, object: nil, userInfo: nil)
