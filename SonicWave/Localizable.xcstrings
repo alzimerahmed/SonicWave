@@ -37,6 +37,18 @@
         }
       }
     },
+    "%lld Seconds" : {
+      "comment" : "Crossfade menu option: overlap duration in seconds",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld Seconds"
+          }
+        }
+      }
+    },
     "%lld Songs" : {
       "comment" : "Song count label on the resolved-list header (play/shuffle row)",
       "extractionState" : "manual",
@@ -157,6 +169,18 @@
         }
       }
     },
+    "Applies a different EQ profile to this audio output. The choice is remembered per device." : {
+      "comment" : "Per-output EQ override section footer",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Applies a different EQ profile to this audio output. The choice is remembered per device."
+          }
+        }
+      }
+    },
     "Artist" : {
       "comment" : "Smart playlist rule field",
       "extractionState" : "manual",
@@ -177,6 +201,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Artwork Tint"
+          }
+        }
+      }
+    },
+    "AutoEQ" : {
+      "comment" : "EQ profile menu section: bundled AutoEQ headphone-correction presets",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AutoEQ"
+          }
+        }
+      }
+    },
+    "AutoEQ provides parametric correction presets for specific headphones. Parametric profiles can be selected but not edited." : {
+      "comment" : "EQ profile picker section footer",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AutoEQ provides parametric correction presets for specific headphones. Parametric profiles can be selected but not edited."
           }
         }
       }
@@ -273,6 +321,42 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Created %@"
+          }
+        }
+      }
+    },
+    "Crossfade" : {
+      "comment" : "Player settings: crossfade duration row title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crossfade"
+          }
+        }
+      }
+    },
+    "Crossfade fades the ending track into the next over the selected duration. Off keeps gapless playback. Radios and streams that cannot seek never crossfade." : {
+      "comment" : "Crossfade setting footer",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crossfade fades the ending track into the next over the selected duration. Off keeps gapless playback. Radios and streams that cannot seek never crossfade."
+          }
+        }
+      }
+    },
+    "Current Output" : {
+      "comment" : "EQ settings: current audio output row title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current Output"
           }
         }
       }
@@ -385,6 +469,30 @@
         }
       }
     },
+    "EQ Profile" : {
+      "comment" : "EQ settings: active equalizer profile picker row title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "EQ Profile"
+          }
+        }
+      }
+    },
+    "EQ for This Output" : {
+      "comment" : "EQ settings: per-output override picker row title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "EQ for This Output"
+          }
+        }
+      }
+    },
     "Expired %@" : {
       "comment" : "Share list: expiry date (tense changes on expiry)",
       "extractionState" : "manual",
@@ -465,6 +573,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Genre"
+          }
+        }
+      }
+    },
+    "Graphic" : {
+      "comment" : "EQ profile menu section: legacy 10-band graphic equalizer presets",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Graphic"
           }
         }
       }
@@ -745,6 +865,18 @@
         }
       }
     },
+    "Parametric" : {
+      "comment" : "EQ profile menu section: parametric profiles",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parametric"
+          }
+        }
+      }
+    },
     "Partially evaluated — the server resolves rules SonicWave cannot read." : {
       "comment" : "Note on smart playlists with unmapped server rules",
       "extractionState" : "manual",
@@ -765,6 +897,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pause"
+          }
+        }
+      }
+    },
+    "Per-Output EQ" : {
+      "comment" : "EQ settings: per-output override section header",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Per-Output EQ"
           }
         }
       }
@@ -885,6 +1029,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rules"
+          }
+        }
+      }
+    },
+    "Same as Active Profile" : {
+      "comment" : "EQ settings: per-output picker option that clears the output's override",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Same as Active Profile"
           }
         }
       }
@@ -1017,6 +1173,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Similar songs around your favorites"
+          }
+        }
+      }
+    },
+    "Skip Silence" : {
+      "comment" : "Player settings: podcast skip-silence toggle title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skip Silence"
+          }
+        }
+      }
+    },
+    "Speeds up silent passages while listening to podcasts. Music is never sped up." : {
+      "comment" : "Skip Silence setting footer",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Speeds up silent passages while listening to podcasts. Music is never sped up."
           }
         }
       }
@@ -1233,6 +1413,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "True Black (OLED)"
+          }
+        }
+      }
+    },
+    "Unknown Output" : {
+      "comment" : "EQ settings: fallback when no audio output name is available",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unknown Output"
           }
         }
       }
