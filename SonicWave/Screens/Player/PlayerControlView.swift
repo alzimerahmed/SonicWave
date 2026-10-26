@@ -68,9 +68,6 @@ class PlayerControlView: UIView, UIGestureRecognizerDelegate {
   private var player: PlayerFacade!
   private var rootView: PopupPlayerVC?
   private var playerHandler: PlayerUIHandler?
-  #if targetEnvironment(macCatalyst) // ok
-    var airplayVolume: MPVolumeView?
-  #endif
 
   @IBOutlet
   weak var playButton: UIButton!
@@ -110,20 +107,10 @@ class PlayerControlView: UIView, UIGestureRecognizerDelegate {
   weak var optionsButton: UIButton!
 
   required init?(coder aDecoder: NSCoder) {
-    #if targetEnvironment(macCatalyst) // ok
-      self.airplayVolume = MPVolumeView(frame: .zero)
-      airplayVolume!.showsVolumeSlider = false
-      airplayVolume!.isHidden = true
-    #endif
-
     super.init(coder: aDecoder)
     self.layoutMargins = Self.margin
     self.player = appDelegate.player
     player.addNotifier(notifier: self)
-
-    #if targetEnvironment(macCatalyst) // ok
-      addSubview(airplayVolume!)
-    #endif
   }
 
   func prepare(toWorkOnRootView: PopupPlayerVC?) {
@@ -137,6 +124,11 @@ class PlayerControlView: UIView, UIGestureRecognizerDelegate {
     skipBackwardButton.tintColor = .label
     skipForwardButton.tintColor = .label
     airplayButton.tintColor = .label
+    #if targetEnvironment(macCatalyst) // ok
+      // G22 — the MPVolumeView route-picker popup is dead on Catalyst;
+      // hide the button rather than offer a control that cannot work
+      airplayButton.isHidden = true
+    #endif
     playerModeButton.tintColor = .label
     volumeButton.tintColor = .label
     optionsButton.imageView?.tintColor = .label
@@ -322,13 +314,8 @@ class PlayerControlView: UIView, UIGestureRecognizerDelegate {
 
   @IBAction
   func airplayButtonPushed(_ sender: UIButton) {
-    #if targetEnvironment(macCatalyst) // ok
-      playerHandler?.airplayButtonPushed(
-        rootView: self,
-        airplayButton: airplayButton,
-        airplayVolume: airplayVolume
-      )
-    #else
+    // G22 — the button is hidden on Catalyst (dead route-picker popup)
+    #if !targetEnvironment(macCatalyst) // ok
       playerHandler?.airplayButtonPushed(rootView: self, airplayButton: airplayButton)
     #endif
   }

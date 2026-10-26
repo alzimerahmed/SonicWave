@@ -34,10 +34,6 @@ class MiniPlayerView: UIView {
 
   static let mediumButtonSize: CGFloat = 20.0
 
-  #if targetEnvironment(macCatalyst) // ok
-    var airplayVolume: MPVolumeView?
-  #endif
-
   fileprivate lazy var artworkOverlay: UIView = {
     let view = UIView()
     view.backgroundColor = .black.withAlphaComponent(0.4)
@@ -346,13 +342,9 @@ class MiniPlayerView: UIView {
 
   @IBAction
   func airplayButtonPushed(_ sender: UIButton) {
-    #if targetEnvironment(macCatalyst) // ok
-      playerHandler?.airplayButtonPushed(
-        rootView: self,
-        airplayButton: airplayButton,
-        airplayVolume: airplayVolume
-      )
-    #endif
+    // G22 — hidden on Catalyst (the MPVolumeView route-picker popup is
+    // dead there); on iOS the mini player's button stays a no-op —
+    // the full player owns AirPlay routing
   }
 
   fileprivate lazy var volumeButton: UIButton = {
@@ -505,15 +497,21 @@ class MiniPlayerView: UIView {
   public lazy var trailingButtonsView: UIStackView = {
     self.lyricsButton.translatesAutoresizingMaskIntoConstraints = false
     self.playlistButton.translatesAutoresizingMaskIntoConstraints = false
-    self.airplayButton.translatesAutoresizingMaskIntoConstraints = false
     self.volumeButton.translatesAutoresizingMaskIntoConstraints = false
 
-    let stack = UIStackView(arrangedSubviews: [
+    var arrangedSubviews: [UIView] = [
       lyricsButton,
       playlistButton,
-      airplayButton,
-      volumeButton,
-    ])
+    ]
+    #if !targetEnvironment(macCatalyst) // ok
+      // G22 — the AirPlay route-picker popup is dead on Catalyst, so
+      // the button is left out of the stack there entirely
+      self.airplayButton.translatesAutoresizingMaskIntoConstraints = false
+      arrangedSubviews.append(airplayButton)
+    #endif
+    arrangedSubviews.append(volumeButton)
+
+    let stack = UIStackView(arrangedSubviews: arrangedSubviews)
     stack.axis = .horizontal
     stack.distribution = .equalSpacing
     stack.alignment = .center
@@ -522,13 +520,15 @@ class MiniPlayerView: UIView {
 
   public func refreshTrailingButtons() {
     guard let playerHandler else { return }
-    if playerHandler.isLyricsButtonAllowedToDisplay {
-      lyricsButton.isHidden = false
-      trailingButtonsViewWidthConstraint?.constant = 140
-    } else {
-      lyricsButton.isHidden = true
-      trailingButtonsViewWidthConstraint?.constant = 100
-    }
+    let isLyricsVisible = playerHandler.isLyricsButtonAllowedToDisplay
+    lyricsButton.isHidden = !isLyricsVisible
+    #if targetEnvironment(macCatalyst) // ok
+      // G22 — the AirPlay button is hidden on Catalyst: 3 or 2 visible
+      // buttons at ~35pt each
+      trailingButtonsViewWidthConstraint?.constant = isLyricsVisible ? 105 : 70
+    #else
+      trailingButtonsViewWidthConstraint?.constant = isLyricsVisible ? 140 : 100
+    #endif
   }
 
   func refreshMoreButton() {
@@ -550,16 +550,7 @@ class MiniPlayerView: UIView {
   init(player: PlayerFacade) {
     self.player = player
 
-    #if targetEnvironment(macCatalyst) // ok
-      self.airplayVolume = MPVolumeView(frame: .zero)
-      airplayVolume!.showsVolumeSlider = false
-      airplayVolume!.isHidden = true
-    #endif
-
     super.init(frame: .zero)
-    #if targetEnvironment(macCatalyst) // ok
-      addSubview(airplayVolume!)
-    #endif
 
     player.addNotifier(notifier: self)
 

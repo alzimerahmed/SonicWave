@@ -349,25 +349,15 @@ class PlayerUIHandler: NSObject {
 
   func airplayButtonPushed(
     rootView: UIView,
-    airplayButton: UIButton,
-    airplayVolume: MPVolumeView? = nil
+    airplayButton: UIButton
   ) {
-    appDelegate.userStatistics.usedAction(.airplay)
-
+    // G22 — no-op on Catalyst: the MPVolumeView fake-tap produced a
+    // dead popup there, so the AirPlay buttons are hidden on Catalyst
+    // and this path is unreachable in practice
     #if targetEnvironment(macCatalyst) // ok
-      guard let airplayVolume else { return }
-      // Position the popup correctly on macOS
-      if let buttonCenter = airplayButton.superview?.convert(airplayButton.center, to: rootView) {
-        airplayVolume.center = buttonCenter
-      }
-
-      for view: UIView in airplayVolume.subviews {
-        if let button = view as? UIButton {
-          button.sendActions(for: .touchUpInside)
-          break
-        }
-      }
+      return
     #else
+      appDelegate.userStatistics.usedAction(.airplay)
       let rect = CGRect(x: -100, y: 0, width: 0, height: 0)
       let airplayVolume = MPVolumeView(frame: rect)
       airplayVolume.showsVolumeSlider = false
