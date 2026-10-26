@@ -193,6 +193,11 @@ public protocol PlayerFacade {
   var repeatMode: RepeatMode { get }
   func setRepeatMode(_: RepeatMode)
   var isOfflineMode: Bool { get set }
+  /// crossfade (G3): overlap in seconds at track boundaries rendered by
+  /// a second audio engine; `0` disables it (gapless queue preload)
+  var crossfadeDurationInSec: Int { get set }
+  /// true while a crossfade is being prepared or is fading
+  var isCrossfadeActive: Bool { get }
   var isShouldPauseAfterFinishedPlaying: Bool { get set }
   var isAutoCachePlayedItems: Bool { get set }
   var isPopupBarAllowedToHide: Bool { get }
@@ -316,6 +321,7 @@ class PlayerFacadeImpl: PlayerFacade {
   private let backendAudioPlayer: BackendAudioPlayer
   private let musicPlayer: AudioPlayer
   private let userStatistics: UserStatistics
+  private var settings: AmperfySettings
 
   init(
     playerStatus: PlayerStatusPersistent,
@@ -323,13 +329,15 @@ class PlayerFacadeImpl: PlayerFacade {
     musicPlayer: AudioPlayer,
     library: LibraryStorage,
     backendAudioPlayer: BackendAudioPlayer,
-    userStatistics: UserStatistics
+    userStatistics: UserStatistics,
+    settings: AmperfySettings
   ) {
     self.playerStatus = playerStatus
     self.queueHandler = queueHandler
     self.backendAudioPlayer = backendAudioPlayer
     self.musicPlayer = musicPlayer
     self.userStatistics = userStatistics
+    self.settings = settings
   }
 
   var prevQueueCount: Int {
@@ -491,6 +499,18 @@ class PlayerFacadeImpl: PlayerFacade {
   var isOfflineMode: Bool {
     get { backendAudioPlayer.isOfflineMode }
     set { backendAudioPlayer.isOfflineMode = newValue }
+  }
+
+  var crossfadeDurationInSec: Int {
+    get { settings.user.crossfadeDurationSeconds }
+    set {
+      settings.user.crossfadeDurationSeconds = newValue
+      backendAudioPlayer.crossfadeDurationInSec = Double(max(0, newValue))
+    }
+  }
+
+  var isCrossfadeActive: Bool {
+    backendAudioPlayer.isCrossfadeActive
   }
 
   var isShouldPauseAfterFinishedPlaying: Bool {

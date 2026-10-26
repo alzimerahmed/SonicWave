@@ -68,6 +68,10 @@ typealias NextPlayablePreloadCallback = () -> AbstractPlayable?
 enum BackendAudioQueueType {
   case play
   case queue
+  /// G3 crossfade — plays on the spare engine immediately at zero volume;
+  /// shares the `.queue` bookkeeping lane (perloaded*/nextPreloaded*) so
+  /// the existing preloaded-match branch adopts it
+  case crossfade
 }
 
 // MARK: - BackendAudioPlayer
@@ -119,6 +123,47 @@ class BackendAudioPlayer: NSObject {
   private var equalizer: AVAudioUnitEQ?
   private var replayGainNode: AVAudioMixerNode?
   public private(set) var audioAnalyzer: AudioAnalyzer
+  /// node the analyzer tap is currently installed on — tracks which
+  /// engine's EQ owns the tap so it can follow the crossfade winner
+  private var analyzerTapNode: AVAudioNode?
+
+  // MARK: Crossfade (G3) — a second AudioStreaming engine so entries
+  // overlap; `player`/`equalizer`/`replayGainNode` always describe the
+  // ACTIVE engine, `spare*` the other one. The roles swap on adoption:
+  // before the adopt `spare` is the incoming track, afterwards it is the
+  // draining tail. `fadeOutPlayerRef`/`fadeInPlayerRef` pin concrete
+  // engine instances for the whole fade so the swap cannot confuse the
+  // volume ramp.
+  private var sparePlayer: AudioStreamingPlayer?
+  private var spareEqualizer: AVAudioUnitEQ?
+  private var spareReplayGainNode: AVAudioMixerNode?
+  /// ReplayGain of the playable loaded on the spare engine (the active
+  /// engine's gain lives in `currentReplayGainValue`)
+  private var spareReplayGainValue: Float = 0.0
+  /// crossfade length in seconds; 0 disables crossfading entirely and the
+  /// engine falls back to the classic gapless queue preload
+  var crossfadeDurationInSec: Double = 0.0 {
+    didSet { if crossfadeDurationInSec <= 0 { abortCrossfade() } }
+  }
+  /// next-track stream insert for a crossfade is in flight (async)
+  private var isCrossfadePreparing = false
+  /// a fade is running: outgoing ramps to 0, incoming to `volumePlayer`
+  private var isCrossfading = false
+  private var fadeOutPlayerRef: AudioStreamingPlayer?
+  private var fadeInPlayerRef: AudioStreamingPlayer?
+  private var fadeOutFactor: Float = 1.0
+  private var fadeInFactor: Float = 1.0
+  private var crossfadeTimer: Timer?
+  private var crossfadeStartUptime: TimeInterval = 0
+  private var crossfadeActiveDurationInSec: Double = 0
+  /// ~30 Hz is enough to keep the equal-power ramps zipper-free
+  private static let crossfadeUpdateIntervalInSec: TimeInterval = 1.0 / 30.0
+
+  /// true while a crossfade is being prepared or is fading — used by
+  /// `PlayerFacade.isCrossfadeActive`
+  var isCrossfadeActive: Bool {
+    isCrossfadePreparing || isCrossfading
+  }
 
   // ReplayGain Settings
   private var isReplayGainEnabled: Bool = true
@@ -176,7 +221,18 @@ class BackendAudioPlayer: NSObject {
     }
     set {
       volumePlayer = newValue
-      player?.volume = newValue
+      applyVolumes()
+    }
+  }
+
+  /// user volume × fade factors; mid-fade the fixed fade refs carry the
+  /// ramps so a volume change during a crossfade scales both engines
+  private func applyVolumes() {
+    if let fadeOutPlayerRef, let fadeInPlayerRef {
+      fadeOutPlayerRef.volume = volumePlayer * fadeOutFactor
+      fadeInPlayerRef.volume = volumePlayer * fadeInFactor
+    } else {
+      player?.volume = volumePlayer
     }
   }
 
@@ -260,44 +316,210 @@ class BackendAudioPlayer: NSObject {
 
   private func checkForPreloadNextPlayerItem() {
     guard isAutoStartPlayback else { return }
-    if nextPreloadedPlayable == nil, !isPreloadInsertPending, elapsedTime.isFinite,
-       elapsedTime > 0, duration.isFinite, duration > 0 {
-      let remainingTime = duration - elapsedTime
-      if remainingTime > 0, remainingTime < 10 {
-        guard let nextPlayable = nextPlayablePreloadCB?() else { return }
-        isPreloadedNextStale = false
-        os_log(.default, "Preloading: %s", nextPlayable.displayString)
-        if nextPlayable.isCached,
-           cacheProxy.getFileURL(forPlayable: nextPlayable) != nil {
-          insertCachedPlayable(playable: nextPlayable, queueType: .queue)
-          nextPreloadedPlayable = nextPlayable
-        } else if !isOfflineMode, !nextPlayable.isCached {
-          isPreloadInsertPending = true
-          Task { @MainActor in
-            do {
-              try await insertStreamPlayable(playable: nextPlayable, queueType: .queue)
-              self.isPreloadInsertPending = false
-              if self.isPreloadedNextStale {
-                // the queue mutated during the async insert — the just-
-                // queued entry is already stale; drop it from the engine
-                // queue instead of adopting it at the boundary
-                self.invalidatePreloadedNext()
-              } else {
-                self.nextPreloadedPlayable = nextPlayable
-              }
-              if self.isAutoCachePlayedItems, nextPlayable.isDownloadAvailable,
-                 let accountInfo = nextPlayable.account?.info {
-                self.getPlayableDownloaderCB(accountInfo)
-                  .download(object: nextPlayable, asTier: .cache)
-              }
-            } catch {
-              self.isPreloadInsertPending = false
-              self.eventLogger.report(topic: "Player", error: error)
+    guard nextPreloadedPlayable == nil, !isPreloadInsertPending, !isCrossfadeActive,
+          elapsedTime.isFinite, elapsedTime > 0, duration.isFinite, duration > 0
+    else { return }
+    let remainingTime = duration - elapsedTime
+    guard remainingTime > 0 else { return }
+    if crossfadeDurationInSec > 0 {
+      // G3 — crossfade supersedes the gapless queue preload: the incoming
+      // track renders on the spare engine so both overlap
+      if remainingTime <= crossfadeDurationInSec {
+        beginCrossfade()
+      }
+      return
+    }
+    if remainingTime < 10 {
+      guard let nextPlayable = nextPlayablePreloadCB?() else { return }
+      isPreloadedNextStale = false
+      os_log(.default, "Preloading: %s", nextPlayable.displayString)
+      if nextPlayable.isCached,
+         cacheProxy.getFileURL(forPlayable: nextPlayable) != nil {
+        insertCachedPlayable(playable: nextPlayable, queueType: .queue)
+        nextPreloadedPlayable = nextPlayable
+      } else if !isOfflineMode, !nextPlayable.isCached {
+        isPreloadInsertPending = true
+        Task { @MainActor in
+          do {
+            try await insertStreamPlayable(playable: nextPlayable, queueType: .queue)
+            self.isPreloadInsertPending = false
+            if self.isPreloadedNextStale {
+              // the queue mutated during the async insert — the just-
+              // queued entry is already stale; drop it from the engine
+              // queue instead of adopting it at the boundary
+              self.invalidatePreloadedNext()
+            } else {
+              self.nextPreloadedPlayable = nextPlayable
             }
+            if self.isAutoCachePlayedItems, nextPlayable.isDownloadAvailable,
+               let accountInfo = nextPlayable.account?.info {
+              self.getPlayableDownloaderCB(accountInfo)
+                .download(object: nextPlayable, asTier: .cache)
+            }
+          } catch {
+            self.isPreloadInsertPending = false
+            self.eventLogger.report(topic: "Player", error: error)
           }
         }
       }
     }
+  }
+
+  // MARK: - Crossfade Implementation
+
+  /// Resolves the next playable and starts it on the spare engine at
+  /// zero volume. Stream inserts are async, so the fade itself only
+  /// begins once the incoming entry is actually queued-and-playing on
+  /// the spare engine (`startCrossfadeFade`).
+  private func beginCrossfade() {
+    guard !isCrossfadeActive, let nextPlayable = nextPlayablePreloadCB?(),
+          // radios have no duration to blend over and their insert path
+          // does not carry bitrate/transcoding bookkeeping — skip them
+          !nextPlayable.isRadio
+    else { return }
+    let isCachedInsert = nextPlayable.isCached &&
+      cacheProxy.getFileURL(forPlayable: nextPlayable) != nil
+    // an uncached next track cannot be fetched in offline mode — bail
+    // before touching any state so the boundary falls back to the
+    // regular (non-gapless) play path
+    guard isCachedInsert || !isOfflineMode else { return }
+    isPreloadedNextStale = false
+    os_log(.default, "Crossfade preparing: %s", nextPlayable.displayString)
+    ensureSparePlayer()
+    spareReplayGainValue = nextPlayable.replayGainTrackGain
+    applyReplayGain()
+    sparePlayer?.volume = 0
+    if isCachedInsert {
+      insertCachedPlayable(playable: nextPlayable, queueType: .crossfade)
+      nextPreloadedPlayable = nextPlayable
+      startCrossfadeFade()
+    } else {
+      isCrossfadePreparing = true
+      Task { @MainActor in
+        do {
+          try await insertStreamPlayable(playable: nextPlayable, queueType: .crossfade)
+          // the pending insert landed after an abort (pause/stop/manual
+          // skip cleared the flag) or on a stale queue — drop it instead
+          // of fading it in
+          let wasAborted = !self.isCrossfadePreparing
+          self.isCrossfadePreparing = false
+          guard !wasAborted, !self.isPreloadedNextStale else {
+            self.discardSpareInsert()
+            return
+          }
+          self.nextPreloadedPlayable = nextPlayable
+          if self.isAutoCachePlayedItems, nextPlayable.isDownloadAvailable,
+             let accountInfo = nextPlayable.account?.info {
+            self.getPlayableDownloaderCB(accountInfo)
+              .download(object: nextPlayable, asTier: .cache)
+          }
+          self.startCrossfadeFade()
+        } catch {
+          self.isCrossfadePreparing = false
+          self.discardSpareInsert()
+          self.eventLogger.report(topic: "Player", error: error)
+        }
+      }
+    }
+  }
+
+  /// The fade and the logical track change start together: the queue
+  /// advance goes through the normal `didItemFinishedPlaying` path so Now
+  /// Playing, scrobble and notifier semantics fire at fade-start (the
+  /// moment the incoming track becomes audible), and `handleRequest`
+  /// adopts the spare engine via the preloaded-match branch.
+  private func startCrossfadeFade() {
+    guard let sparePlayer, nextPreloadedPlayable != nil else { return }
+    isCrossfading = true
+    fadeOutPlayerRef = player
+    fadeInPlayerRef = sparePlayer
+    fadeOutFactor = 1.0
+    fadeInFactor = 0.0
+    // the visualizer/haptics tap follows the incoming track — it is on
+    // the EQ node (before the output-volume ramp), so it sees the new
+    // track at full level for the whole fade
+    moveAnalyzerTap(to: spareEqualizer)
+    let remainingTime = max(0.05, duration - elapsedTime)
+    crossfadeActiveDurationInSec = min(crossfadeDurationInSec, remainingTime)
+    crossfadeStartUptime = ProcessInfo.processInfo.systemUptime
+    crossfadeTimer?.invalidate()
+    crossfadeTimer = Timer.scheduledTimer(
+      withTimeInterval: Self.crossfadeUpdateIntervalInSec,
+      repeats: true
+    ) { [weak self] _ in
+      Task { @MainActor in
+        self?.crossfadeTick()
+      }
+    }
+    // the outgoing entry is logically finished now — required by the
+    // preloaded-match branch; its real finish callback is ignored because
+    // `currentPlayUrl` already moved to the incoming entry
+    isPreviousPlaylableFinshed = true
+    responder?.didItemFinishedPlaying()
+  }
+
+  private func crossfadeTick() {
+    guard isCrossfading else { return }
+    let elapsed = ProcessInfo.processInfo.systemUptime - crossfadeStartUptime
+    let progress = min(1.0, elapsed / crossfadeActiveDurationInSec)
+    // equal-power ramp keeps perceived loudness constant mid-fade
+    fadeOutFactor = Float(cos(progress * .pi / 2.0))
+    fadeInFactor = Float(sin(progress * .pi / 2.0))
+    applyVolumes()
+    if progress >= 1.0 {
+      finishCrossfade()
+    }
+  }
+
+  private func finishCrossfade() {
+    crossfadeTimer?.invalidate()
+    crossfadeTimer = nil
+    fadeOutPlayerRef?.stop()
+    fadeOutPlayerRef = nil
+    fadeInPlayerRef = nil
+    fadeOutFactor = 1.0
+    fadeInFactor = 1.0
+    isCrossfading = false
+    applyVolumes()
+  }
+
+  /// Hard-cut out of any in-flight crossfade: stops whatever sits on the
+  /// spare engine (incoming pre-adopt, draining post-adopt), restores the
+  /// active engine to full volume and moves the analyzer tap back.
+  /// Must no-op outside a crossfade — the markers it clears belong to the
+  /// spare engine, while the same slots double as the normal preload
+  /// bookkeeping of the active engine's queue.
+  private func abortCrossfade() {
+    guard isCrossfadePreparing || isCrossfading ||
+          fadeOutPlayerRef != nil || fadeInPlayerRef != nil
+    else { return }
+    crossfadeTimer?.invalidate()
+    crossfadeTimer = nil
+    isCrossfading = false
+    isCrossfadePreparing = false
+    sparePlayer?.stop()
+    if let fadeOutPlayerRef, fadeOutPlayerRef !== player {
+      fadeOutPlayerRef.stop()
+    }
+    fadeOutPlayerRef = nil
+    fadeInPlayerRef = nil
+    fadeOutFactor = 1.0
+    fadeInFactor = 1.0
+    moveAnalyzerTap(to: equalizer)
+    nextPreloadedPlayable = nil
+    nextPreloadedUrl = ""
+    applyVolumes()
+  }
+
+  /// drops an incoming-track insert that finished after the crossfade was
+  /// already aborted — the spare engine must not keep playing it silently
+  private func discardSpareInsert() {
+    sparePlayer?.stop()
+    nextPreloadedPlayable = nil
+    nextPreloadedUrl = ""
+    perloadedPlayType = nil
+    perloadedStreamingBitrate = nil
+    preloadTranscodingFormat = nil
   }
 
   @MainActor
@@ -315,6 +537,7 @@ class BackendAudioPlayer: NSObject {
   }
 
   private func handleError(error: Error) {
+    abortCrossfade()
     isErrorOccurred = true
     wasPlayingBeforeErrorOccurred = isPlaying
     pause()
@@ -340,10 +563,15 @@ class BackendAudioPlayer: NSObject {
     player?.resume()
     startTimers()
     player?.rate = Float(userDefinedPlaybackRate.asDouble)
+    // re-assert the user volume — a leftover fade gain must not leak
+    applyVolumes()
     audioAnalyzer.play()
   }
 
   func pause() {
+    // a pause hard-cuts an in-flight crossfade — the draining tail must
+    // not keep bleeding audio while the player is paused
+    abortCrossfade()
     isPlaying = false
     player?.pause()
     stopTimers()
@@ -372,6 +600,11 @@ class BackendAudioPlayer: NSObject {
       os_log(.default, "Seek ignored: current entry is not seekable")
       return
     }
+    // a seek cancels any in-flight fade — the incoming track (already
+    // the active engine after adoption) jumps straight to full volume
+    if isCrossfadeActive {
+      abortCrossfade()
+    }
     if currentPlayUrl != "", player?.getState() == .playing || player?.getState() == .paused {
       seekTimeWhenStarted = nil
       player?.seek(to: toSecond)
@@ -385,18 +618,14 @@ class BackendAudioPlayer: NSObject {
     initAudioStreamingPlayerAndNodes()
   }
 
-  private func initAudioStreamingPlayerAndNodes() {
-    guard player == nil else { return }
-    player = createAudioStreamingPlayerCB()
-
-    equalizer = AVAudioUnitEQ(numberOfBands: 10)
-    replayGainNode = AVAudioMixerNode()
-    audioAnalyzer = AudioAnalyzer()
-
-    guard let player,
-          let eq = equalizer,
-          let replayGain = replayGainNode
-    else { return }
+  /// one engine plus its EQ and ReplayGain mixer — nodes cannot span
+  /// engines, so each of the two crossfade players owns its own set
+  private func buildPlayerWithNodes() -> (
+    player: AudioStreamingPlayer, equalizer: AVAudioUnitEQ, replayGain: AVAudioMixerNode
+  ) {
+    let player = createAudioStreamingPlayerCB()
+    let eq = AVAudioUnitEQ(numberOfBands: 10)
+    let replayGain = AVAudioMixerNode()
 
     player.volume = volumePlayer
     player.delegate = self
@@ -406,13 +635,44 @@ class BackendAudioPlayer: NSObject {
     player.rate = Float(userDefinedPlaybackRate.asDouble)
 
     player.attach(nodes: [eq, replayGain])
+    setupEqualizerBands(on: eq)
+    applyEqualizerSetting(eqSetting: currentEqualizerSetting, to: eq)
+    return (player, eq, replayGain)
+  }
 
-    audioAnalyzer.install(on: equalizer!)
+  private func initAudioStreamingPlayerAndNodes() {
+    guard player == nil else { return }
+    audioAnalyzer = AudioAnalyzer()
 
-    setupEqualizerBands()
-    applyEqualizerSetting(eqSetting: currentEqualizerSetting)
+    let nodes = buildPlayerWithNodes()
+    player = nodes.player
+    equalizer = nodes.equalizer
+    replayGainNode = nodes.replayGain
+
+    moveAnalyzerTap(to: equalizer)
     applyReplayGain()
     os_log(.debug, "Player setup completed with EQ and ReplayGain support")
+  }
+
+  /// lazily builds the second engine when a crossfade actually needs it —
+  /// no crossfade setting means zero extra engine cost
+  private func ensureSparePlayer() {
+    guard sparePlayer == nil else { return }
+    let nodes = buildPlayerWithNodes()
+    sparePlayer = nodes.player
+    spareEqualizer = nodes.equalizer
+    spareReplayGainNode = nodes.replayGain
+    sparePlayer?.volume = 0
+    applyReplayGain()
+  }
+
+  /// moves the analyzer tap between engines' EQ nodes — the tap cannot
+  /// span engines, so it follows whichever engine wins the fade
+  private func moveAnalyzerTap(to node: AVAudioNode?) {
+    guard let node, analyzerTapNode !== node else { return }
+    analyzerTapNode?.removeTap(onBus: 0)
+    audioAnalyzer.install(on: node)
+    analyzerTapNode = node
   }
 
   var shouldPlaybackStart: Bool {
@@ -461,6 +721,15 @@ class BackendAudioPlayer: NSObject {
       activeTranscodingFormat = preloadTranscodingFormat
       preloadTranscodingFormat = nil
       isPreviousPlaylableFinshed = false
+      if isCrossfading {
+        // G3 — the incoming track already renders on the spare engine;
+        // promote spare to active. The outgoing engine keeps fading to
+        // silence on the crossfade timer and is stopped at its end.
+        spareReplayGainValue = currentReplayGainValue
+        swap(&player, &sparePlayer)
+        swap(&equalizer, &spareEqualizer)
+        swap(&replayGainNode, &spareReplayGainNode)
+      }
       currentReplayGainValue = nextPreloadedPlayable.replayGainTrackGain
       applyReplayGain()
       self.nextPreloadedPlayable = nil
@@ -468,7 +737,9 @@ class BackendAudioPlayer: NSObject {
       responder?.notifyItemPreparationFinished()
     } else if let relFilePath = playable.relFilePath,
               fileManager.fileExits(relFilePath: relFilePath) {
+      // an explicit play request hard-cuts any in-flight crossfade and
       // any still-queued preload is superseded by this explicit request
+      abortCrossfade()
       invalidatePreloadedNext()
       currentPlayUrl = ""
       activeStreamingBitrate = nil
@@ -488,7 +759,9 @@ class BackendAudioPlayer: NSObject {
       isPlaying = shouldPlaybackStart
       responder?.notifyItemPreparationFinished()
     } else if !isOfflineMode {
+      // an explicit play request hard-cuts any in-flight crossfade and
       // any still-queued preload is superseded by this explicit request
+      abortCrossfade()
       invalidatePreloadedNext()
       currentPlayUrl = ""
       activeStreamingBitrate = nil
@@ -559,6 +832,7 @@ class BackendAudioPlayer: NSObject {
   }
 
   private func clearPlayer() {
+    abortCrossfade()
     isPreviousPlaylableFinshed = true
     currentPreparedUrl = ""
     currentPlayUrl = ""
@@ -616,7 +890,12 @@ class BackendAudioPlayer: NSObject {
         else {
           throw BackendError.invalidUrl
         }
-        playType = .stream
+        if queueType == .play {
+          playType = .stream
+          perloadedPlayType = nil
+        } else {
+          perloadedPlayType = .stream
+        }
         return streamUrl
       } else {
         if queueType == .play {
@@ -717,6 +996,17 @@ class BackendAudioPlayer: NSObject {
       } else {
         player?.queue(url: asset.url, headers: httpHeaders)
       }
+    case .crossfade:
+      // the incoming track plays on the spare engine immediately —
+      // silent until the fade ramps its volume in
+      nextPreloadedUrl = asset.url.absoluteString
+      sparePlayer?.rate = Float(userDefinedPlaybackRate.asDouble)
+      sparePlayer?.volume = 0
+      if httpHeaders.isEmpty {
+        sparePlayer?.play(url: asset.url)
+      } else {
+        sparePlayer?.play(url: asset.url, headers: httpHeaders)
+      }
     }
   }
 
@@ -741,21 +1031,19 @@ class BackendAudioPlayer: NSObject {
   }
 
   private func applyEqualizerToActiveContent() {
-    if isEqualizerEnabled {
-      applyEqualizerSetting(eqSetting: currentEqualizerSetting)
-    } else {
-      applyEqualizerSetting(eqSetting: .off)
-    }
+    let effectiveSetting = isEqualizerEnabled ? currentEqualizerSetting : .off
+    // apply to both engines so a crossfade-incoming track starts with
+    // the same curve the outgoing one had
+    applyEqualizerSetting(eqSetting: effectiveSetting, to: equalizer)
+    applyEqualizerSetting(eqSetting: effectiveSetting, to: spareEqualizer)
     applyReplayGain()
   }
 
-  private func setupEqualizerBands() {
-    guard let equalizer else { return }
-
+  private func setupEqualizerBands(on eq: AVAudioUnitEQ) {
     for (index, frequency) in EqualizerSetting.frequencies.enumerated() {
-      guard index < equalizer.bands.count else { break }
+      guard index < eq.bands.count else { break }
 
-      let band = equalizer.bands[index]
+      let band = eq.bands[index]
       band.frequency = frequency
       band.bandwidth = 1.0
       band.filterType = .parametric
@@ -764,14 +1052,14 @@ class BackendAudioPlayer: NSObject {
     }
   }
 
-  private func applyEqualizerSetting(eqSetting: EqualizerSetting) {
-    guard let equalizer else { return }
+  private func applyEqualizerSetting(eqSetting: EqualizerSetting, to eq: AVAudioUnitEQ?) {
+    guard let eq else { return }
 
     // EQ band gains
     for (index, gain) in eqSetting.gains.enumerated() {
-      guard index < equalizer.bands.count else { break }
+      guard index < eq.bands.count else { break }
 
-      let band = equalizer.bands[index]
+      let band = eq.bands[index]
 
       band.filterType = .parametric
       band.bandwidth = 1.0
@@ -799,19 +1087,26 @@ class BackendAudioPlayer: NSObject {
     applyReplayGain()
   }
 
+  /// applies each engine's own gain — the active node gets the active
+  /// track's gain, the spare node the incoming track's
   private func applyReplayGain() {
-    guard let replayGain = replayGainNode else { return }
+    applyReplayGain(to: replayGainNode, gainDb: currentReplayGainValue)
+    applyReplayGain(to: spareReplayGainNode, gainDb: spareReplayGainValue)
+  }
+
+  private func applyReplayGain(to replayGain: AVAudioMixerNode?, gainDb: Float) {
+    guard let replayGain = replayGain else { return }
 
     let eqCompensation = isEqualizerEnabled ? equalizerVolumeCompensation : 1.0
 
-    if isReplayGainEnabled, currentReplayGainValue != 0.0 {
+    if isReplayGainEnabled, gainDb != 0.0 {
       // Convert dB to linear scale: gain = pow(10, dB / 20)
-      let linearGain = pow(10.0, currentReplayGainValue / 20.0)
+      let linearGain = pow(10.0, gainDb / 20.0)
       replayGain.outputVolume = linearGain * eqCompensation
       os_log(
         .debug,
         "ReplayGain: %.2f dB → %.3f linear gain (EQ Compensation: %.2f)",
-        currentReplayGainValue,
+        gainDb,
         linearGain,
         eqCompensation
       )
@@ -891,6 +1186,11 @@ extension BackendAudioPlayer: AudioStreaming.AudioPlayerDelegate {
   ) {
     let entryID = entryId.id
     Task { @MainActor in
+      // finish callbacks from the draining (spare) engine must not drive
+      // the state machine — after a same-URL fade (repeat-single, or the
+      // same song queued twice) the outgoing entry's id equals
+      // `currentPlayUrl` and would double-advance the queue
+      guard player === self.player else { return }
       if self.currentPlayUrl == entryID {
         self.currentPlayUrl = ""
         self.itemFinishedPlaying()
@@ -903,7 +1203,15 @@ extension BackendAudioPlayer: AudioStreaming.AudioPlayerDelegate {
     error: AudioStreaming.AudioPlayerError
   ) {
     Task { @MainActor in
-      self.handleError(error: error)
+      if player === self.player || self.player == nil {
+        self.handleError(error: error)
+      } else {
+        // a failing spare engine must not tear down active playback —
+        // drop just the crossfade it was prepared for
+        os_log(.default, "Spare player error: %s", error.localizedDescription)
+        self.abortCrossfade()
+        self.eventLogger.report(topic: "Player", error: error)
+      }
     }
   }
 
@@ -912,6 +1220,9 @@ extension BackendAudioPlayer: AudioStreaming.AudioPlayerDelegate {
     queuedItems: [AudioStreaming.AudioEntryId]
   ) {
     Task { @MainActor in
+      // only the active engine's queue maps to `currentPlayUrl` — a
+      // cancelled spare-engine entry must not clear the playing track
+      guard player === self.player else { return }
       self.currentPlayUrl = ""
     }
   }

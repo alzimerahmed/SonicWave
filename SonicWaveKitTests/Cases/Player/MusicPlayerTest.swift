@@ -448,7 +448,8 @@ class MusicPlayerTest: XCTestCase {
       musicPlayer: testMusicPlayer,
       library: library,
       backendAudioPlayer: backendPlayer,
-      userStatistics: userStatistics
+      userStatistics: userStatistics,
+      settings: storage.settings
     )
     testPlayer.addNotifier(notifier: mockMusicPlayable)
 

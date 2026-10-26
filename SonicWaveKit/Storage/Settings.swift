@@ -264,6 +264,18 @@ public struct UserSettings: Sendable, Codable {
     set { _isReplayGainEnabled = newValue }
   }
 
+  /// crossfade (G3): overlap duration in seconds between the outgoing
+  /// and incoming track at a track boundary, rendered by a second
+  /// `AudioStreaming` engine. `0` disables crossfading — the classic
+  /// gapless queue preload stays active instead. Radios and seek-locked
+  /// streams never crossfade.
+  // optional backing to stay decodable for settings stored before this key existed
+  private var _crossfadeDurationSeconds: Int? = nil
+  public var crossfadeDurationSeconds: Int {
+    get { _crossfadeDurationSeconds ?? 0 }
+    set { _crossfadeDurationSeconds = max(0, newValue) }
+  }
+
   private var _isMiniPlayerAlwaysOnTop: Bool = false
   public var isMiniPlayerAlwaysOnTop: Bool {
     get { _isMiniPlayerAlwaysOnTop }

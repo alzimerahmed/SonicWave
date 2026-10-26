@@ -98,6 +98,10 @@ final class Settings: ObservableObject {
   @Published
   var isReplayGainEnabled = true
 
+  /// crossfade (G3): overlap seconds at track boundaries; 0 = off
+  @Published
+  var crossfadeDurationInSec = 0
+
   @Published
   var isMiniPlayerAlwaysOnTop = false
 

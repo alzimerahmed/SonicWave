@@ -229,9 +229,13 @@ public class AmperKit {
       musicPlayer: curPlayer,
       library: storage.main.library,
       backendAudioPlayer: backendAudioPlayer,
-      userStatistics: userStatistics
+      userStatistics: userStatistics,
+      settings: storage.settings
     )
     facadeImpl.isOfflineMode = storage.settings.user.isOfflineMode
+    backendAudioPlayer.crossfadeDurationInSec = Double(
+      storage.settings.user.crossfadeDurationSeconds
+    )
 
     playerNowPlayingInfoCenterHandler = NowPlayingInfoCenterHandler(
       musicPlayer: curPlayer,
