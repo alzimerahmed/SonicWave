@@ -29,6 +29,12 @@ import UIKit
 
 struct AmperfyAppShortcuts: AppShortcutsProvider {
   static var appShortcuts: [AppShortcut] {
+    // `AppShortcutsBuilder` historically surfaces at most 10 shortcuts —
+    // entries beyond the cap are silently dropped, so this list is
+    // curated to exactly 10: the eight highest-value originals plus
+    // Sleep Timer and Play Mix. Repeat/Shuffle transport is covered by
+    // the Home-Screen widgets; the AlbumShuffle/PlaybackRate/Download/
+    // Dislike intents still exist, they simply have no shortcut phrase.
     //
     // Quick Actions
     //
@@ -113,36 +119,6 @@ struct AmperfyAppShortcuts: AppShortcutsProvider {
       systemImageName: "star"
     )
     //
-    // Change Repeat / Shuffle
-    //
-    AppShortcut(
-      intent: SetRepeatIntent(),
-      phrases: [
-        "Change repeat in \(.applicationName)",
-        "Set repeat \(\.$repeatMode) in \(.applicationName)",
-        "Set repeat mode to \(\.$repeatMode) in \(.applicationName)",
-        "Activate repeat \(\.$repeatMode) in \(.applicationName)",
-      ],
-      shortTitle: "Change Repeat",
-      systemImageName: "repeat"
-    )
-    AppShortcut(
-      intent: SetShuffleIntent(),
-      phrases: [
-        "Shuffle in \(.applicationName)",
-        "Change shuffle in \(.applicationName)",
-        "Shuffle \(\.$isShuffle) in \(.applicationName)",
-        "Change shuffle \(\.$isShuffle) in \(.applicationName)",
-        "Change shuffle to \(\.$isShuffle) in \(.applicationName)",
-        "Change shuffle mode to \(\.$isShuffle) in \(.applicationName)",
-        "Set shuffle \(\.$isShuffle) in \(.applicationName)",
-        "Set shuffle to \(\.$isShuffle) in \(.applicationName)",
-        "Set shuffle mode to \(\.$isShuffle) in \(.applicationName)",
-      ],
-      shortTitle: "Change Shuffle",
-      systemImageName: "shuffle"
-    )
-    //
     // Playback Shortcutes
     //
     AppShortcut(
@@ -164,7 +140,7 @@ struct AmperfyAppShortcuts: AppShortcutsProvider {
       systemImageName: "forward.fill"
     )
     //
-    // Sleep Timer / Playback Rate
+    // Sleep Timer / Discovery
     //
     AppShortcut(
       intent: SleepTimerIntent(),
@@ -173,25 +149,10 @@ struct AmperfyAppShortcuts: AppShortcutsProvider {
         "Set sleep timer to \(\.$timerOption) in \(.applicationName)",
         "Turn off sleep timer in \(.applicationName)",
         "Cancel sleep timer in \(.applicationName)",
-        "Stop playback in \(\.$timerOption) in \(.applicationName)",
       ],
       shortTitle: "Sleep Timer",
       systemImageName: "moon.zzz"
     )
-    AppShortcut(
-      intent: SetPlaybackRateIntent(),
-      phrases: [
-        "Set playback rate in \(.applicationName)",
-        "Set playback rate to \(\.$rate) in \(.applicationName)",
-        "Change playback speed to \(\.$rate) in \(.applicationName)",
-        "Change playback rate to \(\.$rate) in \(.applicationName)",
-      ],
-      shortTitle: "Playback Rate",
-      systemImageName: "gauge.open.with.lines.needle.33percent"
-    )
-    //
-    // Discovery / Album Shuffle
-    //
     AppShortcut(
       intent: PlayMixIntent(),
       phrases: [
@@ -202,39 +163,6 @@ struct AmperfyAppShortcuts: AppShortcutsProvider {
       ],
       shortTitle: "Play Mix",
       systemImageName: "point.3.filled.connected.trianglepath.dotted"
-    )
-    AppShortcut(
-      intent: StartAlbumShuffleIntent(),
-      phrases: [
-        "Shuffle albums in \(.applicationName)",
-        "Start album shuffle in \(.applicationName)",
-        "Play album radio in \(.applicationName)",
-        "Shuffle my albums in \(.applicationName)",
-      ],
-      shortTitle: "Shuffle Albums",
-      systemImageName: "shuffle"
-    )
-    //
-    // Library Maintenance
-    //
-    AppShortcut(
-      intent: DownloadEntityIntent(),
-      phrases: [
-        "Download an item by ID in \(.applicationName)",
-        "Download \(\.$libraryElementType) with ID \(\.$id) in \(.applicationName)",
-      ],
-      shortTitle: "Download ID",
-      systemImageName: "arrow.down.circle"
-    )
-    AppShortcut(
-      intent: SetDislikeForCurrentlyPlayingSongIntent(),
-      phrases: [
-        "Dislike song in \(.applicationName)",
-        "Dislike current song in \(.applicationName)",
-        "Dislike this song in \(.applicationName)",
-      ],
-      shortTitle: "Dislike Song",
-      systemImageName: "hand.thumbsdown"
     )
   }
 }
