@@ -361,7 +361,17 @@ class BackendAudioPlayer: NSObject {
     player?.rate = Float(newValue.asDouble)
   }
 
+  /// false while the playing entry does not support seeking (Ogg Vorbis
+  /// streams, live radio) — engine-side seeks on those silently no-op
+  var isSeekable: Bool {
+    player?.isSeekable ?? true
+  }
+
   func seek(toSecond: Double) {
+    if currentPlayUrl != "", let player, !player.isSeekable {
+      os_log(.default, "Seek ignored: current entry is not seekable")
+      return
+    }
     if currentPlayUrl != "", player?.getState() == .playing || player?.getState() == .paused {
       seekTimeWhenStarted = nil
       player?.seek(to: toSecond)

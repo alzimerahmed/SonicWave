@@ -174,6 +174,8 @@ public protocol PlayerFacade {
   var contextName: String { get }
   var elapsedTime: Double { get }
   var duration: Double { get }
+  /// false while the playing entry cannot seek (Ogg Vorbis, live radio)
+  var isSeekable: Bool { get }
   var isShuffle: Bool { get }
   func toggleShuffle()
   /// true while an album-shuffle session (G21, `AccountSetting
@@ -435,6 +437,10 @@ class PlayerFacadeImpl: PlayerFacade {
 
   var duration: Double {
     backendAudioPlayer.duration
+  }
+
+  var isSeekable: Bool {
+    backendAudioPlayer.isSeekable
   }
 
   var isShuffle: Bool {
