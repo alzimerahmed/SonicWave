@@ -1157,7 +1157,6 @@ class BackendAudioPlayer: NSObject {
     insert(
       playable: playable,
       withUrl: streamUrl,
-      streamingMaxBitrate: streamingMaxBitrate,
       queueType: queueType,
       httpHeaders: httpHeaders
     )
@@ -1166,7 +1165,6 @@ class BackendAudioPlayer: NSObject {
   private func insert(
     playable: AbstractPlayable,
     withUrl url: URL,
-    streamingMaxBitrate: StreamingMaxBitratePreference = .noLimit,
     queueType: BackendAudioQueueType,
     httpHeaders: [String: String] = [:]
   ) {
