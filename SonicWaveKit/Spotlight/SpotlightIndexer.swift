@@ -81,6 +81,12 @@ public actor SpotlightIndexer {
   private var pendingUpsertUris = Set<String>()
   private var pendingDeleteIdentifiers = Set<String>()
   private var drainTask: Task<Void, Never>?
+  /// reentrancy guard — `drainPending` suspends on Spotlight IO with
+  /// `drainTask` already nilled, so an enqueue landing mid-drain would
+  /// spawn a second, interleaved drain without this flag (unordered
+  /// delete/upsert). The single in-flight drain loops until the pending
+  /// sets are empty, so an early-returned enqueue loses nothing.
+  private var isDraining = false
   private var fullReindexTask: Task<Void, Never>?
 
   init(
@@ -297,8 +303,12 @@ public actor SpotlightIndexer {
   }
 
   /// Applies pending work immediately — the debounced drain and tests both
-  /// funnel through here.
+  /// funnel through here. Reentrant calls return early: the in-flight
+  /// drain already loops until both pending sets are empty.
   func drainPending() async {
+    guard !isDraining else { return }
+    isDraining = true
+    defer { isDraining = false }
     drainTask = nil
     while isIndexingAllowed,
           !pendingUpsertUris.isEmpty || !pendingDeleteIdentifiers.isEmpty,
