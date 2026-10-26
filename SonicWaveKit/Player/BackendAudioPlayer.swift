@@ -492,8 +492,12 @@ class BackendAudioPlayer: NSObject {
     }
     // the outgoing entry is logically finished now — required by the
     // preloaded-match branch; its real finish callback is ignored because
-    // `currentPlayUrl` already moved to the incoming entry
+    // `currentPlayUrl` already moved to the incoming entry.
+    // `itemFinishedPlaying` is bypassed here, so its error-recovery
+    // re-arm must happen inline — a crossfade boundary must not keep
+    // `triggerReinsertPlayableCB` suppressed
     isPreviousPlaylableFinshed = true
+    isTriggerReinsertPlayableAllowed = true
     responder?.didItemFinishedPlaying()
   }
 
