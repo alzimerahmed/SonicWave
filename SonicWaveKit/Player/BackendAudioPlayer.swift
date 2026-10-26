@@ -377,6 +377,10 @@ class BackendAudioPlayer: NSObject {
 
     player.volume = volumePlayer
     player.delegate = self
+    // a fresh engine (init + restartPlayer after handleError) resets to
+    // rate 1.0 — re-apply the user rate so the engine and the UI stay
+    // in sync
+    player.rate = Float(userDefinedPlaybackRate.asDouble)
 
     player.attach(nodes: [eq, replayGain])
 
