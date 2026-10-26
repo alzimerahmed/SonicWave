@@ -186,7 +186,10 @@ public class QuickActionsHandler {
     storage.settings.accounts.updateSetting(accountInfo) { accountSettings in
       accountSettings.isAlbumShuffleActive = true
     }
-    player.playShuffled(context: PlayContext(name: "Album Shuffle", playables: songs))
+    player.playShuffled(context: PlayContext(
+      name: String(localized: "Album Shuffle", bundle: .main),
+      playables: songs
+    ))
   }
 }
 

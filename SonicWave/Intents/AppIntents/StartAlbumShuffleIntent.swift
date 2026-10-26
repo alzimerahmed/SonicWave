@@ -88,7 +88,10 @@ struct StartAlbumShuffleIntent: AppIntent {
       accountSettings.isAlbumShuffleActive = true
     }
     appDelegate.player.playShuffled(
-      context: PlayContext(name: "Album Shuffle", playables: songs)
+      context: PlayContext(
+        name: String(localized: "Album Shuffle"),
+        playables: songs
+      )
     )
 
     let dialog = "Album shuffle started."
