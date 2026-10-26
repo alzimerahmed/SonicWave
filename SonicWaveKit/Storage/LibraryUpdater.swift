@@ -40,6 +40,14 @@ public class LibraryUpdater {
   private let storage: PersistentStorage
   private let fileManager = CacheFileManager.shared
 
+  /// App-side purge of the shared widget/live-activity artifacts in the
+  /// App Group container (`WidgetState.json`, `widget-art/`, pending
+  /// command file). The kit can't see the app's `WidgetStore`, so the
+  /// app registers this hook at launch — nil under test targets, where
+  /// the purge is simply skipped.
+  @MainActor
+  public var sharedContainerPurgeHandler: (@MainActor () -> Void)?
+
   init(storage: PersistentStorage) {
     self.storage = storage
   }
@@ -81,6 +89,12 @@ public class LibraryUpdater {
           type: .info,
           obsoleteAccountInfo.ident,
         )
+      }
+      // the shared widget state isn't per-account keyed, so one
+      // obsolete account invalidates the whole surface — purge it once
+      // (same seam as the Spotlight purge above)
+      if !obsoleteCoreDataAccountInfos.isEmpty {
+        sharedContainerPurgeHandler?()
       }
     }
   }

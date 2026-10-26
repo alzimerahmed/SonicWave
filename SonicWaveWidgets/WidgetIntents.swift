@@ -21,6 +21,7 @@
 
 import AppIntents
 import Foundation
+import os.log
 
 // MARK: - WidgetCommandPerformer
 
@@ -32,8 +33,25 @@ import Foundation
 /// survives in the container and `WidgetCommandConsumer.start()` drains it
 /// at next launch — the widget itself never has to open the app.
 enum WidgetCommandPerformer {
+  private static let log = OSLog(
+    subsystem: "com.alzimerahmed.SonicWave",
+    category: "WidgetCommandPerformer"
+  )
+
   static func dispatch(_ command: WidgetCommand) {
-    try? WidgetStore.writeCommand(command)
+    do {
+      try WidgetStore.writeCommand(command)
+    } catch {
+      // log, then ping anyway — a pending command file from an earlier
+      // tap may still be sitting in the container
+      os_log(
+        "Widget command write failed (%s): %s",
+        log: log,
+        type: .error,
+        command.rawValue,
+        error.localizedDescription
+      )
+    }
     WidgetStore.postCommandNotification()
   }
 }

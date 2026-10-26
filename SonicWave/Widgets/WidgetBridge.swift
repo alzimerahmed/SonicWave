@@ -21,6 +21,9 @@
 
 import Foundation
 import SonicWaveKit
+#if canImport(WidgetKit)
+  import WidgetKit
+#endif
 
 // MARK: - WidgetBridge
 
@@ -63,5 +66,23 @@ final class WidgetBridge {
   /// the next player event
   func notifyLiveActivitySettingChanged() {
     liveActivityManager.settingChanged()
+  }
+
+  /// Security seam (M1): account teardown — logout and the launch-time
+  /// obsolete-account cleanup — must also erase the shared widget
+  /// artifacts (`WidgetState.json`, `widget-art/` contents, pending
+  /// command file); the state isn't per-account keyed, so any removed
+  /// account invalidates the whole surface. Static so the seam works
+  /// without materializing the lazy bridge.
+  static func purgeSharedState() {
+    WidgetStore.purgeSharedState()
+    #if canImport(WidgetKit)
+      WidgetCenter.shared
+        .reloadTimelines(ofKind: WidgetSharedConfig.kindNowPlaying)
+      WidgetCenter.shared
+        .reloadTimelines(ofKind: WidgetSharedConfig.kindRecentlyPlayed)
+      WidgetCenter.shared
+        .reloadTimelines(ofKind: WidgetSharedConfig.kindLockScreenNowPlaying)
+    #endif
   }
 }

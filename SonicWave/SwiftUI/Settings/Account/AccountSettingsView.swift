@@ -132,6 +132,10 @@ struct AccountSettingsView: View {
       await AmperKit.shared.spotlightIndexer
         .deleteItems(forAccountIdent: accountInfo.ident)
     }
+    // same seam for the shared widget artifacts — the signed-out
+    // account's now-playing/recent entries must not stay on the
+    // Home/Lock Screen
+    WidgetBridge.purgeSharedState()
     // reset login credentials -> at new start the login view is presented to auth and resync library
     appDelegate.storage.settings.accounts.logout(accountInfo)
     appDelegate.notificationHandler.post(name: .accountDeleted, object: nil, userInfo: nil)

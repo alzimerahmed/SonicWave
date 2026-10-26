@@ -92,7 +92,10 @@ final class WidgetCommandConsumer {
   /// session on the next launch would be surprising
   fileprivate func consumePending() {
     guard let envelope = WidgetStore.consumeCommandEnvelope() else { return }
-    let age = -envelope.createdAt.timeIntervalSinceNow
+    // abs() also bounds forward skew — a future `createdAt` would
+    // otherwise produce a negative age that passes the staleness check
+    // and lets a clock-shifted (or crafted) command execute
+    let age = abs(envelope.createdAt.timeIntervalSinceNow)
     guard age < WidgetSharedConfig.commandMaxAge else {
       os_log(
         "Dropping stale widget command (%lds old)",

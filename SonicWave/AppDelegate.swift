@@ -269,6 +269,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     if storage.settings.user.cacheLimit != 0 {
       storage.settings.user.cacheLimit = 0
     }
+    // kit→app seam: the obsolete-account cleanup inside must also wipe
+    // the shared widget artifacts; the kit can't reach `WidgetStore`
+    // so the purge is injected as a closure
+    libraryUpdater.sharedContainerPurgeHandler = WidgetBridge.purgeSharedState
     libraryUpdater.performAccountCleanUpIfNeccessaryInBackground()
 
     configureDefaultNavigationBarStyle()

@@ -139,15 +139,20 @@ struct WidgetRecentItem: Codable, Sendable, Identifiable, Hashable {
   var artist: String
   var artworkFileName: String?
 
-  /// `sonicwave://x-callback-url/playID?id=…&libraryElementType=…`
+  /// `sonicwave://x-callback-url/playID?id=…&libraryElementType=…` —
+  /// built via `URLComponents` so an `&`, `=` or `+` inside an entity id
+  /// can't break out and inject extra query parameters
   var deepLinkURL: URL? {
-    guard libraryElementType.isPlayableViaDeepLink,
-          let encodedId = id.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)
-    else { return nil }
-    return URL(
-      string: "\(WidgetSharedConfig.appURLScheme)://x-callback-url/playID"
-        + "?id=\(encodedId)&libraryElementType=\(libraryElementType.rawValue)"
-    )
+    guard libraryElementType.isPlayableViaDeepLink else { return nil }
+    var components = URLComponents()
+    components.scheme = WidgetSharedConfig.appURLScheme
+    components.host = "x-callback-url"
+    components.path = "/playID"
+    components.queryItems = [
+      URLQueryItem(name: "id", value: id),
+      URLQueryItem(name: "libraryElementType", value: libraryElementType.rawValue),
+    ]
+    return components.url
   }
 }
 
@@ -205,7 +210,13 @@ enum WidgetStore {
   }
 
   static func artworkURL(fileName: String) -> URL? {
-    artworkDirectoryURL?.appendingPathComponent(fileName)
+    // the file name travels inside the shared-container JSON blob —
+    // reject path separators and `..` segments so a crafted state file
+    // can't resolve artwork outside `widget-art/`; the callers render
+    // the themed placeholder on `nil`
+    guard fileName == (fileName as NSString).lastPathComponent,
+          !fileName.contains("..") else { return nil }
+    return artworkDirectoryURL?.appendingPathComponent(fileName)
   }
 
   static func readState() -> WidgetState? {
@@ -221,7 +232,11 @@ enum WidgetStore {
   }
 
   static func writeCommand(_ command: WidgetCommand) throws {
-    guard let url = commandFileURL else { return }
+    // a missing App Group container must not masquerade as a delivered
+    // command — the Darwin ping would fire regardless
+    guard let url = commandFileURL else {
+      throw CocoaError(.fileNoSuchFile)
+    }
     let envelope = WidgetCommandEnvelope(command: command, createdAt: Date())
     let data = try JSONEncoder().encode(envelope)
     try data.write(to: url, options: .atomic)
@@ -241,6 +256,26 @@ enum WidgetStore {
     defer { try? FileManager.default.removeItem(at: url) }
     guard let data = try? Data(contentsOf: url) else { return nil }
     return try? JSONDecoder().decode(WidgetCommandEnvelope.self, from: data)
+  }
+
+  /// Wipes every widget artifact in the shared container: state is
+  /// reset to `.empty`, the `widget-art/` cache contents and any
+  /// pending command file are removed. Called on account teardown
+  /// (logout + obsolete-account cleanup) so a removed account's
+  /// now-playing/recent data can't linger on the Home/Lock Screen.
+  /// The callers reload WidgetKit timelines afterwards.
+  static func purgeSharedState() {
+    try? writeState(.empty)
+    if let commandURL = commandFileURL {
+      try? FileManager.default.removeItem(at: commandURL)
+    }
+    guard let directory = artworkDirectoryURL,
+          let files = try? FileManager.default
+          .contentsOfDirectory(atPath: directory.path) else { return }
+    for file in files {
+      try? FileManager.default
+        .removeItem(at: directory.appendingPathComponent(file))
+    }
   }
 
   /// Darwin ping — cross-process inside the App Group; wakes the app's
