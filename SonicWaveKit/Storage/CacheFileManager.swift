@@ -34,9 +34,20 @@ public class MimeFileConverter {
     "flac": "audio/x-flac", // the case "audio/flac" is already covered by UTType
   ]
 
+  /// Opus: AudioStreaming ships no libopus decoder, so these route to
+  /// the "enable transcoding" path instead of a hard engine error (G2).
+  /// Bare `audio/ogg`/`application/ogg` stays playable — Ogg Vorbis
+  /// decodes in-engine; only the explicit Opus codec forms are blocked.
+  /// Note: some servers report `.opus` files as plain `audio/ogg` —
+  /// indistinguishable from Vorbis by MIME alone, they still hit the
+  /// engine error path (documented limitation).
   static let iOSIncompatibleMimeTypes = [
     "audio/x-ms-wma",
     mimeTypeUnknown,
+    "audio/opus",
+    "application/opus",
+    "audio/ogg;codecs=opus",
+    "application/ogg;codecs=opus",
   ]
 
   static let conversionNeededMimeTypes = [
@@ -50,7 +61,10 @@ public class MimeFileConverter {
   }
 
   static func isMimeTypePlayableOniOS(mimeType: String) -> Bool {
-    !iOSIncompatibleMimeTypes.contains(where: { $0 == mimeType.lowercased() })
+    // spaces are stripped so `audio/ogg; codecs=opus` and
+    // `audio/ogg;codecs=opus` are the same type
+    let normalized = mimeType.lowercased().replacingOccurrences(of: " ", with: "")
+    return !iOSIncompatibleMimeTypes.contains(normalized)
   }
 
   static func getMIMEType(filenameExtension: String?) -> String? {
