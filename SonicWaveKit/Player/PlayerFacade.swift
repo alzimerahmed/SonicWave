@@ -255,6 +255,18 @@ public protocol PlayerFacade {
 
   func updateEqualizerEnabled(isEnabled: Bool)
   func updateEqualizerSetting(eqSetting: EqualizerSetting)
+  /// G22 — applies a parametric profile (custom or AutoEQ) as the
+  /// active profile; `updateEqualizerSetting` switches the kind back
+  /// to the legacy graphic curve
+  func updateEqualizerProfile(_: ParametricEQSetting)
+  /// display name of the EQ profile the engine currently applies —
+  /// a per-route override wins over the active profile; "Off" while
+  /// the EQ is disabled
+  var activeEqualizerProfileName: String { get }
+  /// the AutoEQ-derived parametric correction profiles bundled with
+  /// the kit — candidates for `updateEqualizerProfile` and per-route
+  /// overrides
+  var autoEqProfiles: [ParametricEQSetting] { get }
   /// stable identity (portType:uid, G22) of the audio output the route
   /// currently feeds — the key `setRouteEqualizerProfile` maps profile
   /// names to; nil while the session reports no route
@@ -600,6 +612,18 @@ class PlayerFacadeImpl: PlayerFacade {
 
   public func updateEqualizerSetting(eqSetting: EqualizerSetting) {
     backendAudioPlayer.updateEqualizerSetting(eqSetting: eqSetting)
+  }
+
+  func updateEqualizerProfile(_ profile: ParametricEQSetting) {
+    backendAudioPlayer.updateEqualizerProfile(profile)
+  }
+
+  var activeEqualizerProfileName: String {
+    backendAudioPlayer.appliedEqualizerProfileName
+  }
+
+  var autoEqProfiles: [ParametricEQSetting] {
+    AutoEqProfileStore.profiles
   }
 
   var currentOutputRouteKey: String? {
