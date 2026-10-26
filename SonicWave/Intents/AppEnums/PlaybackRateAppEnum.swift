@@ -34,15 +34,30 @@ enum PlaybackRateAppEnum: Int, AppEnum {
 
   static let typeDisplayRepresentation = TypeDisplayRepresentation(name: "Playback Rate")
   static let caseDisplayRepresentations: [Self: DisplayRepresentation] = [
-    .dot5: "0.5x",
-    .dot75: "0.75x",
+    .dot5: DisplayRepresentation(
+      title: "0.5x",
+      synonyms: ["half speed", "half-speed"]
+    ),
+    .dot75: DisplayRepresentation(
+      title: "0.75x",
+      synonyms: ["three-quarter speed", "three quarter speed"]
+    ),
     .one: DisplayRepresentation(
       title: "1x",
       synonyms: ["normal speed", "regular speed"]
     ),
-    .oneDot25: "1.25x",
-    .oneDot5: "1.5x",
-    .oneDot75: "1.75x",
+    .oneDot25: DisplayRepresentation(
+      title: "1.25x",
+      synonyms: ["one and a quarter speed", "one point two five"]
+    ),
+    .oneDot5: DisplayRepresentation(
+      title: "1.5x",
+      synonyms: ["one and a half speed", "one point five"]
+    ),
+    .oneDot75: DisplayRepresentation(
+      title: "1.75x",
+      synonyms: ["one and three-quarter speed", "one point seven five"]
+    ),
     .two: DisplayRepresentation(
       title: "2x",
       synonyms: ["double speed", "twice as fast"]

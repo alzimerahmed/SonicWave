@@ -98,6 +98,7 @@
 		504262B22BF5FC3400B5EF38 /* IntentManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50BE5D9D2851D5DE00156FC6 /* IntentManager.swift */; };
 		504262B32BF5FC3800B5EF38 /* PlayMediaIntentHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50BE5D442850EFE100156FC6 /* PlayMediaIntentHandler.swift */; };
 		504262B42BF5FC3D00B5EF38 /* NSUserActivity+IntentData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50A7BB30284F3F6400C02990 /* NSUserActivity+IntentData.swift */; };
+		7ED1CB010000000000000014 /* IntentResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ED1CA010000000000000013 /* IntentResultView.swift */; };
 		504415C72EE865D1005E8429 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 504415C62EE865D1005E8429 /* Settings.swift */; };
 		504627EA2B73B44C00F481F8 /* PopupPlayerVC.xib in Resources */ = {isa = PBXBuildFile; fileRef = 504627E92B73B44C00F481F8 /* PopupPlayerVC.xib */; };
 		5047B7082E3CB90C00D5090C /* PlayerUIHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5047B7072E3CB8D400D5090C /* PlayerUIHandler.swift */; };
@@ -1024,6 +1025,7 @@
 		50A7388422452C1900D3F2D4 /* SsPlaylistSongsParserDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SsPlaylistSongsParserDelegate.swift; sourceTree = "<group>"; };
 		50A79E0C27A80E2A002E0D2D /* SonicWave v19.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "SonicWave v19.xcdatamodel"; sourceTree = "<group>"; };
 		50A7BB30284F3F6400C02990 /* NSUserActivity+IntentData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSUserActivity+IntentData.swift"; sourceTree = "<group>"; };
+		7ED1CA010000000000000013 /* IntentResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntentResultView.swift; sourceTree = "<group>"; };
 		50A85EEA2689C0A500FB3E31 /* AbstractPlayable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AbstractPlayable.swift; sourceTree = "<group>"; };
 		50A85EEC2689C5DB00FB3E31 /* SsSongParserDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SsSongParserDelegate.swift; sourceTree = "<group>"; };
 		50A85EEE2689C77F00FB3E31 /* PlayableParserDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayableParserDelegate.swift; sourceTree = "<group>"; };
@@ -1779,6 +1781,7 @@
 				50BE5D9D2851D5DE00156FC6 /* IntentManager.swift */,
 				50E936D82F0FF9F200C1C504 /* SonicWaveAppShortcuts.swift */,
 				50A7BB30284F3F6400C02990 /* NSUserActivity+IntentData.swift */,
+				7ED1CA010000000000000013 /* IntentResultView.swift */,
 				50DB15E62F0C56A800A44DED /* AppEnums */,
 				50DB15E72F0C572900A44DED /* AppEntities */,
 				50DB15E82F0C573B00A44DED /* AppIntents */,
@@ -2995,6 +2998,7 @@
 				50AB3B4D2F032D6200556CE4 /* HomeManager.swift in Sources */,
 				504262B12BF5FBDE00B5EF38 /* Intents.intentdefinition in Sources */,
 				504262B42BF5FC3D00B5EF38 /* NSUserActivity+IntentData.swift in Sources */,
+				7ED1CB010000000000000014 /* IntentResultView.swift in Sources */,
 				50C16C1021E5463E00F086F0 /* ArtistsVC.swift in Sources */,
 				50065EB421F0584D0066FC32 /* PlaylistSelectorVC.swift in Sources */,
 				507BA5C72F01BCA300B4EA8B /* SetRepeatIntent.swift in Sources */,

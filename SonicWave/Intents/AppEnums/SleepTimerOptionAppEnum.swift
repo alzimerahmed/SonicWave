@@ -35,28 +35,33 @@ enum SleepTimerOptionAppEnum: Int, AppEnum {
   case minutes240
 
   static let typeDisplayRepresentation = TypeDisplayRepresentation(name: "Sleep Timer")
+  /// titles come from `displayName` — single source of truth so the
+  /// Shortcuts picker and the spoken dialogs can't drift
   static let caseDisplayRepresentations: [Self: DisplayRepresentation] = [
-    .off: DisplayRepresentation(title: "Off", image: .init(systemName: "moon.zzz")),
+    .off: DisplayRepresentation(
+      title: "\(SleepTimerOptionAppEnum.off.displayName)",
+      image: .init(systemName: "moon.zzz")
+    ),
     .endOfTrack: DisplayRepresentation(
-      title: "End of Track",
+      title: "\(SleepTimerOptionAppEnum.endOfTrack.displayName)",
       image: .init(systemName: "music.note"),
       synonyms: ["end of song", "end of episode", "after this track"]
     ),
-    .minutes5: "5 Minutes",
-    .minutes10: "10 Minutes",
-    .minutes15: "15 Minutes",
-    .minutes30: "30 Minutes",
-    .minutes45: "45 Minutes",
+    .minutes5: "\(SleepTimerOptionAppEnum.minutes5.displayName)",
+    .minutes10: "\(SleepTimerOptionAppEnum.minutes10.displayName)",
+    .minutes15: "\(SleepTimerOptionAppEnum.minutes15.displayName)",
+    .minutes30: "\(SleepTimerOptionAppEnum.minutes30.displayName)",
+    .minutes45: "\(SleepTimerOptionAppEnum.minutes45.displayName)",
     .minutes60: DisplayRepresentation(
-      title: "1 Hour",
+      title: "\(SleepTimerOptionAppEnum.minutes60.displayName)",
       synonyms: ["60 minutes", "one hour"]
     ),
     .minutes120: DisplayRepresentation(
-      title: "2 Hours",
+      title: "\(SleepTimerOptionAppEnum.minutes120.displayName)",
       synonyms: ["120 minutes", "two hours"]
     ),
     .minutes240: DisplayRepresentation(
-      title: "4 Hours",
+      title: "\(SleepTimerOptionAppEnum.minutes240.displayName)",
       synonyms: ["240 minutes", "four hours"]
     ),
   ]

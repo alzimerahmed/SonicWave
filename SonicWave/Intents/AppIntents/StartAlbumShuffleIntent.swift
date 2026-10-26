@@ -24,33 +24,13 @@ import AppIntents
 import Foundation
 import SwiftUI
 
-// MARK: - StartAlbumShuffleResultView
-
-struct StartAlbumShuffleResultView: View {
-  var displayString: String
-
-  var body: some View {
-    VStack {
-      AmperfyImage.shuffle.asImage
-        .font(intentResultViewHeaderImageFont)
-        .foregroundStyle(
-          appDelegate.storage.settings.accounts.activeSetting.read.themePreference
-            .asSwiftUIColor
-        )
-      Spacer()
-      Text(displayString)
-    }
-    .padding()
-  }
-}
-
 // MARK: - StartAlbumShuffleIntent
 
 struct StartAlbumShuffleIntent: AppIntent {
   static let intentClassName = "StartAlbumShuffleIntent"
   static let title: LocalizedStringResource = "Shuffle Albums"
   static let description = IntentDescription(
-    "Starts album radio: whole albums from the library play through in shuffled order (G21 album-queue shuffle)."
+    "Starts album radio: whole albums from the library play through in shuffled order."
   )
 
   @Parameter(
@@ -70,34 +50,33 @@ struct StartAlbumShuffleIntent: AppIntent {
     guard let accountCoreData = appDelegate.intentManager.getAccount(fromIntent: account)
     else { throw AmperfyAppIntentError.accountNotValid }
 
-    if appDelegate.player.isAlbumShuffleSessionActive {
+    // shared recipe with the Home-Screen quick action
+    // (`QuickActionsHandler`) — the handler also no-ops a live session
+    // instead of wiping the queue
+    switch AlbumShuffleHandler.start(
+      storage: appDelegate.storage,
+      player: appDelegate.player,
+      accountInfo: accountCoreData.info
+    ) {
+    case .alreadyRunning:
       return .result(
         dialog: "Album shuffle is already running.",
-        view: StartAlbumShuffleResultView(displayString: "Album shuffle is already running.")
+        view: IntentResultView(
+          image: AmperfyImage.shuffle.asImage,
+          displayString: "Album shuffle is already running."
+        )
+      )
+    case .libraryEmpty:
+      throw AmperfyAppIntentError.notFound
+    case .started:
+      let dialog = "Album shuffle started."
+      return .result(
+        dialog: IntentDialog(stringLiteral: dialog),
+        view: IntentResultView(
+          image: AmperfyImage.shuffle.asImage,
+          displayString: dialog
+        )
       )
     }
-
-    let songs = appDelegate.storage.main.library.getSongs(for: accountCoreData)
-    guard !songs.isEmpty else { throw AmperfyAppIntentError.notFound }
-
-    // same entry path as the entity-preview "Shuffle Albums" action
-    // (EntityPreviewVC): enable the account-level album-shuffle mode, then
-    // `playShuffled` — the kit keeps whole albums back-to-back and lazily
-    // appends the next album as the queue drains
-    appDelegate.storage.settings.accounts.updateSetting(accountCoreData.info) { accountSettings in
-      accountSettings.isAlbumShuffleActive = true
-    }
-    appDelegate.player.playShuffled(
-      context: PlayContext(
-        name: String(localized: "Album Shuffle"),
-        playables: songs
-      )
-    )
-
-    let dialog = "Album shuffle started."
-    return .result(
-      dialog: IntentDialog(stringLiteral: dialog),
-      view: StartAlbumShuffleResultView(displayString: dialog)
-    )
   }
 }

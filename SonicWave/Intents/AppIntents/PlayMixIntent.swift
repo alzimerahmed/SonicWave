@@ -24,27 +24,6 @@ import AppIntents
 import Foundation
 import SwiftUI
 
-// MARK: - PlayMixResultView
-
-struct PlayMixResultView: View {
-  var mixKind: MixKindAppEnum
-  var displayString: String
-
-  var body: some View {
-    VStack {
-      AmperfyImage.instantMix.asImage
-        .font(intentResultViewHeaderImageFont)
-        .foregroundStyle(
-          appDelegate.storage.settings.accounts.activeSetting.read.themePreference
-            .asSwiftUIColor
-        )
-      Spacer()
-      Text(displayString)
-    }
-    .padding()
-  }
-}
-
 // MARK: - PlayMixIntent
 
 struct PlayMixIntent: AppIntent {
@@ -101,8 +80,8 @@ struct PlayMixIntent: AppIntent {
     else {
       return .result(
         dialog: "The \(mixKind.displayName) mix isn't available right now.",
-        view: PlayMixResultView(
-          mixKind: mixKind,
+        view: IntentResultView(
+          image: AmperfyImage.instantMix.asImage,
           displayString: "The \(mixKind.displayName) mix isn't available right now."
         )
       )
@@ -116,7 +95,10 @@ struct PlayMixIntent: AppIntent {
     let dialog = "Now playing \(mix.title)."
     return .result(
       dialog: IntentDialog(stringLiteral: dialog),
-      view: PlayMixResultView(mixKind: mixKind, displayString: dialog)
+      view: IntentResultView(
+        image: AmperfyImage.instantMix.asImage,
+        displayString: dialog
+      )
     )
   }
 }

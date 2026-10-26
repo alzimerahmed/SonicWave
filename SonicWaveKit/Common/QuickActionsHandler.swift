@@ -175,14 +175,53 @@ public class QuickActionsHandler {
     return true
   }
 
-  /// G21 "album radio" from the Home Screen: same entry path as the
-  /// entity-preview "Shuffle Albums" action — enable the account-level
-  /// album-shuffle mode, then `playShuffled` over the whole library
+  /// G21 "album radio" from the Home Screen — the shared
+  /// `AlbumShuffleHandler` owns the recipe (same entry path as the
+  /// entity-preview "Shuffle Albums" action and
+  /// `StartAlbumShuffleIntent`)
   private func startAlbumShuffle() {
     guard let accountInfo = storage.settings.accounts.active else { return }
+    _ = AlbumShuffleHandler.start(
+      storage: storage,
+      player: player,
+      accountInfo: accountInfo
+    )
+  }
+}
+
+// MARK: - AlbumShuffleStartResult
+
+/// Outcome of `AlbumShuffleHandler.start` — lets `StartAlbumShuffleIntent`
+/// answer precisely while the quick action can ignore it.
+public enum AlbumShuffleStartResult {
+  case started
+  /// an album-shuffle session is already live — restarting would
+  /// silently wipe the user's queue, so both entry points no-op
+  /// instead (deliberate pick over the quick action's old restart)
+  case alreadyRunning
+  case libraryEmpty
+}
+
+// MARK: - AlbumShuffleHandler
+
+/// Single entry path for "album radio" (G21): the Home-Screen quick
+/// action, the entity-preview "Shuffle Albums" action and
+/// `StartAlbumShuffleIntent` all route here so the
+/// enable-mode-then-`playShuffled` recipe can't drift.
+public enum AlbumShuffleHandler {
+  @MainActor
+  public static func start(
+    storage: PersistentStorage,
+    player: PlayerFacade,
+    accountInfo: AccountInfo
+  ) -> AlbumShuffleStartResult {
+    guard !player.isAlbumShuffleSessionActive else { return .alreadyRunning }
     let account = storage.main.library.getAccount(info: accountInfo)
     let songs = storage.main.library.getSongs(for: account)
-    guard !songs.isEmpty else { return }
+    guard !songs.isEmpty else { return .libraryEmpty }
+    // enable the account-level album-shuffle mode, then `playShuffled` —
+    // the kit keeps whole albums back-to-back and lazily appends the next
+    // album as the queue drains
     storage.settings.accounts.updateSetting(accountInfo) { accountSettings in
       accountSettings.isAlbumShuffleActive = true
     }
@@ -190,6 +229,7 @@ public class QuickActionsHandler {
       name: String(localized: "Album Shuffle", bundle: .main),
       playables: songs
     ))
+    return .started
   }
 }
 

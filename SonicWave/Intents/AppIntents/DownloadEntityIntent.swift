@@ -24,26 +24,6 @@ import AppIntents
 import Foundation
 import SwiftUI
 
-// MARK: - DownloadEntityResultView
-
-struct DownloadEntityResultView: View {
-  var displayString: String
-
-  var body: some View {
-    VStack {
-      AmperfyImage.download.asImage
-        .font(intentResultViewHeaderImageFont)
-        .foregroundStyle(
-          appDelegate.storage.settings.accounts.activeSetting.read.themePreference
-            .asSwiftUIColor
-        )
-      Spacer()
-      Text(displayString)
-    }
-    .padding()
-  }
-}
-
 // MARK: - DownloadEntityIntent
 
 struct DownloadEntityIntent: AppIntent {
@@ -93,7 +73,10 @@ struct DownloadEntityIntent: AppIntent {
       "Added \(playableContainer.playables.count) items from \(playableContainer.name) to the download queue."
     return .result(
       dialog: IntentDialog(stringLiteral: dialog),
-      view: DownloadEntityResultView(displayString: dialog)
+      view: IntentResultView(
+        image: AmperfyImage.download.asImage,
+        displayString: dialog
+      )
     )
   }
 }

@@ -35,27 +35,6 @@ extension DislikeTypeAppEnum {
   }
 }
 
-// MARK: - SetDislikeForCurrentlyPlayingSongResultView
-
-struct SetDislikeForCurrentlyPlayingSongResultView: View {
-  var isDislike: DislikeTypeAppEnum
-  var displayString: String
-
-  var body: some View {
-    VStack {
-      isDislike.image
-        .font(intentResultViewHeaderImageFont)
-        .foregroundStyle(
-          appDelegate.storage.settings.accounts.activeSetting.read.themePreference
-            .asSwiftUIColor
-        )
-      Spacer()
-      Text(displayString)
-    }
-    .padding()
-  }
-}
-
 // MARK: - SetDislikeForCurrentlyPlayingSongIntent
 
 struct SetDislikeForCurrentlyPlayingSongIntent: AppIntent {
@@ -90,8 +69,10 @@ struct SetDislikeForCurrentlyPlayingSongIntent: AppIntent {
       // do nothing
       return .result(
         dialog: IntentDialog(stringLiteral: dialog),
-        view:
-        SetDislikeForCurrentlyPlayingSongResultView(isDislike: isDislike, displayString: dialog)
+        view: IntentResultView(
+          image: isDislike.image,
+          displayString: dialog
+        )
       )
     }
 
@@ -115,8 +96,10 @@ struct SetDislikeForCurrentlyPlayingSongIntent: AppIntent {
     }
     return .result(
       dialog: IntentDialog(stringLiteral: dialog),
-      view:
-      SetDislikeForCurrentlyPlayingSongResultView(isDislike: isDislike, displayString: dialog)
+      view: IntentResultView(
+        image: isDislike.image,
+        displayString: dialog
+      )
     )
   }
 }

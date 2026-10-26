@@ -35,27 +35,6 @@ extension SleepTimerOptionAppEnum {
   }
 }
 
-// MARK: - SleepTimerResultView
-
-struct SleepTimerResultView: View {
-  var option: SleepTimerOptionAppEnum
-  var displayString: String
-
-  var body: some View {
-    VStack {
-      option.image
-        .font(intentResultViewHeaderImageFont)
-        .foregroundStyle(
-          appDelegate.storage.settings.accounts.activeSetting.read.themePreference
-            .asSwiftUIColor
-        )
-      Spacer()
-      Text(displayString)
-    }
-    .padding()
-  }
-}
-
 // MARK: - SleepTimerIntent
 
 struct SleepTimerIntent: AppIntent {
@@ -97,7 +76,10 @@ struct SleepTimerIntent: AppIntent {
     }
     return .result(
       dialog: IntentDialog(stringLiteral: dialog),
-      view: SleepTimerResultView(option: timerOption, displayString: dialog)
+      view: IntentResultView(
+        image: timerOption.image,
+        displayString: dialog
+      )
     )
   }
 }

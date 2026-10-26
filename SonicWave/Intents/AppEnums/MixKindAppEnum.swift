@@ -34,25 +34,27 @@ enum MixKindAppEnum: Int, AppEnum {
   case timeOfDay
 
   static let typeDisplayRepresentation = TypeDisplayRepresentation(name: "Mix")
+  /// titles come from `displayName` — single source of truth so the
+  /// Shortcuts picker and the spoken dialogs can't drift
   static let caseDisplayRepresentations: [Self: DisplayRepresentation] = [
     .favoritesRadio: DisplayRepresentation(
-      title: "Favorites Radio",
+      title: "\(MixKindAppEnum.favoritesRadio.displayName)",
       image: .init(systemName: "heart.fill")
     ),
     .decadeMix: DisplayRepresentation(
-      title: "Decade Mix",
+      title: "\(MixKindAppEnum.decadeMix.displayName)",
       image: .init(systemName: "calendar")
     ),
     .genreBlend: DisplayRepresentation(
-      title: "Genre Blend",
+      title: "\(MixKindAppEnum.genreBlend.displayName)",
       image: .init(systemName: "guitars.fill")
     ),
     .deepCuts: DisplayRepresentation(
-      title: "Deep Cuts",
+      title: "\(MixKindAppEnum.deepCuts.displayName)",
       image: .init(systemName: "sparkles")
     ),
     .timeOfDay: DisplayRepresentation(
-      title: "Time Machine",
+      title: "\(MixKindAppEnum.timeOfDay.displayName)",
       image: .init(systemName: "clock")
     ),
   ]

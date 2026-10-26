@@ -24,26 +24,6 @@ import AppIntents
 import Foundation
 import SwiftUI
 
-// MARK: - SetPlaybackRateResultView
-
-struct SetPlaybackRateResultView: View {
-  var displayString: String
-
-  var body: some View {
-    VStack {
-      AmperfyImage.playbackRate.asImage
-        .font(intentResultViewHeaderImageFont)
-        .foregroundStyle(
-          appDelegate.storage.settings.accounts.activeSetting.read.themePreference
-            .asSwiftUIColor
-        )
-      Spacer()
-      Text(displayString)
-    }
-    .padding()
-  }
-}
-
 // MARK: - SetPlaybackRateIntent
 
 struct SetPlaybackRateIntent: AppIntent {
@@ -67,7 +47,10 @@ struct SetPlaybackRateIntent: AppIntent {
     let dialog = "Playback rate set to \(rate.playbackRate.description)."
     return .result(
       dialog: IntentDialog(stringLiteral: dialog),
-      view: SetPlaybackRateResultView(displayString: dialog)
+      view: IntentResultView(
+        image: AmperfyImage.playbackRate.asImage,
+        displayString: dialog
+      )
     )
   }
 }
