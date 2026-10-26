@@ -272,6 +272,11 @@ class SettingsHostVC: UIViewController {
 
     settings.isLiveActivityEnabled = appDelegate.storage.settings.user.isLiveActivityEnabled
     changesAgent.append(settings.$isLiveActivityEnabled.sink(receiveValue: { newValue in
+      // guarded: the sink fires on the initial assignment too — only
+      // persist + re-evaluate on a real user change
+      let hasValueChanged = self.appDelegate.storage.settings.user
+        .isLiveActivityEnabled != newValue
+      guard hasValueChanged else { return }
       self.appDelegate.storage.settings.user.isLiveActivityEnabled = newValue
       // a running activity honors the opt-out on the next player event;
       // nudge it now so disabling takes effect immediately
@@ -281,6 +286,11 @@ class SettingsHostVC: UIViewController {
     settings.isSpotlightIndexingEnabled = appDelegate.storage.settings.user
       .isSpotlightIndexingEnabled
     changesAgent.append(settings.$isSpotlightIndexingEnabled.sink(receiveValue: { newValue in
+      // guarded: the sink fires on the initial assignment too — only
+      // persist + re-evaluate on a real user change
+      let hasValueChanged = self.appDelegate.storage.settings.user
+        .isSpotlightIndexingEnabled != newValue
+      guard hasValueChanged else { return }
       self.appDelegate.storage.settings.user.isSpotlightIndexingEnabled = newValue
       // `start()` re-evaluates the flag both ways — disabling stops the
       // indexer and wipes the index, enabling re-arms the full pass
