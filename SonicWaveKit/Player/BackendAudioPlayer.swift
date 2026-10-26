@@ -874,6 +874,13 @@ class BackendAudioPlayer: NSObject {
     }
     nextPreloadedPlayable = nil
     nextPreloadedUrl = ""
+    // drop the preload bookkeeping alongside the entry — the stale
+    // insert must not donate its bitrate/transcoding/offset-seek state
+    // to whatever is adopted next (same set discardSpareInsert clears)
+    perloadedPlayType = nil
+    perloadedStreamingBitrate = nil
+    preloadTranscodingFormat = nil
+    isPreloadTranscodeOffsetSeekSupported = false
   }
 
   private func handleRequest(playable: AbstractPlayable) {
