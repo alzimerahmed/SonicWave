@@ -142,7 +142,11 @@ class BackendAudioPlayer: NSObject {
   private var player: AudioStreamingPlayer?
   private var equalizer: AVAudioUnitEQ?
   private var replayGainNode: AVAudioMixerNode?
-  public private(set) var audioAnalyzer: AudioAnalyzer
+  /// one analyzer for the whole player lifetime — `SkipSilenceService`
+  /// and `MusicHapticsService` hold it across `restartPlayer`, so it
+  /// must never be recreated with the engine; the tap itself is
+  /// re-installed per node by `moveAnalyzerTap`
+  public let audioAnalyzer: AudioAnalyzer
   /// node the analyzer tap is currently installed on — tracks which
   /// engine's EQ owns the tap so it can follow the crossfade winner
   private var analyzerTapNode: AVAudioNode?
@@ -793,7 +797,6 @@ class BackendAudioPlayer: NSObject {
 
   private func initAudioStreamingPlayerAndNodes() {
     guard player == nil else { return }
-    audioAnalyzer = AudioAnalyzer()
 
     let nodes = buildPlayerWithNodes()
     player = nodes.player
