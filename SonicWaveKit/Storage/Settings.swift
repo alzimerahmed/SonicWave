@@ -258,6 +258,23 @@ public struct UserSettings: Sendable, Codable {
     set { _equalizerSettings = newValue }
   }
 
+  /// parametric EQ (G22): the active advanced profile — non-nil means
+  /// the engine applies it instead of the legacy `activeEqualizerSetting`
+  // optional backing to stay decodable for settings stored before this key existed
+  private var _activeParametricEqualizerSetting: ParametricEQSetting? = nil
+  public var activeParametricEqualizerSetting: ParametricEQSetting? {
+    get { _activeParametricEqualizerSetting }
+    set { _activeParametricEqualizerSetting = newValue }
+  }
+
+  /// parametric EQ (G22): user-saved profiles (custom or AutoEQ-imported)
+  // optional backing to stay decodable for settings stored before this key existed
+  private var _parametricEqualizerSettings: [ParametricEQSetting]? = nil
+  public var parametricEqualizerSettings: [ParametricEQSetting] {
+    get { _parametricEqualizerSettings ?? [] }
+    set { _parametricEqualizerSettings = newValue }
+  }
+
   private var _isReplayGainEnabled: Bool = true
   public var isReplayGainEnabled: Bool {
     get { _isReplayGainEnabled }

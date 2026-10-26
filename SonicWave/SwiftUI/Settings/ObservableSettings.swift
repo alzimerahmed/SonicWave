@@ -95,6 +95,13 @@ final class Settings: ObservableObject {
   @Published
   var equalizerSettings: [EqualizerSetting] = []
 
+  /// parametric EQ (G22): the active advanced profile; nil → the
+  /// legacy `activeEqualizerSetting` applies
+  @Published
+  var activeParametricEqualizerSetting: ParametricEQSetting?
+  @Published
+  var parametricEqualizerSettings: [ParametricEQSetting] = []
+
   @Published
   var isReplayGainEnabled = true
 

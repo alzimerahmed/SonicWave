@@ -74,6 +74,7 @@
 		7E8D2B010000000000000002 /* AlbumShuffleHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E8D2B010000000000000001 /* AlbumShuffleHandler.swift */; };
 		7E8D2B010000000000000004 /* MusicHapticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E8D2B010000000000000003 /* MusicHapticsService.swift */; };
 		7E8D2C010000000000000002 /* SkipSilenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E8D2C010000000000000001 /* SkipSilenceService.swift */; };
+		7E8D2D010000000000000002 /* ParametricEQSetting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E8D2D010000000000000001 /* ParametricEQSetting.swift */; };
 		7E8D2B010000000000000006 /* SyncedLyricsTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E8D2B010000000000000005 /* SyncedLyricsTracker.swift */; };
 		7E8D2B010000000000000008 /* AlbumShuffleTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E8D2B010000000000000007 /* AlbumShuffleTest.swift */; };
 		7E8D2B01000000000000000A /* SyncedLyricsTrackerTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E8D2B010000000000000009 /* SyncedLyricsTrackerTest.swift */; };
@@ -832,6 +833,7 @@
 		7E8D2B010000000000000001 /* AlbumShuffleHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumShuffleHandler.swift; sourceTree = "<group>"; };
 		7E8D2B010000000000000003 /* MusicHapticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicHapticsService.swift; sourceTree = "<group>"; };
 		7E8D2C010000000000000001 /* SkipSilenceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkipSilenceService.swift; sourceTree = "<group>"; };
+		7E8D2D010000000000000001 /* ParametricEQSetting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParametricEQSetting.swift; sourceTree = "<group>"; };
 		7E8D2B010000000000000005 /* SyncedLyricsTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncedLyricsTracker.swift; sourceTree = "<group>"; };
 		7E8D2B010000000000000007 /* AlbumShuffleTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumShuffleTest.swift; sourceTree = "<group>"; };
 		7E8D2B010000000000000009 /* SyncedLyricsTrackerTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncedLyricsTrackerTest.swift; sourceTree = "<group>"; };
@@ -2487,6 +2489,7 @@
 				7E8D2B010000000000000001 /* AlbumShuffleHandler.swift */,
 				7E8D2B010000000000000003 /* MusicHapticsService.swift */,
 				7E8D2C010000000000000001 /* SkipSilenceService.swift */,
+				7E8D2D010000000000000001 /* ParametricEQSetting.swift */,
 			);
 			path = Player;
 			sourceTree = "<group>";
@@ -3109,6 +3112,7 @@
 				7E8D2B010000000000000002 /* AlbumShuffleHandler.swift in Sources */,
 				7E8D2B010000000000000004 /* MusicHapticsService.swift in Sources */,
 				7E8D2C010000000000000002 /* SkipSilenceService.swift in Sources */,
+				7E8D2D010000000000000002 /* ParametricEQSetting.swift in Sources */,
 				7E8D2B010000000000000006 /* SyncedLyricsTracker.swift in Sources */,
 				50C9D6D7284FAB88007F18D0 /* PlayerNotificationAdapter.swift in Sources */,
 				50C9D663284FAA0B007F18D0 /* AuthentificationHandshake.swift in Sources */,

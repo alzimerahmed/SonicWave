@@ -216,6 +216,11 @@ public class AmperKit {
     backendAudioPlayer.updateEqualizerEnabled(isEnabled: storage.settings.user.isEqualizerEnabled)
     backendAudioPlayer
       .updateEqualizerSetting(eqSetting: storage.settings.user.activeEqualizerSetting)
+    // G22 — a persisted parametric profile supersedes the graphic
+    // setting as the active EQ profile
+    if let parametricEQ = storage.settings.user.activeParametricEqualizerSetting {
+      backendAudioPlayer.updateEqualizerProfile(parametricEQ)
+    }
     backendAudioPlayer.updateReplayGainEnabled(isEnabled: storage.settings.user.isReplayGainEnabled)
     backendAudioPlayer.volume = storage.settings.user.playerVolume
 

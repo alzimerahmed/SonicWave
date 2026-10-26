@@ -192,6 +192,9 @@ class BackendAudioPlayer: NSObject {
   private var equalizerVolumeCompensation: Float = 1.0
   private var isEqualizerEnabled: Bool = true
   private var currentEqualizerSetting: EqualizerSetting = .off
+  /// G22 — the active parametric profile; nil → the legacy
+  /// `currentEqualizerSetting` graphic curve applies instead
+  private var currentParametricEQSetting: ParametricEQSetting?
 
   public var isOfflineMode: Bool = false
   public var isAutoCachePlayedItems: Bool = true
@@ -745,7 +748,10 @@ class BackendAudioPlayer: NSObject {
     player: AudioStreamingPlayer, equalizer: AVAudioUnitEQ, replayGain: AVAudioMixerNode
   ) {
     let player = createAudioStreamingPlayerCB()
-    let eq = AVAudioUnitEQ(numberOfBands: 10)
+    // the node is shaped for the effective profile up-front so a fresh
+    // engine never needs a mid-stream rebuild — `numberOfBands` is
+    // fixed at creation
+    let eq = AVAudioUnitEQ(numberOfBands: effectiveEqualizerProfile.requiredBandCount)
     let replayGain = AVAudioMixerNode()
 
     player.volume = volumePlayer
@@ -756,8 +762,7 @@ class BackendAudioPlayer: NSObject {
     player.rate = Float(userDefinedPlaybackRate.asDouble)
 
     player.attach(nodes: [eq, replayGain])
-    setupEqualizerBands(on: eq)
-    applyEqualizerSetting(eqSetting: currentEqualizerSetting, to: eq)
+    configureEqualizer(eq, profile: effectiveEqualizerProfile)
     return (player, eq, replayGain)
   }
 
@@ -1176,9 +1181,13 @@ class BackendAudioPlayer: NSObject {
     applyEqualizerToActiveContent()
   }
 
+  /// selects a legacy 10-band graphic profile — the profile-kind
+  /// switch (G22): choosing a graphic setting clears the active
+  /// parametric profile
   func updateEqualizerSetting(eqSetting: EqualizerSetting) {
     let oldSetting = currentEqualizerSetting
     currentEqualizerSetting = eqSetting
+    currentParametricEQSetting = nil
     os_log(
       .debug,
       "Equalizer changed from %s to %s",
@@ -1188,54 +1197,136 @@ class BackendAudioPlayer: NSObject {
     applyEqualizerToActiveContent()
   }
 
+  /// G22 — selects a parametric profile (custom or AutoEQ-imported) as
+  /// the active profile; `updateEqualizerSetting` switches the kind
+  /// back to graphic
+  func updateEqualizerProfile(_ eqProfile: ParametricEQSetting) {
+    currentParametricEQSetting = eqProfile
+    os_log(.debug, "Parametric EQ profile changed to %s", eqProfile.name)
+    applyEqualizerToActiveContent()
+  }
+
+  /// the profile the engines should currently run: an active
+  /// parametric profile wins, else the legacy graphic setting
+  private var effectiveEqualizerProfile: EqualizerProfile {
+    if let currentParametricEQSetting {
+      return .parametric(currentParametricEQSetting)
+    }
+    return .graphic(currentEqualizerSetting)
+  }
+
+  /// display name of the profile the engine currently applies — for
+  /// `PlayerFacade.activeEqualizerProfileName`
+  var appliedEqualizerProfileName: String {
+    isEqualizerEnabled ? effectiveEqualizerProfile.name : EqualizerSetting.off.name
+  }
+
   private func applyEqualizerToActiveContent() {
-    let effectiveSetting = isEqualizerEnabled ? currentEqualizerSetting : .off
+    let profile = effectiveEqualizerProfile
     // apply to both engines so a crossfade-incoming track starts with
-    // the same curve the outgoing one had
-    applyEqualizerSetting(eqSetting: effectiveSetting, to: equalizer)
-    applyEqualizerSetting(eqSetting: effectiveSetting, to: spareEqualizer)
+    // the same curve the outgoing one had; applying may rebuild an
+    // engine's EQ node, so the (possibly replaced) node is stored back
+    equalizer = applyEqualizerProfile(profile, to: player, existing: equalizer)
+    spareEqualizer = applyEqualizerProfile(profile, to: sparePlayer, existing: spareEqualizer)
+    // loudness compensation: graphic profiles fold their automatic
+    // compensation into the ReplayGain mixer; parametric profiles put
+    // their preamp on the EQ node's own `globalGain` instead
+    switch profile {
+    case .graphic(let setting):
+      equalizerVolumeCompensation =
+        isEqualizerEnabled ? setting.compensatedVolume : 1.0
+    case .parametric:
+      equalizerVolumeCompensation = 1.0
+    }
     applyReplayGain()
+    os_log(.debug, "   EQ '%s'", profile.name)
   }
 
-  private func setupEqualizerBands(on eq: AVAudioUnitEQ) {
-    for (index, frequency) in EqualizerSetting.frequencies.enumerated() {
-      guard index < eq.bands.count else { break }
-
-      let band = eq.bands[index]
-      band.frequency = frequency
-      band.bandwidth = 1.0
-      band.filterType = .parametric
-      band.gain = 0.0
-      band.bypass = false
+  /// ensures `engine`'s EQ node matches the profile's band count —
+  /// `numberOfBands` is immutable after node creation — then writes
+  /// the band parameters in place (filter types are mutable, so no
+  /// rebuild is needed for type changes). Returns the EQ node the
+  /// engine must now hold — the original or its replacement.
+  private func applyEqualizerProfile(
+    _ profile: EqualizerProfile,
+    to engine: AudioStreamingPlayer?,
+    existing eq: AVAudioUnitEQ?
+  ) -> AVAudioUnitEQ? {
+    guard let engine else { return eq }
+    var eq = eq
+    if eq == nil || eq!.bands.count != profile.requiredBandCount {
+      eq = recreateEqualizer(
+        on: engine,
+        replacing: eq,
+        bandCount: profile.requiredBandCount
+      )
     }
+    if let eq {
+      configureEqualizer(eq, profile: profile)
+    }
+    return eq
   }
 
-  private func applyEqualizerSetting(eqSetting: EqualizerSetting, to eq: AVAudioUnitEQ?) {
-    guard let eq else { return }
-
-    // EQ band gains
-    for (index, gain) in eqSetting.gains.enumerated() {
-      guard index < eq.bands.count else { break }
-
-      let band = eq.bands[index]
-
-      band.filterType = .parametric
-      band.bandwidth = 1.0
-      band.gain = gain
-      band.bypass = false
+  /// swaps an engine's EQ node: detach the old node, attach a fresh
+  /// `AVAudioUnitEQ` with the required band count. The analyzer tap
+  /// rides on the EQ node — it is removed before the detach and
+  /// re-installed on the replacement only when the swapped node owned
+  /// it (mid-fade it may sit on the other engine's EQ).
+  private func recreateEqualizer(
+    on engine: AudioStreamingPlayer,
+    replacing oldEq: AVAudioUnitEQ?,
+    bandCount: Int
+  ) -> AVAudioUnitEQ {
+    if let oldEq {
+      if analyzerTapNode === oldEq {
+        oldEq.removeTap(onBus: 0)
+        analyzerTapNode = nil
+      }
+      engine.detach(node: oldEq)
     }
+    let eq = AVAudioUnitEQ(numberOfBands: bandCount)
+    engine.attach(nodes: [eq])
+    if analyzerTapNode == nil {
+      // the tap's node was just swapped out — follow it
+      moveAnalyzerTap(to: eq)
+    }
+    return eq
+  }
 
-    equalizerVolumeCompensation = isEqualizerEnabled ? eqSetting.compensatedVolume : 1.0
-
-    os_log(.debug, "   EQ '%s'", eqSetting.description)
-    os_log(
-      .debug,
-      "   EQ Gains: [%@] dB",
-      eqSetting.gains.map { String(format: "%.1f", $0) }.joined(separator: ", ")
-    )
-    os_log(.debug, "   EQ Gain Compensation: %.1f dB", eqSetting.gainCompensation)
-    os_log(.debug, "   EQ linear Volume Compensation: %.2f", eqSetting.compensatedVolume)
-    os_log(.debug, "   Active EQ linear Volume Compensation: %.2f", equalizerVolumeCompensation)
+  /// writes a profile's parameters onto an existing EQ node
+  private func configureEqualizer(_ eq: AVAudioUnitEQ, profile: EqualizerProfile) {
+    switch profile {
+    case .graphic(let setting):
+      let applied = isEqualizerEnabled ? setting : .off
+      eq.globalGain = 0
+      for (index, band) in eq.bands.enumerated() {
+        band.filterType = .parametric
+        if index < EqualizerSetting.frequencies.count {
+          band.frequency = EqualizerSetting.frequencies[index]
+        }
+        band.bandwidth = 1.0
+        band.gain = index < applied.gains.count ? applied.gains[index] : 0
+        band.bypass = false
+      }
+    case .parametric(let setting):
+      // the preamp lives on the node's own global gain (dB) — this
+      // keeps the ReplayGain mixer free for ReplayGain
+      eq.globalGain = isEqualizerEnabled ? setting.clampedPreampDb : 0
+      for (index, band) in eq.bands.enumerated() {
+        guard index < setting.bands.count else {
+          band.bypass = true
+          continue
+        }
+        let eqBand = setting.bands[index]
+        band.filterType = eqBand.filterType.avAudioUnitEQFilterType
+        band.frequency = eqBand.clampedFrequency
+        band.gain = eqBand.clampedGainDb
+        // ignored by shelf filters; the Q-derived octave width only
+        // matters to `.parametric`
+        band.bandwidth = Float(eqBand.bandwidthOctaves)
+        band.bypass = !isEqualizerEnabled
+      }
+    }
   }
 
   // MARK: - ReplayGain Implementation
