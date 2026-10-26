@@ -247,6 +247,39 @@ class SettingsHostVC: UIViewController {
       self.appDelegate.storage.settings.user.equalizerSettings = newValue
     }))
 
+    settings.activeParametricEqualizerSetting = appDelegate.storage.settings.user
+      .activeParametricEqualizerSetting
+    changesAgent.append(
+      settings.$activeParametricEqualizerSetting.sink(receiveValue: { newValue in
+        // guarded: the sink fires on the initial assignment too — only
+        // persist + re-apply on a real user change
+        let hasValueChanged = self.appDelegate.storage.settings.user
+          .activeParametricEqualizerSetting != newValue
+        guard hasValueChanged else { return }
+        self.appDelegate.storage.settings.user.activeParametricEqualizerSetting = newValue
+        if let newValue {
+          self.appDelegate.player.updateEqualizerProfile(newValue)
+        } else {
+          // profile-kind switch back to the graphic curve — without this
+          // a stale parametric profile would keep applying in the engine
+          self.appDelegate.player.updateEqualizerSetting(
+            eqSetting: self.appDelegate.storage.settings.user.activeEqualizerSetting
+          )
+        }
+      })
+    )
+
+    settings.parametricEqualizerSettings = appDelegate.storage.settings.user
+      .parametricEqualizerSettings
+    changesAgent.append(settings.$parametricEqualizerSettings.sink(receiveValue: { newValue in
+      self.appDelegate.storage.settings.user.parametricEqualizerSettings = newValue
+    }))
+
+    // the route→profile map is only ever written through
+    // `player.setRouteEqualizerProfile` (persists + pushes engine
+    // overrides in one call) — mirrored here for the EQ settings UI
+    settings.routeEqualizerProfileNames = appDelegate.player.routeEqualizerProfileNames
+
     changesAgent.append(settings.$swipeActionSettings.sink(receiveValue: { newValue in
       self.appDelegate.storage.settings.user.swipeActionSettings = newValue
     }))
