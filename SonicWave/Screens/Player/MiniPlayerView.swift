@@ -343,8 +343,11 @@ class MiniPlayerView: UIView {
   @IBAction
   func airplayButtonPushed(_ sender: UIButton) {
     // G22 — hidden on Catalyst (the MPVolumeView route-picker popup is
-    // dead there); on iOS the mini player's button stays a no-op —
-    // the full player owns AirPlay routing
+    // dead there); on iOS forward to the same shared route-picker the
+    // full player's AirPlay button uses
+    #if !targetEnvironment(macCatalyst) // ok
+      playerHandler?.airplayButtonPushed(rootView: self, airplayButton: airplayButton)
+    #endif
   }
 
   fileprivate lazy var volumeButton: UIButton = {

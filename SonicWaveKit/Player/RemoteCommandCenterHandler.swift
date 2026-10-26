@@ -139,6 +139,9 @@ public class RemoteCommandCenterHandler {
     remoteCommandCenter.changePlaybackPositionCommand.addTarget(handler: { event in
       guard let command = event as? MPChangePlaybackPositionCommandEvent
       else { return .noSuchContent }
+      // unseekable entries (Ogg Vorbis streams, live radio) cannot act
+      // on the seek — report failure instead of silently no-oping
+      guard self.musicPlayer.isSeekable else { return .commandFailed }
       let cmTime = CMTime(
         seconds: command.positionTime,
         preferredTimescale: CMTimeScale(NSEC_PER_SEC)

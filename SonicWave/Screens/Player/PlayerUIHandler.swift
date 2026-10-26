@@ -387,6 +387,13 @@ class PlayerUIHandler: NSObject {
   }
 
   func timeSliderChanged(timeSlider: UISlider) {
+    // unseekable entries (Ogg Vorbis streams, transcodes without
+    // server offset support) reject the engine seek — snap the thumb
+    // back to the real position instead of pretending it moved
+    guard player.isSeekable else {
+      timeSlider.setValue(Float(player.elapsedTime), animated: false)
+      return
+    }
     player.seek(toSecond: Double(timeSlider.value))
     // G4 — the lyrics tick only runs during playback; nudge the tracker
     // so a scrub while paused snaps the active line immediately. Only an
@@ -422,7 +429,11 @@ class PlayerUIHandler: NSObject {
     timeSlider.sliderStyle = .thumbless
     if let currentlyPlaying = player.currentlyPlaying {
       let supportTimeInteraction = !currentlyPlaying.isRadio
-      timeSlider.isEnabled = supportTimeInteraction && (style != .miniPlayeriOS)
+      // scrubbing is additionally gated on the entry being seekable —
+      // an unseekable stream keeps its live progress bar but must not
+      // offer a slider that can never act on the drag
+      timeSlider.isEnabled = supportTimeInteraction && player.isSeekable &&
+        (style != .miniPlayeriOS)
       timeSlider.minimumValue = 0.0
       timeSlider.maximumValue = Float(player.duration)
       if !timeSlider.isTracking, supportTimeInteraction {

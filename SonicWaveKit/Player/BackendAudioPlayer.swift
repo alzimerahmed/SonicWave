@@ -414,7 +414,11 @@ class BackendAudioPlayer: NSObject {
     guard !isCrossfadeActive, let nextPlayable = nextPlayablePreloadCB?(),
           // radios have no duration to blend over and their insert path
           // does not carry bitrate/transcoding bookkeeping — skip them
-          !nextPlayable.isRadio
+          !nextPlayable.isRadio,
+          // unseekable outgoing entries (Ogg Vorbis streams, transcodes
+          // without server offset support) never crossfade either — the
+          // settings copy promises seek-locked streams stay gapless
+          isSeekable
     else { return }
     let isCachedInsert = nextPlayable.isCached &&
       cacheProxy.getFileURL(forPlayable: nextPlayable) != nil
