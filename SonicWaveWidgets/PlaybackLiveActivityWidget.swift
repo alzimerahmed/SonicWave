@@ -22,6 +22,7 @@
 #if canImport(ActivityKit)
 
   import ActivityKit
+  import AppIntents
   import SwiftUI
   import WidgetKit
 

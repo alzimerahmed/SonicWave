@@ -47,11 +47,21 @@ enum SleepTimerOptionAppEnum: Int, AppEnum {
       image: .init(systemName: "music.note"),
       synonyms: ["end of song", "end of episode", "after this track"]
     ),
-    .minutes5: "\(SleepTimerOptionAppEnum.minutes5.displayName)",
-    .minutes10: "\(SleepTimerOptionAppEnum.minutes10.displayName)",
-    .minutes15: "\(SleepTimerOptionAppEnum.minutes15.displayName)",
-    .minutes30: "\(SleepTimerOptionAppEnum.minutes30.displayName)",
-    .minutes45: "\(SleepTimerOptionAppEnum.minutes45.displayName)",
+    .minutes5: DisplayRepresentation(
+      title: "\(SleepTimerOptionAppEnum.minutes5.displayName)"
+    ),
+    .minutes10: DisplayRepresentation(
+      title: "\(SleepTimerOptionAppEnum.minutes10.displayName)"
+    ),
+    .minutes15: DisplayRepresentation(
+      title: "\(SleepTimerOptionAppEnum.minutes15.displayName)"
+    ),
+    .minutes30: DisplayRepresentation(
+      title: "\(SleepTimerOptionAppEnum.minutes30.displayName)"
+    ),
+    .minutes45: DisplayRepresentation(
+      title: "\(SleepTimerOptionAppEnum.minutes45.displayName)"
+    ),
     .minutes60: DisplayRepresentation(
       title: "\(SleepTimerOptionAppEnum.minutes60.displayName)",
       synonyms: ["60 minutes", "one hour"]
