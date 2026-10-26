@@ -155,7 +155,7 @@ class BackendAudioPlayer: NSObject {
   // overlap; `player`/`equalizer`/`replayGainNode` always describe the
   // ACTIVE engine, `spare*` the other one. The roles swap on adoption:
   // before the adopt `spare` is the incoming track, afterwards it is the
-  // draining tail. `fadeOutPlayerRef`/`fadeInPlayerRef` pin concrete
+  // draining tail. `crossfadeRamp.fadeOutPlayer`/`fadeInPlayer` pin concrete
   // engine instances for the whole fade so the swap cannot confuse the
   // volume ramp.
   private var sparePlayer: AudioStreamingPlayer?
@@ -173,13 +173,37 @@ class BackendAudioPlayer: NSObject {
   private var isCrossfadePreparing = false
   /// a fade is running: outgoing ramps to 0, incoming to `volumePlayer`
   private var isCrossfading = false
-  private var fadeOutPlayerRef: AudioStreamingPlayer?
-  private var fadeInPlayerRef: AudioStreamingPlayer?
-  private var fadeOutFactor: Float = 1.0
-  private var fadeInFactor: Float = 1.0
-  private var crossfadeTimer: Timer?
-  private var crossfadeStartUptime: TimeInterval = 0
-  private var crossfadeActiveDurationInSec: Double = 0
+  /// state the 30 Hz fade ramp touches — read and written from both
+  /// MainActor (arm/abort/finish, the `volume` setter) and
+  /// `crossfadeQueue` (the ramp tick), so every access goes through
+  /// `crossfadeRampLock`
+  private struct CrossfadeRamp {
+    /// pinned engine instances for the whole fade — the active/spare
+    /// roles swap on adoption, so the ramp must not follow `player`
+    var fadeOutPlayer: AudioStreamingPlayer?
+    var fadeInPlayer: AudioStreamingPlayer?
+    var fadeOutFactor: Float = 1.0
+    var fadeInFactor: Float = 1.0
+    var startUptime: TimeInterval = 0
+    var durationInSec: TimeInterval = 0
+    /// snapshot of the user volume, kept in step by the `volume`
+    /// setter — the tick cannot touch MainActor `volumePlayer`
+    var userVolume: Float = 1.0
+    /// false once the ramp hits its end — late ticks must not write
+    /// volume while the finish hops back to MainActor
+    var isFading = false
+  }
+  nonisolated(unsafe) private var crossfadeRamp = CrossfadeRamp()
+  private let crossfadeRampLock = NSLock()
+  /// the ramp tick's serial queue — running it off MainActor keeps the
+  /// fade smooth while the main thread is busy (e.g. CoreData work
+  /// inside `didItemFinishedPlaying`); only the thread-safe engine
+  /// `volume` writes happen there, all state changes stay on MainActor
+  private let crossfadeQueue = DispatchQueue(
+    label: "SonicWaveCrossfade",
+    qos: .userInteractive
+  )
+  private var crossfadeTimer: DispatchSourceTimer?
   /// ~30 Hz is enough to keep the equal-power ramps zipper-free
   private static let crossfadeUpdateIntervalInSec: TimeInterval = 1.0 / 30.0
 
@@ -256,18 +280,26 @@ class BackendAudioPlayer: NSObject {
     }
     set {
       volumePlayer = newValue
+      // keep the ramp's snapshot in step so the off-main tick scales
+      // with the new user volume instead of the armed one
+      crossfadeRampLock.withLock { crossfadeRamp.userVolume = newValue }
       applyVolumes()
     }
   }
 
-  /// user volume × fade factors; mid-fade the fixed fade refs carry the
-  /// ramps so a volume change during a crossfade scales both engines
+  /// user volume × fade factors; mid-fade the pinned fade refs carry
+  /// the ramps so a volume change during a crossfade scales both
+  /// engines. Runs under `crossfadeRampLock` — the ramp tick writes
+  /// the same `volume` properties off-main.
   private func applyVolumes() {
-    if let fadeOutPlayerRef, let fadeInPlayerRef {
-      fadeOutPlayerRef.volume = volumePlayer * fadeOutFactor
-      fadeInPlayerRef.volume = volumePlayer * fadeInFactor
-    } else {
-      player?.volume = volumePlayer
+    crossfadeRampLock.withLock {
+      if let fadeOut = crossfadeRamp.fadeOutPlayer,
+         let fadeIn = crossfadeRamp.fadeInPlayer {
+        fadeOut.volume = volumePlayer * crossfadeRamp.fadeOutFactor
+        fadeIn.volume = volumePlayer * crossfadeRamp.fadeInFactor
+      } else {
+        player?.volume = volumePlayer
+      }
     }
   }
 
@@ -474,26 +506,39 @@ class BackendAudioPlayer: NSObject {
   private func startCrossfadeFade() {
     guard let sparePlayer, nextPreloadedPlayable != nil else { return }
     isCrossfading = true
-    fadeOutPlayerRef = player
-    fadeInPlayerRef = sparePlayer
-    fadeOutFactor = 1.0
-    fadeInFactor = 0.0
     // the visualizer/haptics tap follows the incoming track — it is on
     // the EQ node (before the output-volume ramp), so it sees the new
     // track at full level for the whole fade
     moveAnalyzerTap(to: spareEqualizer)
+    // the engine may not have reported a duration yet (or the track is
+    // already deep inside the crossfade window) — the 50 ms floor keeps
+    // `durationInSec` positive so the ramp still runs and terminates
+    // instead of dividing by ~zero
     let remainingTime = max(0.05, duration - elapsedTime)
-    crossfadeActiveDurationInSec = min(crossfadeDurationInSec, remainingTime)
-    crossfadeStartUptime = ProcessInfo.processInfo.systemUptime
-    crossfadeTimer?.invalidate()
-    crossfadeTimer = Timer.scheduledTimer(
-      withTimeInterval: Self.crossfadeUpdateIntervalInSec,
-      repeats: true
-    ) { [weak self] _ in
-      Task { @MainActor in
-        self?.crossfadeTick()
-      }
+    crossfadeRampLock.withLock {
+      crossfadeRamp.fadeOutPlayer = player
+      crossfadeRamp.fadeInPlayer = sparePlayer
+      crossfadeRamp.fadeOutFactor = 1.0
+      crossfadeRamp.fadeInFactor = 0.0
+      crossfadeRamp.startUptime = ProcessInfo.processInfo.systemUptime
+      crossfadeRamp.durationInSec = min(crossfadeDurationInSec, remainingTime)
+      crossfadeRamp.userVolume = volumePlayer
+      crossfadeRamp.isFading = true
     }
+    crossfadeTimer?.cancel()
+    // a dispatch timer on the dedicated serial queue — unlike a runloop
+    // `Timer` it has no runloop modes (scrolling can't stall it) and it
+    // never queues behind a busy MainActor
+    let timer = DispatchSource.makeTimerSource(queue: crossfadeQueue)
+    timer.schedule(
+      deadline: .now() + Self.crossfadeUpdateIntervalInSec,
+      repeating: Self.crossfadeUpdateIntervalInSec
+    )
+    timer.setEventHandler { [weak self] in
+      self?.crossfadeTick()
+    }
+    crossfadeTimer = timer
+    timer.resume()
     // the outgoing entry is logically finished now — required by the
     // preloaded-match branch; its real finish callback is ignored because
     // `currentPlayUrl` already moved to the incoming entry.
@@ -505,29 +550,58 @@ class BackendAudioPlayer: NSObject {
     responder?.didItemFinishedPlaying()
   }
 
-  private func crossfadeTick() {
-    guard isCrossfading else { return }
-    let elapsed = ProcessInfo.processInfo.systemUptime - crossfadeStartUptime
-    let progress = min(1.0, elapsed / crossfadeActiveDurationInSec)
-    // equal-power ramp keeps perceived loudness constant mid-fade
-    fadeOutFactor = Float(cos(progress * .pi / 2.0))
-    fadeInFactor = Float(sin(progress * .pi / 2.0))
-    applyVolumes()
-    if progress >= 1.0 {
-      finishCrossfade()
+  /// the 30 Hz ramp — runs on `crossfadeQueue`, deliberately off
+  /// MainActor so main-thread stalls cannot zipper the fade. It only
+  /// writes `volume` on the pinned engine refs (a thread-safe audio
+  /// parameter) under the ramp lock, so a concurrent abort or
+  /// `applyVolumes` on MainActor serializes against it. The finish is
+  /// the only piece that hops back to MainActor — `stop()` and the
+  /// ramp reset are engine state changes.
+  private nonisolated func crossfadeTick() {
+    let didFinish = crossfadeRampLock.withLock {
+      guard crossfadeRamp.isFading else { return false }
+      let elapsed = ProcessInfo.processInfo.systemUptime - crossfadeRamp.startUptime
+      let progress = min(1.0, elapsed / crossfadeRamp.durationInSec)
+      // equal-power ramp keeps perceived loudness constant mid-fade
+      crossfadeRamp.fadeOutFactor = Float(cos(progress * .pi / 2.0))
+      crossfadeRamp.fadeInFactor = Float(sin(progress * .pi / 2.0))
+      crossfadeRamp.fadeOutPlayer?.volume =
+        crossfadeRamp.userVolume * crossfadeRamp.fadeOutFactor
+      crossfadeRamp.fadeInPlayer?.volume =
+        crossfadeRamp.userVolume * crossfadeRamp.fadeInFactor
+      // latch inside the lock — ticks already in flight no-op while
+      // `finishCrossfade` hops back to MainActor
+      if progress >= 1.0 { crossfadeRamp.isFading = false }
+      return progress >= 1.0
+    }
+    guard didFinish else { return }
+    Task { @MainActor in
+      self.finishCrossfade()
     }
   }
 
   private func finishCrossfade() {
-    crossfadeTimer?.invalidate()
+    crossfadeTimer?.cancel()
     crossfadeTimer = nil
-    fadeOutPlayerRef?.stop()
-    fadeOutPlayerRef = nil
-    fadeInPlayerRef = nil
-    fadeOutFactor = 1.0
-    fadeInFactor = 1.0
+    // the outgoing engine is now silent — stop it and release the
+    // pinned ramp refs; the surviving engine already holds full volume
+    resetFadeRamp()?.stop()
     isCrossfading = false
     applyVolumes()
+  }
+
+  /// clears the ramp refs/factors under `crossfadeRampLock` — returns
+  /// the outgoing engine so the caller can `stop()` it on MainActor
+  private func resetFadeRamp() -> AudioStreamingPlayer? {
+    crossfadeRampLock.withLock {
+      let fadeOutPlayer = crossfadeRamp.fadeOutPlayer
+      crossfadeRamp.fadeOutPlayer = nil
+      crossfadeRamp.fadeInPlayer = nil
+      crossfadeRamp.fadeOutFactor = 1.0
+      crossfadeRamp.fadeInFactor = 1.0
+      crossfadeRamp.isFading = false
+      return fadeOutPlayer
+    }
   }
 
   /// Hard-cut out of any in-flight crossfade: stops whatever sits on the
@@ -537,21 +611,23 @@ class BackendAudioPlayer: NSObject {
   /// spare engine, while the same slots double as the normal preload
   /// bookkeeping of the active engine's queue.
   private func abortCrossfade() {
-    guard isCrossfadePreparing || isCrossfading ||
-          fadeOutPlayerRef != nil || fadeInPlayerRef != nil
+    let hasFadeRefs = crossfadeRampLock.withLock {
+      crossfadeRamp.fadeOutPlayer != nil || crossfadeRamp.fadeInPlayer != nil
+    }
+    guard isCrossfadePreparing || isCrossfading || hasFadeRefs
     else { return }
-    crossfadeTimer?.invalidate()
+    crossfadeTimer?.cancel()
     crossfadeTimer = nil
     isCrossfading = false
     isCrossfadePreparing = false
     sparePlayer?.stop()
-    if let fadeOutPlayerRef, fadeOutPlayerRef !== player {
-      fadeOutPlayerRef.stop()
+    // a mid-tick abort serializes against the ramp lock — the tick
+    // either finishes its volume writes first (then this reset wins)
+    // or sees `isFading == false` and skips them entirely
+    let fadeOutPlayer = resetFadeRamp()
+    if let fadeOutPlayer, fadeOutPlayer !== player {
+      fadeOutPlayer.stop()
     }
-    fadeOutPlayerRef = nil
-    fadeInPlayerRef = nil
-    fadeOutFactor = 1.0
-    fadeInFactor = 1.0
     moveAnalyzerTap(to: equalizer)
     // symmetric with the other drop paths — an aborted crossfade insert
     // must not leave its bitrate/transcoding/offset-seek bookkeeping
@@ -835,7 +911,11 @@ class BackendAudioPlayer: NSObject {
   }
 
   /// lazily builds the second engine when a crossfade actually needs it —
-  /// no crossfade setting means zero extra engine cost
+  /// no crossfade setting means zero extra engine cost. Deliberate
+  /// trade-off: once built the spare engine is kept for the player's
+  /// lifetime (no teardown) — an idle `AudioStreaming` engine plus two
+  /// detached-from-output nodes is cheap, and re-attaching a fresh
+  /// engine for every fade boundary would cost more than keeping it
   private func ensureSparePlayer() {
     guard sparePlayer == nil else { return }
     let nodes = buildPlayerWithNodes()
