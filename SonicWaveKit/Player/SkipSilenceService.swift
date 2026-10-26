@@ -105,7 +105,8 @@ struct SkipSilenceDecider {
 ///
 /// The service is registered as a `MusicPlayable` notifier from
 /// `AmperKit.createPlayer` and self-gates per player event — toggling
-/// the setting takes effect within one elapsed-time tick (1s).
+/// the setting takes effect via `UserDefaults.didChangeNotification`
+/// and the next player event, not by decoding settings on the 1s tick.
 @MainActor
 public final class SkipSilenceService: ObservableObject {
   /// true while the rate boost is applied — observable so a settings row
@@ -121,6 +122,15 @@ public final class SkipSilenceService: ObservableObject {
   private let settings: AmperfySettings
   private var rmsCancellable: AnyCancellable?
   private var isEngaged = false
+  /// cached copy of `settings.user.isSkipSilenceEnabled` — `user` is a
+  /// full UserDefaults read + JSON decode per access, far too heavy for
+  /// the 1s `didElapsedTimeChange` tick; refreshed on player events and
+  /// on `UserDefaults.didChangeNotification`
+  private var isSkipSilenceEnabled: Bool
+  /// `nonisolated(unsafe)` so `deinit` can unregister — the observer
+  /// token itself is written once in `init` and `removeObserver` is
+  /// thread-safe
+  nonisolated(unsafe) private var defaultsObserver: NSObjectProtocol?
   /// the silence→boost state machine — `isBoosting` mirrors its latch
   private var decider = SkipSilenceDecider()
 
@@ -132,11 +142,38 @@ public final class SkipSilenceService: ObservableObject {
     self.player = player
     self.audioAnalyzer = audioAnalyzer
     self.settings = settings
+    self.isSkipSilenceEnabled = settings.user.isSkipSilenceEnabled
+    // any UserDefaults write (the toggle lives in `settings.user`)
+    // refreshes the cached flag — paying the decode on the change
+    // itself keeps the per-second tick free of JSON work while a
+    // mid-episode toggle still lands promptly
+    defaultsObserver = NotificationCenter.default.addObserver(
+      forName: UserDefaults.didChangeNotification,
+      object: nil,
+      queue: nil
+    ) { [weak self] _ in
+      Task { @MainActor in
+        self?.refreshSkipSilenceEnabled()
+      }
+    }
+  }
+
+  deinit {
+    if let defaultsObserver {
+      NotificationCenter.default.removeObserver(defaultsObserver)
+    }
+  }
+
+  /// re-reads the persisted toggle into `isSkipSilenceEnabled`, then
+  /// re-evaluates — the only places allowed to decode `settings.user`
+  private func refreshSkipSilenceEnabled() {
+    isSkipSilenceEnabled = settings.user.isSkipSilenceEnabled
+    reevaluateEngagement()
   }
 
   private func reevaluateEngagement() {
     let shouldEngage = SkipSilenceDecider.isEngagementAllowed(
-      isEnabled: settings.user.isSkipSilenceEnabled,
+      isEnabled: isSkipSilenceEnabled,
       playerMode: player.playerMode,
       isPlaying: player.isPlaying
     )
@@ -199,24 +236,25 @@ extension SkipSilenceService: MusicPlayable {
   public func didStartPlayingFromBeginning() {
     // a track change must drop any leftover boost immediately
     restoreRateIfNeeded()
-    reevaluateEngagement()
+    refreshSkipSilenceEnabled()
   }
 
   public func didStartPlaying() {
-    reevaluateEngagement()
+    refreshSkipSilenceEnabled()
   }
 
   public func didPause() {
     restoreRateIfNeeded()
-    reevaluateEngagement()
+    refreshSkipSilenceEnabled()
   }
 
   public func didStopPlaying() {
     disengage()
   }
 
-  /// 1s tick — catches `isSkipSilenceEnabled` toggles and player-mode
-  /// switches without any dedicated settings observation
+  /// 1s tick — re-evaluates the cached flag only; the cache itself is
+  /// refreshed by player events and `UserDefaults.didChangeNotification`
+  /// so this path never pays the settings JSON decode
   public func didElapsedTimeChange() {
     reevaluateEngagement()
   }

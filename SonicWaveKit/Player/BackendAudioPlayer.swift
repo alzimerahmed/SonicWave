@@ -461,6 +461,14 @@ class BackendAudioPlayer: NSObject {
     isPreloadedNextStale = false
     os_log(.default, "Crossfade preparing: %s", nextPlayable.displayString)
     ensureSparePlayer()
+    // an idle spare engine skips EQ rebuilds while it is not rendering
+    // (applyEqualizerToActiveContent) — bring its node up to the
+    // effective profile now that it is about to produce audio
+    spareEqualizer = applyEqualizerProfile(
+      effectiveEqualizerProfile,
+      to: sparePlayer,
+      existing: spareEqualizer
+    )
     spareReplayGainValue = nextPlayable.replayGainTrackGain
     applyReplayGain()
     sparePlayer?.volume = 0
@@ -790,8 +798,8 @@ class BackendAudioPlayer: NSObject {
         )
         return
       }
-      guard currentPlayUrl != "" || isTranscodeSeekRestartInFlight ||
-            currentPreparedUrl != ""
+      guard (currentPlayUrl != "") || isTranscodeSeekRestartInFlight ||
+            (currentPreparedUrl != "")
       else { return }
       // G17 — a transcoded stream cannot be byte-seeked; restart it at
       // the target offset instead (server-side `transcodeOffset`)
@@ -1193,21 +1201,26 @@ class BackendAudioPlayer: NSObject {
         }
         let backendApi = getBackendApiCB(accountInfo)
         httpHeaders = backendApi.httpHeaders
-        // G17 — cache the backend's offset-seek capability alongside
-        // the bitrate/transcoding bookkeeping so a later seek knows
-        // whether a stream restart can serve it
-        let isOffsetSeekSupported = await backendApi.isTranscodeOffsetSeekSupported()
-        if queueType == .play {
-          isTranscodeOffsetSeekSupported = isOffsetSeekSupported
-        } else {
-          isPreloadTranscodeOffsetSeekSupported = isOffsetSeekSupported
-        }
-        return try await backendApi.generateUrl(
+        // G17 — probe the backend's offset-seek capability in parallel
+        // with the URL build so the first insert does not pay a serial
+        // RTT for the OpenSubsonic extension check (the probe result is
+        // cached server-side after the first call); the outcome joins
+        // the preload bookkeeping so a later seek knows whether a
+        // stream restart can serve it
+        async let offsetSeekProbe = backendApi.isTranscodeOffsetSeekSupported()
+        let url = try await backendApi.generateUrl(
           forStreamingPlayable: playable.info,
           maxBitrate: streamingMaxBitrate,
           formatPreference: streamingTranscodingFormat,
           timeOffset: nil
         )
+        let isOffsetSeekSupported = await offsetSeekProbe
+        if queueType == .play {
+          isTranscodeOffsetSeekSupported = isOffsetSeekSupported
+        } else {
+          isPreloadTranscodeOffsetSeekSupported = isOffsetSeekSupported
+        }
+        return url
       }
     }
     let streamUrl = try await provideUrl()
@@ -1366,9 +1379,14 @@ class BackendAudioPlayer: NSObject {
     let profile = effectiveEqualizerProfile
     // apply to both engines so a crossfade-incoming track starts with
     // the same curve the outgoing one had; applying may rebuild an
-    // engine's EQ node, so the (possibly replaced) node is stored back
+    // engine's EQ node, so the (possibly replaced) node is stored back.
+    // An idle spare engine is skipped — it is not rendering, a node
+    // swap buys nothing, and beginCrossfade re-applies the profile
+    // lazily before the next fade
     equalizer = applyEqualizerProfile(profile, to: player, existing: equalizer)
-    spareEqualizer = applyEqualizerProfile(profile, to: sparePlayer, existing: spareEqualizer)
+    if isCrossfadeActive || sparePlayer?.getState() == .playing {
+      spareEqualizer = applyEqualizerProfile(profile, to: sparePlayer, existing: spareEqualizer)
+    }
     // loudness compensation: graphic profiles fold their automatic
     // compensation into the ReplayGain mixer; parametric profiles put
     // their preamp on the EQ node's own `globalGain` instead
