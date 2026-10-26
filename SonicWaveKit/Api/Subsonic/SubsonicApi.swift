@@ -299,6 +299,84 @@ extension SubsonicApi: BackendApi {
     }
   }
 
+  // MARK: G19 bookmarks — `getBookmarks`/`createBookmark`/`deleteBookmark`
+  // exist since API 1.9.0; older/locked-down servers degrade via
+  // `unsupportedIfMissing`
+
+  func getBookmarks() async throws -> BackendFeatureResult<[ServerBookmark]> {
+    try await unsupportedIfMissing {
+      let response = try await self.subsonicServerApi.requestBookmarks()
+      let delegate = SsBookmarksParserDelegate(performanceMonitor: self.performanceMonitor)
+      try self.parse(response: response, delegate: delegate)
+      return .supported(delegate.bookmarks)
+    }
+  }
+
+  func createBookmark(
+    playableInfo: AbstractPlayableInfo,
+    positionSeconds: Int
+  ) async throws -> BackendFeatureResult<Bool> {
+    guard playableInfo.type != .radio else { return .notSupported }
+    return try await unsupportedIfMissing {
+      let response = try await self.subsonicServerApi.requestCreateBookmark(
+        id: playableInfo.id,
+        positionInMilliseconds: max(0, positionSeconds) * 1_000
+      )
+      try self.parse(response: response, delegate: SsPingParserDelegate(
+        performanceMonitor: self.performanceMonitor
+      ))
+      return .supported(true)
+    }
+  }
+
+  func deleteBookmark(
+    _ bookmark: ServerBookmark
+  ) async throws -> BackendFeatureResult<Bool> {
+    try await unsupportedIfMissing {
+      let response = try await self.subsonicServerApi.requestDeleteBookmark(id: bookmark.id)
+      try self.parse(response: response, delegate: SsPingParserDelegate(
+        performanceMonitor: self.performanceMonitor
+      ))
+      return .supported(true)
+    }
+  }
+
+  // MARK: G11 jukebox — `jukeboxControl` since API 1.2.0; needs the
+  // jukebox user role, unauthorized answers collapse to `.notSupported`
+
+  func getJukeboxPlaylist() async throws -> BackendFeatureResult<JukeboxPlaylist> {
+    try await unsupportedIfMissing {
+      let response = try await self.subsonicServerApi.requestJukeboxControl(action: .get)
+      let delegate = SsJukeboxParserDelegate(performanceMonitor: self.performanceMonitor)
+      try self.parse(response: response, delegate: delegate)
+      return .supported(delegate.jukeboxPlaylist ?? JukeboxPlaylist())
+    }
+  }
+
+  func jukeboxControl(_ action: JukeboxAction) async throws -> BackendFeatureResult<Bool> {
+    try await unsupportedIfMissing {
+      let response = try await self.subsonicServerApi.requestJukeboxControl(action: action)
+      try self.parse(response: response, delegate: SsPingParserDelegate(
+        performanceMonitor: self.performanceMonitor
+      ))
+      return .supported(true)
+    }
+  }
+
+  // MARK: G23 music folders — `getMusicFolders` exists since API 1.0.0,
+  // still wrapped: legacy/proxy servers can refuse it
+
+  func getMusicFolders() async throws -> BackendFeatureResult<[MusicFolderStub]> {
+    try await unsupportedIfMissing {
+      let response = try await self.subsonicServerApi.requestMusicFolders()
+      let delegate = SsMusicFolderListParserDelegate(
+        performanceMonitor: self.performanceMonitor
+      )
+      try self.parse(response: response, delegate: delegate)
+      return .supported(delegate.musicFolders)
+    }
+  }
+
   // MARK: G8 smart playlists
 
   func getSmartPlaylistCriteria(

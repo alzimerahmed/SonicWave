@@ -306,6 +306,12 @@ struct AccountSettingsView: View {
                 .onSubmit { savePublicUrlOverride(accountInfo: activeAccountInfo) }
                 .onDisappear { savePublicUrlOverride(accountInfo: activeAccountInfo) }
               }
+              NavigationLink(destination: MusicFolderSettingsView(accountInfo: activeAccountInfo)) {
+                Label("Music Folder", systemImage: "folder")
+              }
+              NavigationLink(destination: LidarrSettingsView(accountInfo: activeAccountInfo)) {
+                Label("Lidarr", systemImage: "antenna.radiowaves.left.and.right")
+              }
               NavigationLink(destination: SharesSettingsView(accountInfo: activeAccountInfo)) {
                 Text("Manage Shares")
               }

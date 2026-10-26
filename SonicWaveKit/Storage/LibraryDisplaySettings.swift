@@ -43,6 +43,10 @@ public enum LibraryDisplayType: Int, CaseIterable, Sendable {
   case newestAlbums = 12
   case recentAlbums = 13
   case radios = 14
+  /// G19 bookmarks — server-side positions list (Subsonic/Ampache
+  /// `bookmarks`); decode merges cases missing from persisted settings
+  /// into `notUsed` so existing installs can enable it via Edit
+  case bookmarks = 15
 
   public static func createByDisplayName(name: String) -> LibraryDisplayType? {
     .allCases.first {
@@ -80,6 +84,8 @@ public enum LibraryDisplayType: Int, CaseIterable, Sendable {
       return "Recently Played Albums"
     case .radios:
       return "Radios"
+    case .bookmarks:
+      return "Bookmarks"
     }
   }
 
@@ -113,6 +119,8 @@ public enum LibraryDisplayType: Int, CaseIterable, Sendable {
       return UIImage.albumRecent
     case .radios:
       return UIImage.radio
+    case .bookmarks:
+      return UIImage(systemName: "bookmark.fill") ?? UIImage.radio
     }
   }
 }
@@ -144,11 +152,18 @@ public struct LibraryDisplaySettings: Sendable, Codable {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     let decodedCombined = try container.decode([[Int]].self, forKey: .combined)
 
-    let mapped: [[LibraryDisplayType]] = decodedCombined.map { group in
+    var mapped: [[LibraryDisplayType]] = decodedCombined.map { group in
       group.compactMap { LibraryDisplayType(rawValue: $0) }
     }
 
+    // types added after the settings blob was persisted land in neither
+    // group — surface them as available-but-off so Edit can enable them
+    let known = Set(mapped.flatMap { $0 })
+    let missing = LibraryDisplayType.allCases
+      .filter { !known.contains($0) }
+      .sorted(by: { $0.rawValue < $1.rawValue })
     if mapped.count == 2 {
+      mapped[1].append(contentsOf: missing)
       self.combined = mapped
     } else if let first = mapped.first {
       // If only one group present, treat it as inUse and compute notUsed
@@ -180,6 +195,7 @@ public struct LibraryDisplaySettings: Sendable, Codable {
         .directories,
         .playlists,
         .podcasts,
+        .bookmarks,
         .radios,
       ]
     )

@@ -74,6 +74,7 @@ class EntityPreviewActionBuilder {
   private var isShareable = false
   private var isDislikable = false
   private var isShareLinkable = false
+  private var isLidarrable = false
 
   init(
     container: PlayableContainable,
@@ -178,6 +179,9 @@ class EntityPreviewActionBuilder {
     }
     if isShareLinkable, let shareableType = shareableTypeForContainer {
       elementHandlingActions.append(createShareLinkAction(shareableType: shareableType))
+    }
+    if isLidarrable, let artist = entityContainer as? Artist {
+      elementHandlingActions.append(createLidarrAction(artist: artist))
     }
     if isGoToSiteUrl, let url = (entityContainer as? AbstractPlayable)?.asRadio?.siteURL {
       elementHandlingActions.append(createGoToSiteUrl(url: url))
@@ -406,6 +410,10 @@ class EntityPreviewActionBuilder {
     isShowPodcastDetails = false
     isShowSongDetails = false
     isShareLinkable = appDelegate.storage.settings.user.isOnlineMode
+    // G25 — "Request in Lidarr" only when the account configured URL+key
+    isLidarrable = appDelegate.storage.settings.user.isOnlineMode &&
+      entityContainer.account != nil &&
+      LidarrApiClient.configured(for: entityContainer.account!.info) != nil
   }
 
   private func configureFor(album: Album) {
@@ -966,6 +974,40 @@ class EntityPreviewActionBuilder {
     if entityContainer is Artist { return .artist }
     if entityContainer is Playlist { return .playlist }
     return nil
+  }
+
+  /// G25: lookup → best name match → `POST artist`; honest toast either way
+  private func createLidarrAction(artist: Artist) -> UIAction {
+    UIAction(
+      title: "Request in Lidarr",
+      image: UIImage(systemName: "antenna.radiowaves.left.and.right")
+    ) { _ in
+      guard let client = artist.account.flatMap({ LidarrApiClient.configured(for: $0.info) })
+      else { return }
+      Task { @MainActor in
+        do {
+          let matches = try await client.searchArtists(term: artist.name)
+          guard let pick = matches.first(where: {
+            $0.artistName.lowercased() == artist.name.lowercased()
+          }) ?? matches.first else {
+            self.appDelegate.eventLogger.info(
+              topic: "Lidarr",
+              message: "No Lidarr match found for \"\(artist.name)\".",
+              displayPopup: true
+            )
+            return
+          }
+          try await client.addArtist(pick)
+          self.appDelegate.eventLogger.info(
+            topic: "Lidarr",
+            message: "Requested \"\(pick.artistName)\" in Lidarr.",
+            displayPopup: true
+          )
+        } catch {
+          self.appDelegate.eventLogger.report(topic: "Lidarr", error: error)
+        }
+      }
+    }
   }
 
   private func createShareLinkAction(shareableType: ShareableType) -> UIAction {

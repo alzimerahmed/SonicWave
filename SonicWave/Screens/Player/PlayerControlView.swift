@@ -124,11 +124,9 @@ class PlayerControlView: UIView, UIGestureRecognizerDelegate {
     skipBackwardButton.tintColor = .label
     skipForwardButton.tintColor = .label
     airplayButton.tintColor = .label
-    #if targetEnvironment(macCatalyst) // ok
-      // G22 — the MPVolumeView route-picker popup is dead on Catalyst;
-      // hide the button rather than offer a control that cannot work
-      airplayButton.isHidden = true
-    #endif
+    // G11 — the button now opens our own "Play To" sheet (jukebox +
+    // UPnP work on Catalyst; only the AirPlay row inside is iOS-only),
+    // so it stays visible on Catalyst since Phase 11
     playerModeButton.tintColor = .label
     volumeButton.tintColor = .label
     optionsButton.imageView?.tintColor = .label

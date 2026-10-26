@@ -609,6 +609,26 @@ public struct AccountSetting: Sendable, Codable {
     get { _publicUrlOverride }
     set { _publicUrlOverride = newValue }
   }
+
+  /// music-folder filter (G23): id of the Subsonic `getMusicFolders`
+  /// entry the library is scoped to — the API layer appends
+  /// `musicFolderId` to folder-aware requests (getArtists/
+  /// getAlbumList2/getRandomSongs). `nil` = whole server library.
+  /// Subsonic only; ignored by other backends.
+  private var _musicFolderId: String? = nil
+  public var musicFolderId: String? {
+    get { _musicFolderId }
+    set { _musicFolderId = newValue }
+  }
+
+  /// Lidarr integration (G25): base URL of the user's Lidarr instance
+  /// (e.g. `http://nas:8686`). The API key lives in Keychain, not here
+  /// (`LidarrKeychain`). `nil` = integration off.
+  private var _lidarrUrl: String? = nil
+  public var lidarrUrl: String? {
+    get { _lidarrUrl }
+    set { _lidarrUrl = newValue }
+  }
 }
 
 // MARK: - ReadOnlyAccountSetting
@@ -653,6 +673,8 @@ public struct AccountSettings: Sendable, Codable {
     _accounts[accountInfo] = nil
     // drop the Keychain-held secrets (password + httpHeaders) as well
     LoginCredentials.deletePersistedSecrets(accountIdent: accountInfo.ident)
+    // G25 — the Lidarr API key is account-scoped secret material too
+    LidarrKeychain.delete(accountIdent: accountInfo.ident)
     if _activeAccount == accountInfo {
       _activeAccount = _accounts.first?.key
     }

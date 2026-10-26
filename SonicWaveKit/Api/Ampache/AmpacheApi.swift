@@ -274,6 +274,132 @@ final class AmpacheApi: BackendApi {
     }
   }
 
+  // MARK: G19 bookmarks — Ampache `bookmarks`/`bookmark_create`/
+  // `bookmark_delete` (API6); position in seconds
+
+  /// maps the playable type to Ampache's `object_type` — radios/streams
+  /// cannot be bookmarked
+  private static func bookmarkObjectType(of playableInfo: AbstractPlayableInfo) -> String? {
+    switch playableInfo.type {
+    case .song: return "song"
+    case .podcastEpisode: return "podcast_episode"
+    case .radio: return nil
+    }
+  }
+
+  func getBookmarks() async throws -> BackendFeatureResult<[ServerBookmark]> {
+    try await unsupportedIfMissing {
+      let response = try await self.ampacheXmlServerApi.requestBookmarks()
+      let delegate = AmpacheBookmarksParserDelegate(
+        performanceMonitor: self.performanceMonitor
+      )
+      try self.parse(response: response, delegate: delegate)
+      return .supported(delegate.bookmarks)
+    }
+  }
+
+  func createBookmark(
+    playableInfo: AbstractPlayableInfo,
+    positionSeconds: Int
+  ) async throws -> BackendFeatureResult<Bool> {
+    guard let objectType = Self.bookmarkObjectType(of: playableInfo) else { return .notSupported }
+    return try await unsupportedIfMissing {
+      let response = try await self.ampacheXmlServerApi.requestBookmarkCreate(
+        filter: playableInfo.id,
+        type: objectType,
+        positionSeconds: max(0, positionSeconds)
+      )
+      try self.parse(
+        response: response,
+        delegate: AmpacheXmlParser(performanceMonitor: self.performanceMonitor)
+      )
+      return .supported(true)
+    }
+  }
+
+  func deleteBookmark(
+    _ bookmark: ServerBookmark
+  ) async throws -> BackendFeatureResult<Bool> {
+    guard !bookmark.objectType.isEmpty else { return .notSupported }
+    return try await unsupportedIfMissing {
+      let response = try await self.ampacheXmlServerApi.requestBookmarkDelete(
+        filter: bookmark.id,
+        type: bookmark.objectType
+      )
+      try self.parse(
+        response: response,
+        delegate: AmpacheXmlParser(performanceMonitor: self.performanceMonitor)
+      )
+      return .supported(true)
+    }
+  }
+
+  // MARK: G11 localplay — Ampache's server-side player (needs a
+  // configured localplay instance; accessDenied → `.notSupported`)
+
+  func getJukeboxPlaylist() async throws -> BackendFeatureResult<JukeboxPlaylist> {
+    try await unsupportedIfMissing {
+      let response = try await self.ampacheXmlServerApi.requestLocalplaySongs()
+      let delegate = AmpacheLocalplaySongsParserDelegate(
+        performanceMonitor: self.performanceMonitor
+      )
+      try self.parse(response: response, delegate: delegate)
+      // Ampache reports no transport state/gain/position in
+      // `localplay_songs` — honest payload carries entries only
+      return .supported(JukeboxPlaylist(isPlaying: false, entries: delegate.entries))
+    }
+  }
+
+  func jukeboxControl(_ action: JukeboxAction) async throws -> BackendFeatureResult<Bool> {
+    // map the shared action set onto Ampache `localplay` commands —
+    // `.get`/`start`/`stop`/`skip`/`add`/`clear` translate; `.set`
+    // (positional select) and `.setGain` (absolute volume; Ampache has
+    // relative volume_up/down only) have no honest equivalent
+    let requests: [(command: String, oid: String?, type: String?, clear: Bool?)]
+    switch action {
+    case .get:
+      return getJukeboxPlaylist().map { _ in true }
+    case .start:
+      requests = [("play", nil, nil, nil)]
+    case .stop:
+      requests = [("stop", nil, nil, nil)]
+    case let .skip(index, _):
+      // Ampache `skip` accepts no index — usable only as next-track
+      guard index >= 0 else { return .notSupported }
+      requests = [("skip", nil, nil, nil)]
+    case let .add(ids):
+      guard !ids.isEmpty else { return .supported(true) }
+      requests = ids.map { ("add", $0, "song", nil) }
+    case .clear:
+      requests = [("delete_all", nil, nil, nil)]
+    case .set, .setGain:
+      return .notSupported
+    }
+    return try await unsupportedIfMissing {
+      for req in requests {
+        let response = try await self.ampacheXmlServerApi.requestLocalplay(
+          command: req.command,
+          objectId: req.oid,
+          objectType: req.type,
+          clear: req.clear
+        )
+        try self.parse(
+          response: response,
+          delegate: AmpacheXmlParser(performanceMonitor: self.performanceMonitor)
+        )
+      }
+      return .supported(true)
+    }
+  }
+
+  // MARK: G23 music folders — Ampache catalogs are browse-only
+  // (syncMusicFolders/syncIndexes); no catalog filter exists on the
+  // library queries themselves → `.notSupported`
+
+  func getMusicFolders() async throws -> BackendFeatureResult<[MusicFolderStub]> {
+    .notSupported
+  }
+
   func getSmartPlaylistCriteria(
     playlistId: String
   ) async throws -> BackendFeatureResult<SmartPlaylistCriteria> {

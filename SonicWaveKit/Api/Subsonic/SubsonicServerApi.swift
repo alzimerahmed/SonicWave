@@ -636,9 +636,32 @@ final class SubsonicServerApi: URLCleanser, Sendable {
     }
   }
 
+  /// G23: the account's active music-folder filter (`AccountSetting.
+  /// musicFolderId`) — appended to every library-scope request that
+  /// documents `musicFolderId` (getArtists/getAlbumList2/getRandomSongs/
+  /// getIndexes-by-picker; `search3` and `getGenres` have no such
+  /// parameter in API <= 1.12.0 and keep whole-server results).
+  private var activeMusicFolderId: String? {
+    guard let accountInfo = account else { return nil }
+    let id = settings.accounts.getSetting(accountInfo).read.musicFolderId
+    return (id?.isEmpty ?? true) ? nil : id
+  }
+
+  /// extracted for testability — `musicFolderId` is emitted only when
+  /// the account has a folder selected
+  static func appendMusicFolderQueryItems(
+    to urlComp: inout URLComponents,
+    musicFolderId: String?
+  ) {
+    guard let musicFolderId, !musicFolderId.isEmpty else { return }
+    urlComp.addQueryItem(name: "musicFolderId", value: musicFolderId)
+  }
+
   public func requestArtists() async throws -> APIDataResponse {
-    try await request { version in
-      let urlComp = try self.createAuthApiUrlComponent(version: version, forAction: "getArtists")
+    let musicFolderId = activeMusicFolderId
+    return try await request { version in
+      var urlComp = try self.createAuthApiUrlComponent(version: version, forAction: "getArtists")
+      Self.appendMusicFolderQueryItems(to: &urlComp, musicFolderId: musicFolderId)
       return try self.createUrl(from: urlComp)
     }
   }
@@ -684,42 +707,50 @@ final class SubsonicServerApi: URLCleanser, Sendable {
   }
 
   public func requestNewestAlbums(offset: Int, count: Int) async throws -> APIDataResponse {
-    try await request { version in
+    let musicFolderId = activeMusicFolderId
+    return try await request { version in
       var urlComp = try self.createAuthApiUrlComponent(version: version, forAction: "getAlbumList2")
       urlComp.addQueryItem(name: "type", value: "newest")
       urlComp.addQueryItem(name: "size", value: count)
       urlComp.addQueryItem(name: "offset", value: offset)
+      Self.appendMusicFolderQueryItems(to: &urlComp, musicFolderId: musicFolderId)
       return try self.createUrl(from: urlComp)
     }
   }
 
   public func requestRecentAlbums(offset: Int, count: Int) async throws -> APIDataResponse {
-    try await request { version in
+    let musicFolderId = activeMusicFolderId
+    return try await request { version in
       var urlComp = try self.createAuthApiUrlComponent(version: version, forAction: "getAlbumList2")
       urlComp.addQueryItem(name: "type", value: "recent")
       urlComp.addQueryItem(name: "size", value: count)
       urlComp.addQueryItem(name: "offset", value: offset)
+      Self.appendMusicFolderQueryItems(to: &urlComp, musicFolderId: musicFolderId)
       return try self.createUrl(from: urlComp)
     }
   }
 
   public func requestAlbums(offset: Int, count: Int) async throws -> APIDataResponse {
-    try await request { version in
+    let musicFolderId = activeMusicFolderId
+    return try await request { version in
       var urlComp = try self.createAuthApiUrlComponent(version: version, forAction: "getAlbumList2")
       urlComp.addQueryItem(name: "type", value: "alphabeticalByName")
       urlComp.addQueryItem(name: "size", value: count)
       urlComp.addQueryItem(name: "offset", value: offset)
+      Self.appendMusicFolderQueryItems(to: &urlComp, musicFolderId: musicFolderId)
       return try self.createUrl(from: urlComp)
     }
   }
 
   public func requestRandomSongs(count: Int) async throws -> APIDataResponse {
-    try await request { version in
+    let musicFolderId = activeMusicFolderId
+    return try await request { version in
       var urlComp = try self.createAuthApiUrlComponent(
         version: version,
         forAction: "getRandomSongs"
       )
       urlComp.addQueryItem(name: "size", value: count)
+      Self.appendMusicFolderQueryItems(to: &urlComp, musicFolderId: musicFolderId)
       return try self.createUrl(from: urlComp)
     }
   }
@@ -1127,7 +1158,8 @@ final class SubsonicServerApi: URLCleanser, Sendable {
     count: Int
   ) async throws
     -> APIDataResponse {
-    try await request { version in
+    let musicFolderId = activeMusicFolderId
+    return try await request { version in
       var urlComp = try self.createAuthApiUrlComponent(
         version: version,
         forAction: "getAlbumList2"
@@ -1137,7 +1169,97 @@ final class SubsonicServerApi: URLCleanser, Sendable {
       urlComp.addQueryItem(name: "toYear", value: toYear)
       urlComp.addQueryItem(name: "size", value: count)
       urlComp.addQueryItem(name: "offset", value: offset)
+      Self.appendMusicFolderQueryItems(to: &urlComp, musicFolderId: musicFolderId)
       return try self.createUrl(from: urlComp)
+    }
+  }
+
+  // MARK: G19 bookmarks (Subsonic API >= 1.9.0; position in milliseconds)
+
+  public func requestBookmarks() async throws -> APIDataResponse {
+    try await request { version in
+      let urlComp = try self.createAuthApiUrlComponent(
+        version: version,
+        forAction: "getBookmarks"
+      )
+      return try self.createUrl(from: urlComp)
+    }
+  }
+
+  public func requestCreateBookmark(
+    id: String,
+    positionInMilliseconds: Int
+  ) async throws
+    -> APIDataResponse {
+    try await request { version in
+      var urlComp = try self.createAuthApiUrlComponent(
+        version: version,
+        forAction: "createBookmark",
+        id: id
+      )
+      urlComp.addQueryItem(name: "position", value: positionInMilliseconds)
+      return try self.createUrl(from: urlComp)
+    }
+  }
+
+  public func requestDeleteBookmark(id: String) async throws -> APIDataResponse {
+    try await request { version in
+      let urlComp = try self.createAuthApiUrlComponent(
+        version: version,
+        forAction: "deleteBookmark",
+        id: id
+      )
+      return try self.createUrl(from: urlComp)
+    }
+  }
+
+  // MARK: G11 jukebox (Subsonic API >= 1.2.0 — needs the jukebox role;
+  // unauthorized users answer error 50 -> `.notSupported` upstream)
+
+  public func requestJukeboxControl(
+    action: JukeboxAction
+  ) async throws -> APIDataResponse {
+    try await request { version in
+      var urlComp = try self.createAuthApiUrlComponent(
+        version: version,
+        forAction: "jukeboxControl"
+      )
+      Self.appendJukeboxQueryItems(to: &urlComp, action: action)
+      return try self.createUrl(from: urlComp)
+    }
+  }
+
+  /// extracted for testability — `action` always first, then the
+  /// action-specific parameters (`index`/`offset` for skip/set, `id`
+  /// repeated per song for add, `gain` 0...1 for setGain)
+  static func appendJukeboxQueryItems(
+    to urlComp: inout URLComponents,
+    action: JukeboxAction
+  ) {
+    switch action {
+    case .get:
+      urlComp.addQueryItem(name: "action", value: "get")
+    case .start:
+      urlComp.addQueryItem(name: "action", value: "start")
+    case .stop:
+      urlComp.addQueryItem(name: "action", value: "stop")
+    case let .skip(index, offsetSeconds):
+      urlComp.addQueryItem(name: "action", value: "skip")
+      urlComp.addQueryItem(name: "index", value: index)
+      urlComp.addQueryItem(name: "offset", value: offsetSeconds)
+    case let .add(ids):
+      urlComp.addQueryItem(name: "action", value: "add")
+      for id in ids {
+        urlComp.addQueryItem(name: "id", value: id)
+      }
+    case .clear:
+      urlComp.addQueryItem(name: "action", value: "clear")
+    case let .set(index):
+      urlComp.addQueryItem(name: "action", value: "set")
+      urlComp.addQueryItem(name: "index", value: index)
+    case let .setGain(gain):
+      urlComp.addQueryItem(name: "action", value: "setGain")
+      urlComp.addQueryItem(name: "gain", value: String(gain))
     }
   }
 

@@ -351,25 +351,19 @@ class PlayerUIHandler: NSObject {
     rootView: UIView,
     airplayButton: UIButton
   ) {
-    // G22 — no-op on Catalyst: the MPVolumeView fake-tap produced a
-    // dead popup there, so the AirPlay buttons are hidden on Catalyst
-    // and this path is unreachable in practice
-    #if targetEnvironment(macCatalyst) // ok
-      return
-    #else
-      appDelegate.userStatistics.usedAction(.airplay)
-      let rect = CGRect(x: -100, y: 0, width: 0, height: 0)
-      let airplayVolume = MPVolumeView(frame: rect)
-      airplayVolume.showsVolumeSlider = false
-      rootView.addSubview(airplayVolume)
-      for view: UIView in airplayVolume.subviews {
-        if let button = view as? UIButton {
-          button.sendActions(for: .touchUpInside)
-          break
-        }
-      }
-      airplayVolume.removeFromSuperview()
-    #endif
+    appDelegate.userStatistics.usedAction(.airplay)
+    // G11 — "Play To" picker: AirPlay/Bluetooth (iOS), server jukebox,
+    // UPnP renderers. Works on Catalyst too (the old MPVolumeView
+    // fake-tap is one row inside the sheet, not the whole popup).
+    guard let presenter = rootView.window?.rootViewController,
+          let accountInfo = appDelegate.storage.settings.accounts.active
+    else { return }
+    let account = appDelegate.storage.main.library.getAccount(info: accountInfo)
+    let targetsVC = OutputTargetsVC(account: account)
+    presenter.present(
+      UINavigationController(rootViewController: targetsVC),
+      animated: true
+    )
   }
 
   /// G4 — the multi-source `SyncedLyricsManager` resolves lyrics for

@@ -268,6 +268,152 @@ public enum ShareUrlRewriter {
   }
 }
 
+// MARK: - JukeboxEntry
+
+/// G11/G19: a media entry as reported inside server playlists — jukebox
+/// playlist entries and bookmark `<entry>` children share this shape.
+/// Display-only DTO: resolve to a local `Song`/`PodcastEpisode` via
+/// `LibraryStorage` when a playable object is needed.
+public struct JukeboxEntry: Sendable, Equatable {
+  /// media file id on the server (song / podcast episode / video id)
+  public var id: String
+  public var title: String?
+  public var artistName: String?
+  public var albumName: String?
+  public var durationSeconds: Int
+
+  public init(
+    id: String,
+    title: String? = nil,
+    artistName: String? = nil,
+    albumName: String? = nil,
+    durationSeconds: Int = 0
+  ) {
+    self.id = id
+    self.title = title
+    self.artistName = artistName
+    self.albumName = albumName
+    self.durationSeconds = durationSeconds
+  }
+}
+
+// MARK: - JukeboxPlaylist
+
+/// G11: server-side jukebox playlist state (Subsonic `jukeboxControl
+/// action=get` / Ampache `localplay` + `localplay_songs`). `isPlaying` is
+/// unknown for Ampache `localplay` — the status answer carries no
+/// transport state, so it reports `true` whenever the playlist is
+/// non-empty and the user asked it to play.
+public struct JukeboxPlaylist: Sendable, Equatable {
+  public var currentIndex: Int
+  public var isPlaying: Bool
+  /// playback gain 0...1 — Subsonic only (`setGain`); `nil` when the
+  /// backend reports no absolute volume (Ampache localplay)
+  public var gain: Double?
+  /// position of the currently playing track in seconds (Subsonic only)
+  public var positionSeconds: Int?
+  public var entries: [JukeboxEntry]
+
+  public init(
+    currentIndex: Int = 0,
+    isPlaying: Bool = false,
+    gain: Double? = nil,
+    positionSeconds: Int? = nil,
+    entries: [JukeboxEntry] = []
+  ) {
+    self.currentIndex = currentIndex
+    self.isPlaying = isPlaying
+    self.gain = gain
+    self.positionSeconds = positionSeconds
+    self.entries = entries
+  }
+}
+
+// MARK: - JukeboxAction
+
+/// G11: remote jukebox commands mapped onto `BackendApi.jukeboxControl`.
+/// Per-backend mapping: Subsonic `jukeboxControl` takes every action;
+/// Ampache `localplay` maps `.start`→`play`, `.stop`→`stop`,
+/// `.skip`→`skip`, `.add`→`add&oid` (repeated), `.clear`→`delete_all` —
+/// `.set` and `.setGain` have no honest Ampache equivalent (no positional
+/// select, volume is relative only) and answer `.notSupported`.
+public enum JukeboxAction: Sendable, Equatable {
+  /// `jukeboxControl action=get` — reads the playlist without touching
+  /// transport state (Subsonic answers `<jukeboxStatus>`)
+  case get
+  case start
+  case stop
+  /// jump to the playlist entry at `index` (0-based), `offsetSeconds`
+  /// into it — Subsonic only; Ampache maps this to its `skip` command
+  case skip(index: Int, offsetSeconds: Int)
+  /// append media file ids to the jukebox playlist
+  case add(ids: [String])
+  case clear
+  /// select the current entry without changing play state (Subsonic only)
+  case set(index: Int)
+  /// absolute playback gain 0...1 (Subsonic only)
+  case setGain(Float)
+}
+
+// MARK: - ServerBookmark
+
+/// G19: a server-side bookmark (saved playback position). Subsonic
+/// `getBookmarks`/`createBookmark`/`deleteBookmark`; Ampache `bookmarks`/
+/// `bookmark_create`/`bookmark_delete`. Positions are SECONDS — Subsonic
+/// transports them in milliseconds and the API layer converts.
+public struct ServerBookmark: Sendable, Equatable, Identifiable {
+  /// media file id the bookmark points at (song/podcast episode id)
+  public var id: String
+  /// `"song"`/`"podcast_episode"`/`"video"` — Subsonic does not carry a
+  /// type, so it is empty there and the UI resolves id → local entity
+  public var objectType: String
+  public var positionSeconds: Int
+  public var username: String?
+  public var clientName: String?
+  public var created: Date?
+  public var changed: Date?
+  public var comment: String?
+  /// display hints from the `<entry>` child (Subsonic only)
+  public var entry: JukeboxEntry?
+
+  public init(
+    id: String,
+    objectType: String = "",
+    positionSeconds: Int = 0,
+    username: String? = nil,
+    clientName: String? = nil,
+    created: Date? = nil,
+    changed: Date? = nil,
+    comment: String? = nil,
+    entry: JukeboxEntry? = nil
+  ) {
+    self.id = id
+    self.objectType = objectType
+    self.positionSeconds = positionSeconds
+    self.username = username
+    self.clientName = clientName
+    self.created = created
+    self.changed = changed
+    self.comment = comment
+    self.entry = entry
+  }
+}
+
+// MARK: - MusicFolderStub
+
+/// G23: a server music folder (Subsonic `getMusicFolders` / Ampache
+/// catalogs) as a lightweight DTO for pickers — unlike the `MusicFolder`
+/// CoreData mirror it exists without a library sync.
+public struct MusicFolderStub: Sendable, Equatable, Identifiable {
+  public var id: String
+  public var name: String
+
+  public init(id: String, name: String) {
+    self.id = id
+    self.name = name
+  }
+}
+
 // MARK: - DislikeResolution
 
 /// Dislike/thumbs-down (#587) server mapping outcome. Neither supported

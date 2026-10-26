@@ -394,6 +394,32 @@ public protocol BackendApi: URLCleanser, Sendable {
     playlistId: String
   ) async throws -> BackendFeatureResult<SmartPlaylistCriteria>
 
+  // MARK: G19 bookmarks — server-side play positions
+  func getBookmarks() async throws -> BackendFeatureResult<[ServerBookmark]>
+  /// `positionSeconds` — Subsonic transports it as milliseconds, the
+  /// backend converts; Ampache takes seconds directly. Only media types
+  /// the server can bookmark are accepted (song/podcast episode; radios
+  /// answer `.notSupported`).
+  func createBookmark(
+    playableInfo: AbstractPlayableInfo,
+    positionSeconds: Int
+  ) async throws -> BackendFeatureResult<Bool>
+  func deleteBookmark(
+    _ bookmark: ServerBookmark
+  ) async throws -> BackendFeatureResult<Bool>
+
+  // MARK: G11 remote output — server-side jukebox / Ampache localplay
+  func getJukeboxPlaylist() async throws -> BackendFeatureResult<JukeboxPlaylist>
+  /// `.notSupported` when the backend/server has no server-side player
+  /// (also when the user lacks the jukebox role — Subsonic answers error 50)
+  func jukeboxControl(_ action: JukeboxAction) async throws -> BackendFeatureResult<Bool>
+
+  // MARK: G23 music folders — server-side library segmentation
+  /// Subsonic `getMusicFolders` (API >= 1.0.0). `.notSupported` for
+  /// backends without a folder filter on library queries (Ampache
+  /// catalogs stay browse-only via `syncMusicFolders`/`syncIndexes`).
+  func getMusicFolders() async throws -> BackendFeatureResult<[MusicFolderStub]>
+
   // MARK: dislike / thumbs-down (#587)
   /// Server mapping is decided per backend (see `DislikeResolution`) —
   /// both shipped backends report `.localOnly` today; the flag itself is

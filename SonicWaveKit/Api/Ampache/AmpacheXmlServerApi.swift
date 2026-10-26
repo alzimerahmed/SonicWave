@@ -1029,6 +1029,94 @@ final class AmpacheXmlServerApi: URLCleanser, Sendable {
     return try createUrl(from: outputUrlComp)
   }
 
+  // MARK: G19 bookmarks (Ampache `bookmarks`/`bookmark_create`/`bookmark_delete`;
+  // position in SECONDS — unlike Subsonic's milliseconds)
+
+  public func requestBookmarks() async throws -> APIDataResponse {
+    try await request { auth in
+      var urlComp = try self.createAuthApiUrlComponent(auth: auth)
+      urlComp.addQueryItem(name: "action", value: "bookmarks")
+      return try self.createUrl(from: urlComp)
+    }
+  }
+
+  public func requestBookmarkCreate(
+    filter: String,
+    type: String,
+    positionSeconds: Int
+  ) async throws
+    -> APIDataResponse {
+    try await request { auth in
+      var urlComp = try self.createAuthApiUrlComponent(auth: auth)
+      urlComp.addQueryItem(name: "action", value: "bookmark_create")
+      urlComp.addQueryItem(name: "filter", value: filter)
+      urlComp.addQueryItem(name: "type", value: type)
+      urlComp.addQueryItem(name: "position", value: positionSeconds)
+      urlComp.addQueryItem(name: "client", value: "SonicWave")
+      return try self.createUrl(from: urlComp)
+    }
+  }
+
+  public func requestBookmarkDelete(
+    filter: String,
+    type: String
+  ) async throws
+    -> APIDataResponse {
+    try await request { auth in
+      var urlComp = try self.createAuthApiUrlComponent(auth: auth)
+      urlComp.addQueryItem(name: "action", value: "bookmark_delete")
+      urlComp.addQueryItem(name: "filter", value: filter)
+      urlComp.addQueryItem(name: "type", value: type)
+      return try self.createUrl(from: urlComp)
+    }
+  }
+
+  // MARK: G11 localplay — Ampache's server-side player control
+  // (`localplay` commands; `localplay_songs` for the playlist)
+
+  /// extracted for testability — `command` always first; `oid`/`type`/
+  /// `clear` are optional per the API6 table
+  static func appendLocalplayQueryItems(
+    to urlComp: inout URLComponents,
+    command: String,
+    objectId: String?,
+    objectType: String?,
+    clear: Bool?
+  ) {
+    urlComp.addQueryItem(name: "action", value: "localplay")
+    urlComp.addQueryItem(name: "command", value: command)
+    if let objectId { urlComp.addQueryItem(name: "oid", value: objectId) }
+    if let objectType { urlComp.addQueryItem(name: "type", value: objectType) }
+    if let clear { urlComp.addQueryItem(name: "clear", value: clear ? "1" : "0") }
+  }
+
+  public func requestLocalplay(
+    command: String,
+    objectId: String? = nil,
+    objectType: String? = nil,
+    clear: Bool? = nil
+  ) async throws -> APIDataResponse {
+    try await request { auth in
+      var urlComp = try self.createAuthApiUrlComponent(auth: auth)
+      Self.appendLocalplayQueryItems(
+        to: &urlComp,
+        command: command,
+        objectId: objectId,
+        objectType: objectType,
+        clear: clear
+      )
+      return try self.createUrl(from: urlComp)
+    }
+  }
+
+  public func requestLocalplaySongs() async throws -> APIDataResponse {
+    try await request { auth in
+      var urlComp = try self.createAuthApiUrlComponent(auth: auth)
+      urlComp.addQueryItem(name: "action", value: "localplay_songs")
+      return try self.createUrl(from: urlComp)
+    }
+  }
+
   private func request(
     urlCreation: @escaping (_: AuthentificationHandshake) throws
       -> URL

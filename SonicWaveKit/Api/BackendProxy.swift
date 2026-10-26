@@ -663,6 +663,44 @@ extension BackendProxy: BackendApi {
     try await activeApi.getSmartPlaylistCriteria(playlistId: playlistId)
   }
 
+  // MARK: G19 bookmarks — forwards to the detected backend
+
+  public func getBookmarks() async throws -> BackendFeatureResult<[ServerBookmark]> {
+    try await activeApi.getBookmarks()
+  }
+
+  public func createBookmark(
+    playableInfo: AbstractPlayableInfo,
+    positionSeconds: Int
+  ) async throws -> BackendFeatureResult<Bool> {
+    try await activeApi.createBookmark(
+      playableInfo: playableInfo,
+      positionSeconds: positionSeconds
+    )
+  }
+
+  public func deleteBookmark(
+    _ bookmark: ServerBookmark
+  ) async throws -> BackendFeatureResult<Bool> {
+    try await activeApi.deleteBookmark(bookmark)
+  }
+
+  // MARK: G11 jukebox
+
+  public func getJukeboxPlaylist() async throws -> BackendFeatureResult<JukeboxPlaylist> {
+    try await activeApi.getJukeboxPlaylist()
+  }
+
+  public func jukeboxControl(_ action: JukeboxAction) async throws -> BackendFeatureResult<Bool> {
+    try await activeApi.jukeboxControl(action)
+  }
+
+  // MARK: G23 music folders
+
+  public func getMusicFolders() async throws -> BackendFeatureResult<[MusicFolderStub]> {
+    try await activeApi.getMusicFolders()
+  }
+
   public func setDislike(playableInfo: AbstractPlayableInfo) async throws -> DislikeResolution {
     try await activeApi.setDislike(playableInfo: playableInfo)
   }

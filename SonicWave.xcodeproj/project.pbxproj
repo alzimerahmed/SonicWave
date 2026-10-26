@@ -17,6 +17,19 @@
 		09EB5F102F93B96E00B1C71C /* ShareSongAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09EB5F0D2F93B65400B1C71C /* ShareSongAction.swift */; };
 		43FBE27F250D4DFD00D5F9B3 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 43FBE27E250D4DFD00D5F9B3 /* LaunchScreen.storyboard */; };
 		7E1BC50100000000000001 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 7E1BC50100000000000002 /* Localizable.xcstrings */; };
+		11F1E5A00000000000001001 /* SsBookmarksParserDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11F1E5A00000000000000001 /* SsBookmarksParserDelegate.swift */; };
+		11F1E5A00000000000001002 /* SsJukeboxParserDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11F1E5A00000000000000002 /* SsJukeboxParserDelegate.swift */; };
+		11F1E5A00000000000001003 /* SsMusicFolderListParserDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11F1E5A00000000000000003 /* SsMusicFolderListParserDelegate.swift */; };
+		11F1E5A00000000000001004 /* AmpacheBookmarksParserDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11F1E5A00000000000000004 /* AmpacheBookmarksParserDelegate.swift */; };
+		11F1E5A00000000000001005 /* AmpacheLocalplayParserDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11F1E5A00000000000000005 /* AmpacheLocalplayParserDelegate.swift */; };
+		11F1E5A00000000000001006 /* UpnpClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11F1E5A00000000000000006 /* UpnpClient.swift */; };
+		11F1E5A00000000000001007 /* LidarrApiClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11F1E5A00000000000000007 /* LidarrApiClient.swift */; };
+		11F1E5A00000000000001008 /* BookmarksVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11F1E5A00000000000000008 /* BookmarksVC.swift */; };
+		11F1E5A00000000000001009 /* JukeboxVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11F1E5A00000000000000009 /* JukeboxVC.swift */; };
+		11F1E5A00000000000001010 /* OutputTargetsVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11F1E5A00000000000000010 /* OutputTargetsVC.swift */; };
+		11F1E5A00000000000001011 /* MusicFolderSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11F1E5A00000000000000011 /* MusicFolderSettingsView.swift */; };
+		11F1E5A00000000000001012 /* LidarrSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11F1E5A00000000000000012 /* LidarrSettingsView.swift */; };
+
 		5003D8FB267B3390006946BF /* LibrarySyncPopupVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5003D8FA267B3390006946BF /* LibrarySyncPopupVC.swift */; };
 		5005938928E2D4EF008C8DF6 /* CommonCollectionSectionHeader.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5005938828E2D4EF008C8DF6 /* CommonCollectionSectionHeader.xib */; };
 		5005938B28E2D4FB008C8DF6 /* CommonCollectionSectionHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5005938A28E2D4FB008C8DF6 /* CommonCollectionSectionHeader.swift */; };
@@ -1370,6 +1383,18 @@
 		7E51A0010000000000000001 /* SpotlightIndexing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotlightIndexing.swift; sourceTree = "<group>"; };
 		7E51A0010000000000000003 /* SpotlightIndexer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotlightIndexer.swift; sourceTree = "<group>"; };
 		7E51A0010000000000000006 /* SpotlightIndexingTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotlightIndexingTest.swift; sourceTree = "<group>"; };
+		11F1E5A00000000000000001 /* SsBookmarksParserDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SsBookmarksParserDelegate.swift; sourceTree = "<group>"; };
+		11F1E5A00000000000000002 /* SsJukeboxParserDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SsJukeboxParserDelegate.swift; sourceTree = "<group>"; };
+		11F1E5A00000000000000003 /* SsMusicFolderListParserDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SsMusicFolderListParserDelegate.swift; sourceTree = "<group>"; };
+		11F1E5A00000000000000004 /* AmpacheBookmarksParserDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmpacheBookmarksParserDelegate.swift; sourceTree = "<group>"; };
+		11F1E5A00000000000000005 /* AmpacheLocalplayParserDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmpacheLocalplayParserDelegate.swift; sourceTree = "<group>"; };
+		11F1E5A00000000000000006 /* UpnpClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpnpClient.swift; sourceTree = "<group>"; };
+		11F1E5A00000000000000007 /* LidarrApiClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LidarrApiClient.swift; sourceTree = "<group>"; };
+		11F1E5A00000000000000008 /* BookmarksVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksVC.swift; sourceTree = "<group>"; };
+		11F1E5A00000000000000009 /* JukeboxVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JukeboxVC.swift; sourceTree = "<group>"; };
+		11F1E5A00000000000000010 /* OutputTargetsVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputTargetsVC.swift; sourceTree = "<group>"; };
+		11F1E5A00000000000000011 /* MusicFolderSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicFolderSettingsView.swift; sourceTree = "<group>"; };
+		11F1E5A00000000000000012 /* LidarrSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LidarrSettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1568,6 +1593,7 @@
 			isa = PBXGroup;
 			children = (
 				5047B7072E3CB8D400D5090C /* PlayerUIHandler.swift */,
+				11F1E5A00000000000000010 /* OutputTargetsVC.swift */,
 				509357512E3BF47800CD4075 /* MiniPlayerView.swift */,
 				504627E92B73B44C00F481F8 /* PopupPlayerVC.xib */,
 				5058708F21DEBBCA0043896F /* PopupPlayerVC.swift */,
@@ -1663,6 +1689,8 @@
 			isa = PBXGroup;
 			children = (
 				50791E7728D25845006CE6E5 /* AccountSettingsView.swift */,
+				11F1E5A00000000000000012 /* LidarrSettingsView.swift */,
+				11F1E5A00000000000000011 /* MusicFolderSettingsView.swift */,
 				50791E7928D31090006CE6E5 /* ServerURLsSettingsView.swift */,
 				50C0FFEE0000000000A00002 /* CustomHTTPHeadersView.swift */,
 				50791E7B28D32B8A006CE6E5 /* AlternativeURLAddDialogView.swift */,
@@ -1750,6 +1778,9 @@
 			children = (
 				5086F875223852F200546F5A /* SubsonicApi.swift */,
 				5086F87E22399D1900546F5A /* SubsonicServerApi.swift */,
+				11F1E5A00000000000000003 /* SsMusicFolderListParserDelegate.swift */,
+				11F1E5A00000000000000002 /* SsJukeboxParserDelegate.swift */,
+				11F1E5A00000000000000001 /* SsBookmarksParserDelegate.swift */,
 				5086F88022399F3700546F5A /* SubsonicLibrarySyncer.swift */,
 				502C0044224C0B1400DA0D1E /* SubsonicArtworkDownloadDelegate.swift */,
 				501267B6264C058500E13F08 /* SsXmlParser.swift */,
@@ -2032,6 +2063,8 @@
 			children = (
 				5086F87C22397B9A00546F5A /* AmpacheApi.swift */,
 				5083861B21C828E200C4BB32 /* AmpacheXmlServerApi.swift */,
+				11F1E5A00000000000000005 /* AmpacheLocalplayParserDelegate.swift */,
+				11F1E5A00000000000000004 /* AmpacheBookmarksParserDelegate.swift */,
 				50BA930121D1019B00E5901D /* AmpacheLibrarySyncer.swift */,
 				50C16C3121EA77C700F086F0 /* AmpacheArtworkDownloadDelegate.swift */,
 				50BA930721D75C5600E5901D /* AuthentificationHandshake.swift */,
@@ -2111,6 +2144,8 @@
 				5064F3962B96FBAE00DE61C1 /* NotificationDetailVC.xib */,
 				5064F3972B96FBAE00DE61C1 /* NotificationDetailVC.swift */,
 				50DEEE03265E25A40073FF20 /* MusicFoldersVC.swift */,
+				11F1E5A00000000000000009 /* JukeboxVC.swift */,
+				11F1E5A00000000000000008 /* BookmarksVC.swift */,
 				50DEEE09265E392C0073FF20 /* IndexesVC.swift */,
 				50DEEE0B265E3F9D0073FF20 /* DirectoriesVC.swift */,
 				507361DF2632BA3B005F151D /* GenresVC.swift */,
@@ -2200,6 +2235,10 @@
 			isa = PBXGroup;
 			children = (
 				5086F87322384A4300546F5A /* Api */,
+				11F1E5A00000000000002002 /* Lidarr */,
+				11F1E5A00000000000000007 /* LidarrApiClient.swift */,
+				11F1E5A00000000000002001 /* Output */,
+				11F1E5A00000000000000006 /* UpnpClient.swift */,
 				8D15C801000000000000000029 /* Discovery */,
 				50BA931F21DA4CEF00E5901D /* Assets */,
 				5041B7FE220D4DF600603F02 /* Common */,
@@ -2547,6 +2586,20 @@
 				7ED1CA010000000000000012 /* LiveActivityManager.swift */,
 			);
 			path = Widgets;
+			sourceTree = "<group>";
+		};
+		11F1E5A00000000000002001 /* Output */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Output;
+			sourceTree = "<group>";
+		};
+		11F1E5A00000000000002002 /* Lidarr */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Lidarr;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -2904,6 +2957,11 @@
 				50E77DB728D2163F00BDF882 /* SettingsView.swift in Sources */,
 				50C16C1A21E704EC00F086F0 /* ArtistDetailVC.swift in Sources */,
 				50DEEE04265E25A40073FF20 /* MusicFoldersVC.swift in Sources */,
+				11F1E5A00000000000001012 /* LidarrSettingsView.swift in Sources */,
+				11F1E5A00000000000001011 /* MusicFolderSettingsView.swift in Sources */,
+				11F1E5A00000000000001010 /* OutputTargetsVC.swift in Sources */,
+				11F1E5A00000000000001009 /* JukeboxVC.swift in Sources */,
+				11F1E5A00000000000001008 /* BookmarksVC.swift in Sources */,
 				50AAB9F52F015517004A39C6 /* SeekToPlaybackTimeAppEnum.swift in Sources */,
 				50DEEE0A265E392C0073FF20 /* IndexesVC.swift in Sources */,
 				50E1D39A2B8BEA540001A572 /* SplitVC.swift in Sources */,
@@ -3197,6 +3255,11 @@
 				50C9D6D4284FAB88007F18D0 /* PlayerDownloadPreparationHandler.swift in Sources */,
 				50C9D673284FAA4D007F18D0 /* LibraryUpdater.swift in Sources */,
 				50C9D64B284FAA02007F18D0 /* SubsonicServerApi.swift in Sources */,
+				11F1E5A00000000000001007 /* LidarrApiClient.swift in Sources */,
+				11F1E5A00000000000001006 /* UpnpClient.swift in Sources */,
+				11F1E5A00000000000001003 /* SsMusicFolderListParserDelegate.swift in Sources */,
+				11F1E5A00000000000001002 /* SsJukeboxParserDelegate.swift in Sources */,
+				11F1E5A00000000000001001 /* SsBookmarksParserDelegate.swift in Sources */,
 				50C9D65C284FAA0B007F18D0 /* GenreParserDelegate.swift in Sources */,
 				50C9D6D2284FAB0C007F18D0 /* StringHasher.swift in Sources */,
 				5EC0DE010000000000000001 /* KeychainHelper.swift in Sources */,
@@ -3246,6 +3309,8 @@
 				50C9D6A6284FAA7F007F18D0 /* CoreDataMigrationVersion.swift in Sources */,
 				50C9D692284FAA6C007F18D0 /* DownloadMO+CoreDataClass.swift in Sources */,
 				50C9D662284FAA0B007F18D0 /* AmpacheXmlServerApi.swift in Sources */,
+				11F1E5A00000000000001005 /* AmpacheLocalplayParserDelegate.swift in Sources */,
+				11F1E5A00000000000001004 /* AmpacheBookmarksParserDelegate.swift in Sources */,
 				505CA1F52B848B8300AA81CD /* QuickActionsHandler.swift in Sources */,
 				50C9D64A284FAA02007F18D0 /* SsPodcastParserDelegate.swift in Sources */,
 				50C9D6DC284FAB88007F18D0 /* RemoteCommandCenterHandler.swift in Sources */,

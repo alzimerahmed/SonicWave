@@ -130,6 +130,10 @@ enum AppStoryboard: String {
     MusicFoldersVC(account: account)
   }
 
+  func segueToBookmarks(account: Account) -> UIViewController {
+    BookmarksVC(account: account)
+  }
+
   func segueToGenres(account: Account) -> UIViewController {
     GenresVC(account: account)
   }
