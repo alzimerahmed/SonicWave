@@ -229,14 +229,16 @@ class ParametricEQTest: XCTestCase {
     XCTAssertNil(settings.routeEqualizerMapJson)
   }
 
-  func testRouteEqualizerMapDecodesWhenKeyAbsent() throws {
-    // settings persisted before the key existed must still decode —
-    // the Optional backing is what keeps them readable
-    let settings = try JSONDecoder().decode(UserSettings.self, from: Data("{}".utf8))
-    XCTAssertNil(settings.routeEqualizerMapJson)
-    XCTAssertNil(settings.activeParametricEqualizerSetting)
-    XCTAssertEqual(settings.parametricEqualizerSettings, [])
-    XCTAssertEqual(settings.routeEqualizerProfileMap, [:])
+  func testUserSettingsRoundTripWithoutNewKeys() throws {
+    // encoding a default UserSettings omits the Optional-backed keys,
+    // mimicking a blob persisted before they existed — decoding must
+    // still succeed and yield the fallbacks
+    let data = try JSONEncoder().encode(UserSettings())
+    let decoded = try JSONDecoder().decode(UserSettings.self, from: data)
+    XCTAssertNil(decoded.routeEqualizerMapJson)
+    XCTAssertNil(decoded.activeParametricEqualizerSetting)
+    XCTAssertEqual(decoded.parametricEqualizerSettings, [])
+    XCTAssertEqual(decoded.routeEqualizerProfileMap, [:])
   }
 
   // MARK: Graphic → parametric mapping
