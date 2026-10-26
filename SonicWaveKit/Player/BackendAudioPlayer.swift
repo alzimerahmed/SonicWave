@@ -1354,9 +1354,11 @@ class BackendAudioPlayer: NSObject {
         band.filterType = eqBand.filterType.avAudioUnitEQFilterType
         band.frequency = eqBand.clampedFrequency
         band.gain = eqBand.clampedGainDb
-        // ignored by shelf filters; the Q-derived octave width only
-        // matters to `.parametric`
-        band.bandwidth = Float(eqBand.bandwidthOctaves)
+        // bandwidth is only valid on `.parametric` bands — shelves
+        // ignore/reject it (their slope is fixed inside the unit)
+        if eqBand.filterType == .peak {
+          band.bandwidth = Float(eqBand.bandwidthOctaves)
+        }
         band.bypass = !isEqualizerEnabled
       }
     }
