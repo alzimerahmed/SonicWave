@@ -634,10 +634,15 @@ class BackendAudioPlayer: NSObject {
   /// false while the playing entry does not support seeking (Ogg Vorbis
   /// streams, live radio) — engine-side seeks on those silently no-op.
   /// A transcoded stream stays seekable by restarting it at the target
-  /// offset when the backend advertises `transcodeOffset` (G17).
+  /// offset when the backend advertises `transcodeOffset` (G17) — the
+  /// engine's own byte seek is meaningless on transcode output, so its
+  /// reported seekability does not apply.
   var isSeekable: Bool {
-    guard let player, !player.isSeekable else { return true }
-    return isActiveStreamTranscoded && isTranscodeOffsetSeekSupported
+    if isActiveStreamTranscoded {
+      return isTranscodeOffsetSeekSupported
+    }
+    guard let player else { return true }
+    return player.isSeekable
   }
 
   /// true while the playing entry is a server-transcoded stream —
@@ -668,9 +673,20 @@ class BackendAudioPlayer: NSObject {
   }
 
   func seek(toSecond: Double) {
-    if isActiveStreamTranscoded, isTranscodeOffsetSeekSupported,
-       currentPlayUrl != "" || isTranscodeSeekRestartInFlight ||
-       currentPreparedUrl != "" {
+    if isActiveStreamTranscoded {
+      guard isTranscodeOffsetSeekSupported else {
+        // a byte-range seek on a transcode pipeline lands nowhere near
+        // the target — the server ignores the Range header and the
+        // stream restarts at ~0 while the UI believes the seek (G17)
+        os_log(
+          .default,
+          "Seek ignored: transcoded stream without transcodeOffset support"
+        )
+        return
+      }
+      guard currentPlayUrl != "" || isTranscodeSeekRestartInFlight ||
+            currentPreparedUrl != ""
+      else { return }
       // G17 — a transcoded stream cannot be byte-seeked; restart it at
       // the target offset instead (server-side `transcodeOffset`)
       Task { @MainActor in
