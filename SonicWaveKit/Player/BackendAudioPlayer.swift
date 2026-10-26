@@ -393,12 +393,15 @@ class BackendAudioPlayer: NSObject {
     let remainingTime = duration - elapsedTime
     guard remainingTime > 0 else { return }
     if crossfadeDurationInSec > 0 {
+      // a fade already in flight owns the boundary — nothing to do this tick
+      if isCrossfadeActive { return }
       // G3 — crossfade supersedes the gapless queue preload: the incoming
-      // track renders on the spare engine so both overlap
-      if remainingTime <= crossfadeDurationInSec {
-        beginCrossfade()
+      // track renders on the spare engine so both overlap. When the
+      // crossfade bails (unseekable outgoing, radio, offline-uncached),
+      // fall through to the .queue preload so the boundary stays gapless
+      if remainingTime <= crossfadeDurationInSec, beginCrossfade() {
+        return
       }
-      return
     }
     if remainingTime < 10 {
       guard let nextPlayable = nextPlayablePreloadCB?() else { return }
@@ -442,7 +445,9 @@ class BackendAudioPlayer: NSObject {
   /// zero volume. Stream inserts are async, so the fade itself only
   /// begins once the incoming entry is actually queued-and-playing on
   /// the spare engine (`startCrossfadeFade`).
-  private func beginCrossfade() {
+  /// Returns `true` when a crossfade was initiated — `false` bails fall
+  /// back to the `.queue` gapless preload path in the caller.
+  private func beginCrossfade() -> Bool {
     guard !isCrossfadeActive, let nextPlayable = nextPlayablePreloadCB?(),
           // radios have no duration to blend over and their insert path
           // does not carry bitrate/transcoding bookkeeping — skip them
@@ -451,13 +456,13 @@ class BackendAudioPlayer: NSObject {
           // without server offset support) never crossfade either — the
           // settings copy promises seek-locked streams stay gapless
           isSeekable
-    else { return }
+    else { return false }
     let isCachedInsert = nextPlayable.isCached &&
       cacheProxy.getFileURL(forPlayable: nextPlayable) != nil
     // an uncached next track cannot be fetched in offline mode — bail
     // before touching any state so the boundary falls back to the
     // regular (non-gapless) play path
-    guard isCachedInsert || !isOfflineMode else { return }
+    guard isCachedInsert || !isOfflineMode else { return false }
     isPreloadedNextStale = false
     os_log(.default, "Crossfade preparing: %s", nextPlayable.displayString)
     ensureSparePlayer()
@@ -504,6 +509,7 @@ class BackendAudioPlayer: NSObject {
         }
       }
     }
+    return true
   }
 
   /// The fade and the logical track change start together: the queue
@@ -745,6 +751,11 @@ class BackendAudioPlayer: NSObject {
   /// engine's own byte seek is meaningless on transcode output, so its
   /// reported seekability does not apply.
   var isSeekable: Bool {
+    // mirror the URL-presence guard `seek` requires, so the UI never
+    // enables scrubbing on a seek that would silently no-op
+    guard currentPlayUrl != "" || isTranscodeSeekRestartInFlight ||
+          currentPreparedUrl != ""
+    else { return false }
     if isActiveStreamTranscoded {
       return isTranscodeOffsetSeekSupported
     }

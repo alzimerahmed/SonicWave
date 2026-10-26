@@ -149,7 +149,7 @@ public final class SkipSilenceService: ObservableObject {
     // mid-episode toggle still lands promptly
     defaultsObserver = NotificationCenter.default.addObserver(
       forName: UserDefaults.didChangeNotification,
-      object: nil,
+      object: UserDefaults.standard,
       queue: nil
     ) { [weak self] _ in
       Task { @MainActor in
