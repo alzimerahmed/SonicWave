@@ -608,7 +608,8 @@ class BackendAudioPlayer: NSObject {
     isPlaying = true
     player?.resume()
     startTimers()
-    player?.rate = Float(userDefinedPlaybackRate.asDouble)
+    player?.rate = effectivePlaybackRate
+    sparePlayer?.rate = effectivePlaybackRate
     // re-assert the user volume — a leftover fade gain must not leak
     applyVolumes()
     audioAnalyzer.play()
@@ -632,7 +633,10 @@ class BackendAudioPlayer: NSObject {
 
   func setPlaybackRate(_ newValue: PlaybackRate) {
     userDefinedPlaybackRate = newValue
-    player?.rate = Float(newValue.asDouble)
+    // a base-rate change rescales an active boost too — both engines
+    // follow so a crossfade-incoming track keeps the same rate
+    player?.rate = effectivePlaybackRate
+    sparePlayer?.rate = effectivePlaybackRate
   }
 
   /// false while the playing entry does not support seeking (Ogg Vorbis
@@ -666,14 +670,21 @@ class BackendAudioPlayer: NSObject {
   private static let skipSilenceBoostFactor: Float = 3.0
   private static let skipSilenceBoostMaxRate: Float = 4.0
 
-  func setSkipSilenceBoost(isActive: Bool) {
-    isSkipSilenceBoostActive = isActive
+  /// the rate the engines should currently run: the user's base rate,
+  /// or the skip-silence boost while it is active — every write to
+  /// `player.rate`/`sparePlayer.rate` must go through this so a fresh
+  /// or spare engine never desyncs from an active boost (G26)
+  private var effectivePlaybackRate: Float {
     let base = Float(userDefinedPlaybackRate.asDouble)
-    let rate = isActive
+    return isSkipSilenceBoostActive
       ? min(base * Self.skipSilenceBoostFactor, Self.skipSilenceBoostMaxRate)
       : base
-    player?.rate = rate
-    sparePlayer?.rate = rate
+  }
+
+  func setSkipSilenceBoost(isActive: Bool) {
+    isSkipSilenceBoostActive = isActive
+    player?.rate = effectivePlaybackRate
+    sparePlayer?.rate = effectivePlaybackRate
   }
 
   func seek(toSecond: Double) {
@@ -786,9 +797,9 @@ class BackendAudioPlayer: NSObject {
     player.volume = volumePlayer
     player.delegate = self
     // a fresh engine (init + restartPlayer after handleError) resets to
-    // rate 1.0 — re-apply the user rate so the engine and the UI stay
-    // in sync
-    player.rate = Float(userDefinedPlaybackRate.asDouble)
+    // rate 1.0 — re-apply the effective rate (base or active boost) so
+    // the engine and the UI stay in sync
+    player.rate = effectivePlaybackRate
 
     player.attach(nodes: [eq, replayGain])
     configureEqualizer(eq, profile: effectiveEqualizerProfile)
@@ -839,7 +850,8 @@ class BackendAudioPlayer: NSObject {
     autoStartPlayback: Bool
   ) {
     userDefinedPlaybackRate = playbackRate
-    player?.rate = Float(userDefinedPlaybackRate.asDouble)
+    player?.rate = effectivePlaybackRate
+    sparePlayer?.rate = effectivePlaybackRate
     isAutoStartPlayback = autoStartPlayback
     handleRequest(playable: playable)
   }
@@ -1191,7 +1203,7 @@ class BackendAudioPlayer: NSObject {
       // the incoming track plays on the spare engine immediately —
       // silent until the fade ramps its volume in
       nextPreloadedUrl = asset.url.absoluteString
-      sparePlayer?.rate = Float(userDefinedPlaybackRate.asDouble)
+      sparePlayer?.rate = effectivePlaybackRate
       sparePlayer?.volume = 0
       if httpHeaders.isEmpty {
         sparePlayer?.play(url: asset.url)
