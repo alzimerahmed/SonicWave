@@ -57,9 +57,10 @@ struct EqualizerSettingsView: View {
   private var currentOutputName: String = ""
 
   /// the bundled AutoEQ-derived correction profiles — candidates for
-  /// the active profile and per-output overrides
+  /// the active profile and per-output overrides; read through the
+  /// facade so the kit stays the only store client
   private var autoEqProfiles: [ParametricEQSetting] {
-    AutoEqProfileStore.profiles
+    appDelegate.player.autoEqProfiles
   }
 
   /// the persisted active profile: a parametric selection supersedes
@@ -206,7 +207,7 @@ struct EqualizerSettingsView: View {
                         parametricProfileButton(profile)
                       }
                     } header: {
-                      Text(String(localized: "AutoEQ"))
+                      Text(String(localized: "AutoEQ-style (approximate)"))
                     }
                   }
                 }
@@ -214,7 +215,7 @@ struct EqualizerSettingsView: View {
             }
           },
           footer:
-          String(localized: "AutoEQ provides parametric correction presets for specific headphones. Parametric profiles can be selected but not edited.")
+          String(localized: "AutoEQ-style profiles provide approximate parametric corrections for specific headphones — representative values, not measured calibration. Parametric profiles can be selected but not edited.")
         )
 
         if settings.isEqualizerEnabled {
@@ -267,7 +268,7 @@ struct EqualizerSettingsView: View {
                         routeProfileButton(profile.name)
                       }
                     } header: {
-                      Text(String(localized: "AutoEQ"))
+                      Text(String(localized: "AutoEQ-style (approximate)"))
                     }
                   }
                 }

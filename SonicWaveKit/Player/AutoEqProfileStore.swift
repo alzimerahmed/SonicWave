@@ -35,10 +35,11 @@ import os.log
 /// dumps — they were written for this bundle and should be refreshed
 /// from upstream AutoEq exports when accuracy matters.
 public enum AutoEqProfileStore {
-  /// `[{name, headphone, preamp, filters:[{type:"PK|LS|HS", fc, gain, q}]}]`
+  /// `[{name, preamp, filters:[{type:"PK|LS|HS", fc, gain, q}]}]` —
+  /// the upstream `headphone` field is intentionally not decoded; the
+  /// profile `name` already carries it
   private struct ProfileDTO: Decodable {
     let name: String
-    let headphone: String
     let preamp: Double
     let filters: [FilterDTO]
   }

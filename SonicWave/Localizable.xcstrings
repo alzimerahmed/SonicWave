@@ -205,26 +205,26 @@
         }
       }
     },
-    "AutoEQ" : {
-      "comment" : "EQ profile menu section: bundled AutoEQ headphone-correction presets",
+    "AutoEQ-style (approximate)" : {
+      "comment" : "EQ profile menu section: bundled AutoEQ-style approximate headphone-correction presets",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "AutoEQ"
+            "value" : "AutoEQ-style (approximate)"
           }
         }
       }
     },
-    "AutoEQ provides parametric correction presets for specific headphones. Parametric profiles can be selected but not edited." : {
+    "AutoEQ-style profiles provide approximate parametric corrections for specific headphones — representative values, not measured calibration. Parametric profiles can be selected but not edited." : {
       "comment" : "EQ profile picker section footer",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "AutoEQ provides parametric correction presets for specific headphones. Parametric profiles can be selected but not edited."
+            "value" : "AutoEQ-style profiles provide approximate parametric corrections for specific headphones — representative values, not measured calibration. Parametric profiles can be selected but not edited."
           }
         }
       }

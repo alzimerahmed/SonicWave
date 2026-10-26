@@ -259,10 +259,6 @@ public protocol PlayerFacade {
   /// active profile; `updateEqualizerSetting` switches the kind back
   /// to the legacy graphic curve
   func updateEqualizerProfile(_: ParametricEQSetting)
-  /// display name of the EQ profile the engine currently applies —
-  /// a per-route override wins over the active profile; "Off" while
-  /// the EQ is disabled
-  var activeEqualizerProfileName: String { get }
   /// the AutoEQ-derived parametric correction profiles bundled with
   /// the kit — candidates for `updateEqualizerProfile` and per-route
   /// overrides
@@ -616,10 +612,6 @@ class PlayerFacadeImpl: PlayerFacade {
 
   func updateEqualizerProfile(_ profile: ParametricEQSetting) {
     backendAudioPlayer.updateEqualizerProfile(profile)
-  }
-
-  var activeEqualizerProfileName: String {
-    backendAudioPlayer.appliedEqualizerProfileName
   }
 
   var autoEqProfiles: [ParametricEQSetting] {

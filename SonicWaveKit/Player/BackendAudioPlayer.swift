@@ -1282,12 +1282,6 @@ class BackendAudioPlayer: NSObject {
     return .graphic(currentEqualizerSetting)
   }
 
-  /// display name of the profile the engine currently applies — for
-  /// `PlayerFacade.activeEqualizerProfileName`
-  var appliedEqualizerProfileName: String {
-    isEqualizerEnabled ? effectiveEqualizerProfile.name : EqualizerSetting.off.name
-  }
-
   private func applyEqualizerToActiveContent() {
     let profile = effectiveEqualizerProfile
     // apply to both engines so a crossfade-incoming track starts with
