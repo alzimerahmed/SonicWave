@@ -553,21 +553,32 @@ class BackendAudioPlayer: NSObject {
     fadeOutFactor = 1.0
     fadeInFactor = 1.0
     moveAnalyzerTap(to: equalizer)
-    nextPreloadedPlayable = nil
-    nextPreloadedUrl = ""
+    // symmetric with the other drop paths — an aborted crossfade insert
+    // must not leave its bitrate/transcoding/offset-seek bookkeeping
+    // behind for a later preload to inherit
+    clearPreloadBookkeeping()
     applyVolumes()
   }
 
-  /// drops an incoming-track insert that finished after the crossfade was
-  /// already aborted — the spare engine must not keep playing it silently
-  private func discardSpareInsert() {
-    sparePlayer?.stop()
+  /// clears the bookkeeping a queued preload/crossfade insert leaves
+  /// behind — the slots are shared by the `.queue` and `.crossfade`
+  /// lanes, so every drop path (invalidation, abort, adoption, error,
+  /// clear) must retire the whole set or stale bitrate/transcoding/
+  /// offset-seek state leaks into whatever is adopted next
+  private func clearPreloadBookkeeping() {
     nextPreloadedPlayable = nil
     nextPreloadedUrl = ""
     perloadedPlayType = nil
     perloadedStreamingBitrate = nil
     preloadTranscodingFormat = nil
     isPreloadTranscodeOffsetSeekSupported = false
+  }
+
+  /// drops an incoming-track insert that finished after the crossfade was
+  /// already aborted — the spare engine must not keep playing it silently
+  private func discardSpareInsert() {
+    sparePlayer?.stop()
+    clearPreloadBookkeeping()
   }
 
   @MainActor
@@ -589,16 +600,12 @@ class BackendAudioPlayer: NSObject {
     isErrorOccurred = true
     wasPlayingBeforeErrorOccurred = isPlaying
     pause()
-    nextPreloadedPlayable = nil
-    nextPreloadedUrl = ""
+    clearPreloadBookkeeping()
     isPreloadedNextStale = true
     isPreviousPlaylableFinshed = true
     activeStreamingBitrate = nil
-    perloadedStreamingBitrate = nil
     activeTranscodingFormat = nil
-    preloadTranscodingFormat = nil
     isTranscodeOffsetSeekSupported = false
-    isPreloadTranscodeOffsetSeekSupported = false
     currentPlayable = nil
     transcodeSeekBaseOffsetInSec = 0
     isTranscodeSeekRestartInFlight = false
@@ -876,15 +883,10 @@ class BackendAudioPlayer: NSObject {
        let url = URL(string: nextPreloadedUrl) {
       player?.removeFromQueue(url: url)
     }
-    nextPreloadedPlayable = nil
-    nextPreloadedUrl = ""
     // drop the preload bookkeeping alongside the entry — the stale
     // insert must not donate its bitrate/transcoding/offset-seek state
-    // to whatever is adopted next (same set discardSpareInsert clears)
-    perloadedPlayType = nil
-    perloadedStreamingBitrate = nil
-    preloadTranscodingFormat = nil
-    isPreloadTranscodeOffsetSeekSupported = false
+    // to whatever is adopted next
+    clearPreloadBookkeeping()
   }
 
   private func handleRequest(playable: AbstractPlayable) {
@@ -895,14 +897,12 @@ class BackendAudioPlayer: NSObject {
       os_log(.default, "Play Preloaded: %s", nextPreloadedPlayable.displayString)
       currentPreparedUrl = ""
       currentPlayUrl = nextPreloadedUrl
+      // adopt the preload bookkeeping into the active slots first, then
+      // retire the whole preload set via the seam
       playType = perloadedPlayType
-      perloadedPlayType = nil
       activeStreamingBitrate = perloadedStreamingBitrate
-      perloadedStreamingBitrate = nil
       activeTranscodingFormat = preloadTranscodingFormat
-      preloadTranscodingFormat = nil
       isTranscodeOffsetSeekSupported = isPreloadTranscodeOffsetSeekSupported
-      isPreloadTranscodeOffsetSeekSupported = false
       currentPlayable = playable
       transcodeSeekBaseOffsetInSec = 0
       isTranscodeSeekRestartInFlight = false
@@ -919,22 +919,19 @@ class BackendAudioPlayer: NSObject {
       }
       currentReplayGainValue = nextPreloadedPlayable.replayGainTrackGain
       applyReplayGain()
-      self.nextPreloadedPlayable = nil
-      nextPreloadedUrl = ""
+      clearPreloadBookkeeping()
       responder?.notifyItemPreparationFinished()
     } else if let relFilePath = playable.relFilePath,
               fileManager.fileExits(relFilePath: relFilePath) {
       // an explicit play request hard-cuts any in-flight crossfade and
       // any still-queued preload is superseded by this explicit request
       abortCrossfade()
+      // clears the whole preload bookkeeping set via the seam
       invalidatePreloadedNext()
       currentPlayUrl = ""
       activeStreamingBitrate = nil
-      perloadedStreamingBitrate = nil
       activeTranscodingFormat = nil
-      preloadTranscodingFormat = nil
       isTranscodeOffsetSeekSupported = false
-      isPreloadTranscodeOffsetSeekSupported = false
       currentPlayable = playable
       transcodeSeekBaseOffsetInSec = 0
       isTranscodeSeekRestartInFlight = false
@@ -955,14 +952,12 @@ class BackendAudioPlayer: NSObject {
       // an explicit play request hard-cuts any in-flight crossfade and
       // any still-queued preload is superseded by this explicit request
       abortCrossfade()
+      // clears the whole preload bookkeeping set via the seam
       invalidatePreloadedNext()
       currentPlayUrl = ""
       activeStreamingBitrate = nil
-      perloadedStreamingBitrate = nil
       activeTranscodingFormat = nil
-      preloadTranscodingFormat = nil
       isTranscodeOffsetSeekSupported = false
-      isPreloadTranscodeOffsetSeekSupported = false
       currentPlayable = playable
       transcodeSeekBaseOffsetInSec = 0
       isTranscodeSeekRestartInFlight = false
@@ -1035,18 +1030,13 @@ class BackendAudioPlayer: NSObject {
     isPreviousPlaylableFinshed = true
     currentPreparedUrl = ""
     currentPlayUrl = ""
-    nextPreloadedPlayable = nil
-    nextPreloadedUrl = ""
     isPreloadInsertPending = false
     isPreloadedNextStale = true
     playType = nil
-    perloadedPlayType = nil
+    clearPreloadBookkeeping()
     activeStreamingBitrate = nil
-    perloadedStreamingBitrate = nil
     activeTranscodingFormat = nil
-    preloadTranscodingFormat = nil
     isTranscodeOffsetSeekSupported = false
-    isPreloadTranscodeOffsetSeekSupported = false
     currentPlayable = nil
     transcodeSeekBaseOffsetInSec = 0
     isTranscodeSeekRestartInFlight = false
