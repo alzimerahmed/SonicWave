@@ -174,13 +174,16 @@ final class LiveActivityManager: MusicPlayable {
   private func endActivity() {
     #if canImport(ActivityKit)
       guard let activity else { return }
-      self.activity = nil
       let finalContent = ActivityContent(
         state: activity.content.state,
         staleDate: nil
       )
-      enqueueActivityWork {
+      // self.activity stays bound until `end` actually executes inside the
+      // work chain — nil'ing early let refresh() re-adopt the dying
+      // activity via `activities.first` and update it after its own end
+      enqueueActivityWork { [weak self] in
         await activity.end(finalContent, dismissalPolicy: .immediate)
+        await MainActor.run { self?.activity = nil }
       }
     #endif
   }

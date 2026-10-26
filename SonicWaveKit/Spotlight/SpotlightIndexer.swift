@@ -292,7 +292,11 @@ public actor SpotlightIndexer {
   }
 
   private func scheduleDrain() {
-    guard drainTask == nil else { return }
+    // !isDraining: enqueues mid-drain are picked up by the in-flight loop
+    // (its exit-check→flag-clear window is synchronous on the actor) — a
+    // second task would only early-return and, worse, stay referenced in
+    // drainTask and suppress all future scheduling
+    guard drainTask == nil, !isDraining else { return }
     let debounce = drainDebounceNanoseconds
     drainTask = Task { [weak self] in
       if debounce > 0 {
@@ -306,10 +310,12 @@ public actor SpotlightIndexer {
   /// funnel through here. Reentrant calls return early: the in-flight
   /// drain already loops until both pending sets are empty.
   func drainPending() async {
+    // nil first — a redundant task spawned just before a drain started must
+    // self-clean its reference, or drainTask stays non-nil forever
+    drainTask = nil
     guard !isDraining else { return }
     isDraining = true
     defer { isDraining = false }
-    drainTask = nil
     while isIndexingAllowed,
           !pendingUpsertUris.isEmpty || !pendingDeleteIdentifiers.isEmpty,
           !Task.isCancelled {
