@@ -789,17 +789,19 @@ extension BackendAudioPlayer: AudioStreaming.AudioPlayerDelegate {
     with entryId: AudioStreaming.AudioEntryId
   ) {
     let entryID = entryId.id
+    // capture the mixer rate on the delegate's engine — with the
+    // crossfade pair two engines feed this delegate and `self.player`
+    // may still point at the outgoing one
+    let sampleRate = player.mainMixerNode.outputFormat(forBus: 0).sampleRate
     Task { @MainActor in
-      didStartPlaying(url: entryID)
+      didStartPlaying(url: entryID, sampleRate: Float(sampleRate))
     }
   }
 
   @MainActor
-  public func didStartPlaying(url: String) {
+  public func didStartPlaying(url: String, sampleRate: Float) {
     if currentPreparedUrl == url {
-      if let sampleRate = player?.mainMixerNode.outputFormat(forBus: 0).sampleRate {
-        audioAnalyzer.playing(sampleRate: Float(sampleRate))
-      }
+      audioAnalyzer.playing(sampleRate: sampleRate)
 
       currentPreparedUrl = ""
       currentPlayUrl = url
@@ -815,6 +817,12 @@ extension BackendAudioPlayer: AudioStreaming.AudioPlayerDelegate {
         player?.seek(to: seekTimeWhenStarted)
         self.seekTimeWhenStarted = nil
       }
+    } else if url == currentPlayUrl || url == nextPreloadedUrl {
+      // G-1d — a gapless-queued (or crossfade-incoming) entry reached the
+      // speakers without going through `currentPreparedUrl`; refresh the
+      // analyzer's sample-rate mapping so the FFT tap does not run on the
+      // previous entry's rate
+      audioAnalyzer.playing(sampleRate: sampleRate)
     }
   }
 
