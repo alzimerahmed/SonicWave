@@ -41,10 +41,6 @@ enum WidgetSharedConfig {
   static let commandDarwinNotification =
     "com.alzimerahmed.sonicwave.widget.command"
 
-  /// Widget extension waits this long for the app to consume a command
-  /// before falling back to opening the app (cold start path).
-  static let commandConsumeTimeout: TimeInterval = 0.8
-
   /// Commands older than this are dropped on consumption — replaying a
   /// stale tap on the next app launch would be surprising.
   static let commandMaxAge: TimeInterval = 120
@@ -230,17 +226,18 @@ enum WidgetStore {
 
   /// Reads and deletes the pending command file. Returns `nil` when no
   /// command is queued or the file can't be decoded.
+  ///
+  /// Residual race: a widget write landing between the read and the
+  /// delete below is removed unseen — the command is lost. The window is
+  /// a single file operation; the proper fix (per-command unique
+  /// filenames) is deliberately not worth the added bookkeeping for a
+  /// tap the user can simply repeat.
   static func consumeCommandEnvelope() -> WidgetCommandEnvelope? {
     guard let url = commandFileURL,
           FileManager.default.fileExists(atPath: url.path) else { return nil }
     defer { try? FileManager.default.removeItem(at: url) }
     guard let data = try? Data(contentsOf: url) else { return nil }
     return try? JSONDecoder().decode(WidgetCommandEnvelope.self, from: data)
-  }
-
-  static func commandFileExists() -> Bool {
-    guard let url = commandFileURL else { return false }
-    return FileManager.default.fileExists(atPath: url.path)
   }
 
   /// Darwin ping — cross-process inside the App Group; wakes the app's
