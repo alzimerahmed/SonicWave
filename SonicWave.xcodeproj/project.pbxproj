@@ -621,7 +621,6 @@
 		7ED1CB01000000000000000C /* PlaybackLiveActivityWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ED1CA01000000000000000E /* PlaybackLiveActivityWidget.swift */; };
 		7ED1CB01000000000000000D /* WidgetSharedModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ED1CA010000000000000007 /* WidgetSharedModels.swift */; };
 		7ED1CB01000000000000000E /* PlaybackActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ED1CA010000000000000008 /* PlaybackActivityAttributes.swift */; };
-		7ED1CB01000000000000000F /* WidgetIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ED1CA010000000000000009 /* WidgetIntents.swift */; };
 		7ED1CB010000000000000010 /* WidgetBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ED1CA01000000000000000F /* WidgetBridge.swift */; };
 		7ED1CB010000000000000011 /* WidgetStatePublisher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ED1CA010000000000000010 /* WidgetStatePublisher.swift */; };
 		7ED1CB010000000000000012 /* WidgetCommandConsumer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ED1CA010000000000000011 /* WidgetCommandConsumer.swift */; };
@@ -2841,7 +2840,6 @@
 				638920F02C8C8E9000932EE8 /* SettingsList.swift in Sources */,
 				7ED1CB01000000000000000D /* WidgetSharedModels.swift in Sources */,
 				7ED1CB01000000000000000E /* PlaybackActivityAttributes.swift in Sources */,
-				7ED1CB01000000000000000F /* WidgetIntents.swift in Sources */,
 				7ED1CB010000000000000010 /* WidgetBridge.swift in Sources */,
 				7ED1CB010000000000000011 /* WidgetStatePublisher.swift in Sources */,
 				7ED1CB010000000000000012 /* WidgetCommandConsumer.swift in Sources */,
