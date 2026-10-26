@@ -238,7 +238,18 @@ class SettingsHostVC: UIViewController {
 
     settings.activeEqualizerSetting = appDelegate.storage.settings.user.activeEqualizerSetting
     changesAgent.append(settings.$activeEqualizerSetting.sink(receiveValue: { newValue in
+      // guarded: the sink fires on the initial assignment too — only
+      // persist + re-apply on a real user change
+      let hasValueChanged = self.appDelegate.storage.settings.user
+        .activeEqualizerSetting != newValue
+      guard hasValueChanged else { return }
       self.appDelegate.storage.settings.user.activeEqualizerSetting = newValue
+      // a graphic selection is a profile-kind switch: the persisted
+      // parametric profile must be cleared too or it stays non-nil and
+      // re-applies on the next launch — same ordering as
+      // EqualizerSettingsView.selectGraphicProfile; the parametric sink
+      // persists the nil and re-applies the graphic curve itself
+      self.settings.activeParametricEqualizerSetting = nil
       self.appDelegate.player.updateEqualizerSetting(eqSetting: newValue)
     }))
 
