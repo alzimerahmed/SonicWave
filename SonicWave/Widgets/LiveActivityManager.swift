@@ -42,6 +42,10 @@ final class LiveActivityManager: MusicPlayable {
   private let player: PlayerFacade
   private let storage: PersistentStorage
   private var refreshTask: Task<Void, Never>?
+  /// serializes `update`/`end` ActivityKit calls — fire-and-forget Tasks
+  /// can complete out of order and regress the activity to a stale
+  /// state; each call awaits the previous one before issuing
+  private var activityWork: Task<Void, Never>?
 
   private static let refreshDebounceNanos: UInt64 = 200_000_000
 
@@ -101,7 +105,7 @@ final class LiveActivityManager: MusicPlayable {
         activity = Activity<PlaybackActivityAttributes>.activities.first
         for stale in Activity<PlaybackActivityAttributes>.activities
           .dropFirst() {
-          Task {
+          enqueueActivityWork {
             await stale.end(nil, dismissalPolicy: .immediate)
           }
         }
@@ -134,14 +138,14 @@ final class LiveActivityManager: MusicPlayable {
         staleDate: nil
       )
       if let activity {
-        Task {
+        enqueueActivityWork {
           await activity.update(content)
         }
         return
       }
       if let existing = Activity<PlaybackActivityAttributes>.activities.first {
         activity = existing
-        Task {
+        enqueueActivityWork {
           await existing.update(content)
         }
         return
@@ -175,10 +179,22 @@ final class LiveActivityManager: MusicPlayable {
         state: activity.content.state,
         staleDate: nil
       )
-      Task {
+      enqueueActivityWork {
         await activity.end(finalContent, dismissalPolicy: .immediate)
       }
     #endif
+  }
+
+  /// chains an ActivityKit call behind the previous one so updates and
+  /// ends always apply in issue order
+  private func enqueueActivityWork(
+    _ work: @escaping @Sendable () async -> Void
+  ) {
+    let previous = activityWork
+    activityWork = Task {
+      await previous?.value
+      await work()
+    }
   }
 
   #if canImport(ActivityKit)
