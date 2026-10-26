@@ -1,0 +1,364 @@
+[
+  {
+    "name": "Sony WH-1000XM4",
+    "headphone": "Sony WH-1000XM4",
+    "preamp": -7.0,
+    "filters": [
+      { "type": "LS", "fc": 60, "gain": 7.0, "q": 0.71 },
+      { "type": "PK", "fc": 140, "gain": -1.8, "q": 1.0 },
+      { "type": "PK", "fc": 400, "gain": 3.0, "q": 1.4 },
+      { "type": "PK", "fc": 1150, "gain": -4.5, "q": 2.0 },
+      { "type": "PK", "fc": 3200, "gain": -5.0, "q": 1.8 },
+      { "type": "PK", "fc": 5000, "gain": 4.0, "q": 3.0 },
+      { "type": "PK", "fc": 8000, "gain": -6.5, "q": 2.5 },
+      { "type": "PK", "fc": 10500, "gain": 4.5, "q": 3.5 }
+    ]
+  },
+  {
+    "name": "Sony WH-1000XM5",
+    "headphone": "Sony WH-1000XM5",
+    "preamp": -5.5,
+    "filters": [
+      { "type": "LS", "fc": 60, "gain": 6.0, "q": 0.71 },
+      { "type": "PK", "fc": 180, "gain": -2.5, "q": 1.1 },
+      { "type": "PK", "fc": 850, "gain": 3.5, "q": 1.6 },
+      { "type": "PK", "fc": 1700, "gain": -2.0, "q": 2.2 },
+      { "type": "PK", "fc": 4200, "gain": -4.0, "q": 2.0 },
+      { "type": "PK", "fc": 6300, "gain": 3.0, "q": 3.0 },
+      { "type": "PK", "fc": 9500, "gain": -4.5, "q": 2.8 }
+    ]
+  },
+  {
+    "name": "Apple AirPods Pro (2nd gen)",
+    "headphone": "Apple AirPods Pro 2",
+    "preamp": -5.8,
+    "filters": [
+      { "type": "LS", "fc": 90, "gain": 6.2, "q": 0.71 },
+      { "type": "PK", "fc": 210, "gain": -1.5, "q": 1.2 },
+      { "type": "PK", "fc": 900, "gain": 2.0, "q": 1.8 },
+      { "type": "PK", "fc": 2800, "gain": -3.0, "q": 2.0 },
+      { "type": "PK", "fc": 5500, "gain": -4.5, "q": 2.2 },
+      { "type": "PK", "fc": 7400, "gain": 3.0, "q": 3.5 },
+      { "type": "PK", "fc": 11500, "gain": -5.0, "q": 2.5 }
+    ]
+  },
+  {
+    "name": "Apple AirPods Pro (1st gen)",
+    "headphone": "Apple AirPods Pro",
+    "preamp": -4.6,
+    "filters": [
+      { "type": "LS", "fc": 75, "gain": 5.0, "q": 0.71 },
+      { "type": "PK", "fc": 350, "gain": 1.5, "q": 1.4 },
+      { "type": "PK", "fc": 1300, "gain": -2.5, "q": 1.8 },
+      { "type": "PK", "fc": 5000, "gain": -4.0, "q": 2.0 },
+      { "type": "PK", "fc": 8200, "gain": 3.5, "q": 3.0 }
+    ]
+  },
+  {
+    "name": "Apple AirPods Max",
+    "headphone": "Apple AirPods Max",
+    "preamp": -5.0,
+    "filters": [
+      { "type": "LS", "fc": 70, "gain": 5.0, "q": 0.71 },
+      { "type": "PK", "fc": 180, "gain": -2.0, "q": 1.2 },
+      { "type": "PK", "fc": 700, "gain": 2.5, "q": 1.6 },
+      { "type": "PK", "fc": 2000, "gain": -2.0, "q": 2.0 },
+      { "type": "PK", "fc": 4500, "gain": -3.5, "q": 2.0 },
+      { "type": "PK", "fc": 8000, "gain": -5.0, "q": 2.4 },
+      { "type": "PK", "fc": 12000, "gain": 3.0, "q": 3.0 }
+    ]
+  },
+  {
+    "name": "Sennheiser HD 600",
+    "headphone": "Sennheiser HD600",
+    "preamp": -6.5,
+    "filters": [
+      { "type": "LS", "fc": 105, "gain": 7.0, "q": 0.71 },
+      { "type": "PK", "fc": 65, "gain": -0.5, "q": 1.4 },
+      { "type": "PK", "fc": 160, "gain": -3.5, "q": 1.8 },
+      { "type": "PK", "fc": 950, "gain": -1.0, "q": 2.5 },
+      { "type": "PK", "fc": 2000, "gain": -3.0, "q": 2.4 },
+      { "type": "PK", "fc": 3000, "gain": 2.5, "q": 2.8 },
+      { "type": "PK", "fc": 6000, "gain": -2.0, "q": 2.8 },
+      { "type": "PK", "fc": 10000, "gain": -2.5, "q": 2.4 },
+      { "type": "HS", "fc": 15000, "gain": -3.0, "q": 0.71 }
+    ]
+  },
+  {
+    "name": "Sennheiser HD 650",
+    "headphone": "Sennheiser HD650",
+    "preamp": -6.4,
+    "filters": [
+      { "type": "LS", "fc": 105, "gain": 6.8, "q": 0.71 },
+      { "type": "PK", "fc": 70, "gain": -1.0, "q": 1.4 },
+      { "type": "PK", "fc": 180, "gain": -3.0, "q": 1.8 },
+      { "type": "PK", "fc": 900, "gain": -1.5, "q": 2.5 },
+      { "type": "PK", "fc": 2100, "gain": -2.8, "q": 2.4 },
+      { "type": "PK", "fc": 3000, "gain": 2.0, "q": 2.8 },
+      { "type": "PK", "fc": 6200, "gain": -2.5, "q": 2.8 },
+      { "type": "PK", "fc": 10000, "gain": -2.0, "q": 2.4 }
+    ]
+  },
+  {
+    "name": "Sennheiser HD 800 S",
+    "headphone": "Sennheiser HD800S",
+    "preamp": -7.0,
+    "filters": [
+      { "type": "LS", "fc": 90, "gain": 7.2, "q": 0.71 },
+      { "type": "PK", "fc": 190, "gain": -2.0, "q": 1.4 },
+      { "type": "PK", "fc": 2500, "gain": -1.5, "q": 2.5 },
+      { "type": "PK", "fc": 5600, "gain": -6.0, "q": 2.8 },
+      { "type": "PK", "fc": 6200, "gain": -3.5, "q": 4.0 },
+      { "type": "PK", "fc": 9500, "gain": -2.5, "q": 2.8 },
+      { "type": "PK", "fc": 13500, "gain": -4.0, "q": 2.4 }
+    ]
+  },
+  {
+    "name": "Sennheiser HD 560S",
+    "headphone": "Sennheiser HD560S",
+    "preamp": -6.2,
+    "filters": [
+      { "type": "LS", "fc": 105, "gain": 6.5, "q": 0.71 },
+      { "type": "PK", "fc": 120, "gain": -1.0, "q": 1.6 },
+      { "type": "PK", "fc": 1000, "gain": -1.5, "q": 2.5 },
+      { "type": "PK", "fc": 3500, "gain": -2.0, "q": 2.4 },
+      { "type": "PK", "fc": 10000, "gain": -2.5, "q": 2.4 },
+      { "type": "PK", "fc": 15000, "gain": -3.0, "q": 2.0 }
+    ]
+  },
+  {
+    "name": "Beyerdynamic DT 770 Pro 80 Ohm",
+    "headphone": "Beyerdynamic DT770",
+    "preamp": -6.9,
+    "filters": [
+      { "type": "LS", "fc": 80, "gain": 7.0, "q": 0.71 },
+      { "type": "PK", "fc": 120, "gain": -3.0, "q": 1.2 },
+      { "type": "PK", "fc": 260, "gain": -2.5, "q": 1.6 },
+      { "type": "PK", "fc": 3500, "gain": 2.0, "q": 2.5 },
+      { "type": "PK", "fc": 5500, "gain": -4.0, "q": 2.4 },
+      { "type": "PK", "fc": 8500, "gain": -7.5, "q": 2.8 },
+      { "type": "PK", "fc": 14000, "gain": -6.0, "q": 2.4 }
+    ]
+  },
+  {
+    "name": "Beyerdynamic DT 990 Pro",
+    "headphone": "Beyerdynamic DT990",
+    "preamp": -6.9,
+    "filters": [
+      { "type": "LS", "fc": 90, "gain": 7.0, "q": 0.71 },
+      { "type": "PK", "fc": 200, "gain": -2.5, "q": 1.4 },
+      { "type": "PK", "fc": 4000, "gain": 1.5, "q": 2.8 },
+      { "type": "PK", "fc": 8000, "gain": -8.0, "q": 2.6 },
+      { "type": "PK", "fc": 12000, "gain": -5.5, "q": 2.4 }
+    ]
+  },
+  {
+    "name": "AKG K371",
+    "headphone": "AKG K371",
+    "preamp": -4.0,
+    "filters": [
+      { "type": "LS", "fc": 50, "gain": 1.5, "q": 0.71 },
+      { "type": "PK", "fc": 200, "gain": -1.5, "q": 1.6 },
+      { "type": "PK", "fc": 3500, "gain": -1.0, "q": 2.8 },
+      { "type": "PK", "fc": 10000, "gain": 2.0, "q": 2.4 }
+    ]
+  },
+  {
+    "name": "AKG K702",
+    "headphone": "AKG K702",
+    "preamp": -6.2,
+    "filters": [
+      { "type": "LS", "fc": 60, "gain": 6.5, "q": 0.71 },
+      { "type": "PK", "fc": 150, "gain": -1.0, "q": 1.4 },
+      { "type": "PK", "fc": 2000, "gain": -3.0, "q": 2.0 },
+      { "type": "PK", "fc": 7000, "gain": -3.5, "q": 2.4 },
+      { "type": "PK", "fc": 9000, "gain": 2.0, "q": 3.0 }
+    ]
+  },
+  {
+    "name": "Audio-Technica ATH-M50x",
+    "headphone": "Audio-Technica ATH-M50x",
+    "preamp": -5.6,
+    "filters": [
+      { "type": "LS", "fc": 55, "gain": 5.5, "q": 0.71 },
+      { "type": "PK", "fc": 140, "gain": -2.0, "q": 1.4 },
+      { "type": "PK", "fc": 250, "gain": -2.5, "q": 1.8 },
+      { "type": "PK", "fc": 800, "gain": 2.0, "q": 2.0 },
+      { "type": "PK", "fc": 3000, "gain": -4.0, "q": 2.2 },
+      { "type": "PK", "fc": 6000, "gain": -4.0, "q": 2.4 },
+      { "type": "PK", "fc": 9000, "gain": 3.5, "q": 3.0 }
+    ]
+  },
+  {
+    "name": "Samsung Galaxy Buds2 Pro",
+    "headphone": "Samsung Galaxy Buds2 Pro",
+    "preamp": -5.0,
+    "filters": [
+      { "type": "LS", "fc": 80, "gain": 5.0, "q": 0.71 },
+      { "type": "PK", "fc": 250, "gain": -1.5, "q": 1.4 },
+      { "type": "PK", "fc": 1600, "gain": -3.5, "q": 2.0 },
+      { "type": "PK", "fc": 5000, "gain": 2.5, "q": 2.4 },
+      { "type": "PK", "fc": 7500, "gain": -4.5, "q": 2.4 },
+      { "type": "PK", "fc": 11500, "gain": -3.0, "q": 2.2 }
+    ]
+  },
+  {
+    "name": "Bose QuietComfort 45",
+    "headphone": "Bose QC45",
+    "preamp": -6.2,
+    "filters": [
+      { "type": "LS", "fc": 55, "gain": 6.5, "q": 0.71 },
+      { "type": "PK", "fc": 300, "gain": -3.0, "q": 1.4 },
+      { "type": "PK", "fc": 600, "gain": -2.0, "q": 1.8 },
+      { "type": "PK", "fc": 1500, "gain": 2.0, "q": 2.2 },
+      { "type": "PK", "fc": 3500, "gain": -4.0, "q": 2.2 },
+      { "type": "PK", "fc": 6500, "gain": -3.0, "q": 2.4 },
+      { "type": "PK", "fc": 10000, "gain": 3.0, "q": 3.0 }
+    ]
+  },
+  {
+    "name": "Bose QuietComfort Earbuds II",
+    "headphone": "Bose QuietComfort Earbuds II",
+    "preamp": -5.2,
+    "filters": [
+      { "type": "LS", "fc": 85, "gain": 5.5, "q": 0.71 },
+      { "type": "PK", "fc": 400, "gain": -2.0, "q": 1.6 },
+      { "type": "PK", "fc": 2500, "gain": -3.5, "q": 2.0 },
+      { "type": "PK", "fc": 5500, "gain": -4.5, "q": 2.2 },
+      { "type": "PK", "fc": 9000, "gain": 4.0, "q": 3.0 }
+    ]
+  },
+  {
+    "name": "Sennheiser Momentum True Wireless 3",
+    "headphone": "Sennheiser Momentum True Wireless 3",
+    "preamp": -5.4,
+    "filters": [
+      { "type": "LS", "fc": 70, "gain": 5.5, "q": 0.71 },
+      { "type": "PK", "fc": 200, "gain": -2.0, "q": 1.4 },
+      { "type": "PK", "fc": 3000, "gain": -3.0, "q": 2.2 },
+      { "type": "PK", "fc": 5500, "gain": 2.0, "q": 2.8 },
+      { "type": "PK", "fc": 8000, "gain": -4.0, "q": 2.4 }
+    ]
+  },
+  {
+    "name": "Sennheiser IE 600",
+    "headphone": "Sennheiser IE 600",
+    "preamp": -4.5,
+    "filters": [
+      { "type": "LS", "fc": 90, "gain": 4.0, "q": 0.71 },
+      { "type": "PK", "fc": 300, "gain": -1.5, "q": 1.6 },
+      { "type": "PK", "fc": 3000, "gain": -3.5, "q": 2.0 },
+      { "type": "PK", "fc": 8000, "gain": -4.0, "q": 2.4 },
+      { "type": "PK", "fc": 12000, "gain": 2.0, "q": 3.0 }
+    ]
+  },
+  {
+    "name": "Shure SE215",
+    "headphone": "Shure SE215",
+    "preamp": -4.8,
+    "filters": [
+      { "type": "LS", "fc": 100, "gain": 4.5, "q": 0.71 },
+      { "type": "PK", "fc": 500, "gain": -1.5, "q": 1.8 },
+      { "type": "PK", "fc": 3000, "gain": -2.5, "q": 2.0 },
+      { "type": "PK", "fc": 6000, "gain": -5.5, "q": 2.2 },
+      { "type": "PK", "fc": 9000, "gain": 2.5, "q": 3.0 },
+      { "type": "HS", "fc": 12000, "gain": -4.0, "q": 0.71 }
+    ]
+  },
+  {
+    "name": "Moondrop Blessing 2",
+    "headphone": "Moondrop Blessing 2",
+    "preamp": -2.8,
+    "filters": [
+      { "type": "LS", "fc": 40, "gain": 1.0, "q": 0.71 },
+      { "type": "PK", "fc": 1500, "gain": -1.0, "q": 2.5 },
+      { "type": "PK", "fc": 4000, "gain": -1.5, "q": 2.4 },
+      { "type": "PK", "fc": 8000, "gain": -2.0, "q": 2.4 }
+    ]
+  },
+  {
+    "name": "Truthear HEXA",
+    "headphone": "Truthear HEXA",
+    "preamp": -3.0,
+    "filters": [
+      { "type": "LS", "fc": 60, "gain": 1.5, "q": 0.71 },
+      { "type": "PK", "fc": 2000, "gain": -1.5, "q": 2.4 },
+      { "type": "PK", "fc": 5500, "gain": -2.0, "q": 2.4 },
+      { "type": "PK", "fc": 10000, "gain": 1.5, "q": 3.0 }
+    ]
+  },
+  {
+    "name": "7Hz Salnotes Zero",
+    "headphone": "7Hz Salnotes Zero",
+    "preamp": -3.4,
+    "filters": [
+      { "type": "LS", "fc": 80, "gain": 2.5, "q": 0.71 },
+      { "type": "PK", "fc": 800, "gain": -1.0, "q": 2.0 },
+      { "type": "PK", "fc": 3000, "gain": -2.0, "q": 2.2 },
+      { "type": "PK", "fc": 6000, "gain": -2.5, "q": 2.4 },
+      { "type": "PK", "fc": 9000, "gain": 1.5, "q": 3.0 }
+    ]
+  },
+  {
+    "name": "Etymotic ER2XR",
+    "headphone": "Etymotic ER2XR",
+    "preamp": -2.5,
+    "filters": [
+      { "type": "LS", "fc": 40, "gain": 1.0, "q": 0.71 },
+      { "type": "PK", "fc": 3000, "gain": -1.0, "q": 2.4 },
+      { "type": "PK", "fc": 8000, "gain": -2.0, "q": 2.4 }
+    ]
+  },
+  {
+    "name": "HiFiMAN Sundara",
+    "headphone": "HiFiMAN Sundara",
+    "preamp": -5.8,
+    "filters": [
+      { "type": "LS", "fc": 100, "gain": 6.0, "q": 0.71 },
+      { "type": "PK", "fc": 200, "gain": -1.0, "q": 1.6 },
+      { "type": "PK", "fc": 1500, "gain": -2.0, "q": 2.2 },
+      { "type": "PK", "fc": 2800, "gain": 1.5, "q": 2.6 },
+      { "type": "PK", "fc": 5000, "gain": -3.5, "q": 2.4 },
+      { "type": "PK", "fc": 8500, "gain": -3.0, "q": 2.4 },
+      { "type": "PK", "fc": 13000, "gain": 2.0, "q": 3.0 }
+    ]
+  },
+  {
+    "name": "HiFiMAN Edition XS",
+    "headphone": "HiFiMAN Edition XS",
+    "preamp": -5.6,
+    "filters": [
+      { "type": "LS", "fc": 95, "gain": 5.5, "q": 0.71 },
+      { "type": "PK", "fc": 250, "gain": -1.5, "q": 1.6 },
+      { "type": "PK", "fc": 1500, "gain": -2.5, "q": 2.2 },
+      { "type": "PK", "fc": 5500, "gain": -3.0, "q": 2.4 },
+      { "type": "PK", "fc": 11000, "gain": -3.0, "q": 2.4 }
+    ]
+  },
+  {
+    "name": "Focal Clear",
+    "headphone": "Focal Clear",
+    "preamp": -5.6,
+    "filters": [
+      { "type": "LS", "fc": 65, "gain": 5.5, "q": 0.71 },
+      { "type": "PK", "fc": 250, "gain": -1.0, "q": 1.6 },
+      { "type": "PK", "fc": 3000, "gain": -4.5, "q": 2.0 },
+      { "type": "PK", "fc": 4500, "gain": -2.0, "q": 2.6 },
+      { "type": "PK", "fc": 7000, "gain": -3.0, "q": 2.4 },
+      { "type": "PK", "fc": 10000, "gain": 2.5, "q": 3.0 }
+    ]
+  },
+  {
+    "name": "Meze 99 Classics",
+    "headphone": "Meze 99 Classics",
+    "preamp": -6.0,
+    "filters": [
+      { "type": "LS", "fc": 50, "gain": 4.0, "q": 0.71 },
+      { "type": "PK", "fc": 150, "gain": -3.0, "q": 1.2 },
+      { "type": "PK", "fc": 400, "gain": -2.5, "q": 1.6 },
+      { "type": "PK", "fc": 2000, "gain": -4.0, "q": 2.0 },
+      { "type": "PK", "fc": 6000, "gain": -3.0, "q": 2.4 },
+      { "type": "PK", "fc": 9000, "gain": 2.0, "q": 3.0 }
+    ]
+  }
+]
