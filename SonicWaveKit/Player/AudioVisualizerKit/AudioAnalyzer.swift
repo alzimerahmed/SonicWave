@@ -21,6 +21,7 @@ protocol AudioAnalyzerProtocol: AnyObject {
 public enum AudioAnalyzerConsumer: Hashable {
   case visualizer
   case haptics
+  case skipSilence
 }
 
 // MARK: - AudioAnalyzer

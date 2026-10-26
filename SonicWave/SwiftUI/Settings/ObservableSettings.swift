@@ -101,6 +101,10 @@ final class Settings: ObservableObject {
   /// crossfade (G3): overlap seconds at track boundaries; 0 = off
   @Published
   var crossfadeDurationInSec = 0
+  /// skip-silence (G26): rate boost through silent stretches — podcast
+  /// player mode only, defaults on
+  @Published
+  var isSkipSilenceEnabled = true
 
   @Published
   var isMiniPlayerAlwaysOnTop = false

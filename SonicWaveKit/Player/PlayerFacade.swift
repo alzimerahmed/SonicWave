@@ -198,6 +198,14 @@ public protocol PlayerFacade {
   var crossfadeDurationInSec: Int { get set }
   /// true while a crossfade is being prepared or is fading
   var isCrossfadeActive: Bool { get }
+  /// skip-silence (G26): boost the engine rate through silent stretches —
+  /// scoped to `.podcast` player mode by `SkipSilenceService`
+  var isSkipSilenceEnabled: Bool { get set }
+  /// true while the skip-silence rate boost is applied to the engine
+  var isSkipSilenceBoostActive: Bool { get }
+  /// temporary engine-rate override driven by `SkipSilenceService` —
+  /// never persists into the per-mode `PlaybackRate`
+  func setSkipSilenceBoost(isActive: Bool)
   var isShouldPauseAfterFinishedPlaying: Bool { get set }
   var isAutoCachePlayedItems: Bool { get set }
   var isPopupBarAllowedToHide: Bool { get }
@@ -511,6 +519,19 @@ class PlayerFacadeImpl: PlayerFacade {
 
   var isCrossfadeActive: Bool {
     backendAudioPlayer.isCrossfadeActive
+  }
+
+  var isSkipSilenceEnabled: Bool {
+    get { settings.user.isSkipSilenceEnabled }
+    set { settings.user.isSkipSilenceEnabled = newValue }
+  }
+
+  var isSkipSilenceBoostActive: Bool {
+    backendAudioPlayer.isSkipSilenceBoostActive
+  }
+
+  func setSkipSilenceBoost(isActive: Bool) {
+    backendAudioPlayer.setSkipSilenceBoost(isActive: isActive)
   }
 
   var isShouldPauseAfterFinishedPlaying: Bool {

@@ -595,6 +595,25 @@ class BackendAudioPlayer: NSObject {
     player?.isSeekable ?? true
   }
 
+  /// skip-silence (G26) — `SkipSilenceService` drives this: a temporary
+  /// engine-rate boost that never touches the persisted `PlaybackRate`
+  public private(set) var isSkipSilenceBoostActive = false
+  /// `AVAudioUnitTimePitch` accepts up to 32x, but past ~4x the resume
+  /// back to speech stops being intelligible and the stream buffer
+  /// drains faster than it refills
+  private static let skipSilenceBoostFactor: Float = 3.0
+  private static let skipSilenceBoostMaxRate: Float = 4.0
+
+  func setSkipSilenceBoost(isActive: Bool) {
+    isSkipSilenceBoostActive = isActive
+    let base = Float(userDefinedPlaybackRate.asDouble)
+    let rate = isActive
+      ? min(base * Self.skipSilenceBoostFactor, Self.skipSilenceBoostMaxRate)
+      : base
+    player?.rate = rate
+    sparePlayer?.rate = rate
+  }
+
   func seek(toSecond: Double) {
     if currentPlayUrl != "", let player, !player.isSeekable {
       os_log(.default, "Seek ignored: current entry is not seekable")

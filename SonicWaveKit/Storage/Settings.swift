@@ -276,6 +276,17 @@ public struct UserSettings: Sendable, Codable {
     set { _crossfadeDurationSeconds = max(0, newValue) }
   }
 
+  /// skip-silence (G26): `SkipSilenceService` temporarily boosts the
+  /// engine rate through silent stretches. Defaults ON but scoped to
+  /// `.podcast` player mode — quiet passages are part of music and must
+  /// never be rate-boosted.
+  // optional backing to stay decodable for settings stored before this key existed
+  private var _isSkipSilenceEnabled: Bool? = nil
+  public var isSkipSilenceEnabled: Bool {
+    get { _isSkipSilenceEnabled ?? true }
+    set { _isSkipSilenceEnabled = newValue }
+  }
+
   private var _isMiniPlayerAlwaysOnTop: Bool = false
   public var isMiniPlayerAlwaysOnTop: Bool {
     get { _isMiniPlayerAlwaysOnTop }

@@ -128,6 +128,11 @@ public class AmperKit {
   /// the hardware gate for settings UI.
   public private(set) var musicHapticsService: MusicHapticsService?
 
+  /// skip-silence (G26) — created with the player and self-gated by
+  /// `UserSettings.isSkipSilenceEnabled` + `.podcast` player mode; nil
+  /// until the player exists
+  public private(set) var skipSilenceService: SkipSilenceService?
+
   /// synced-lyrics playback tracker (G4) — vendored lazily; registers
   /// itself as a `MusicPlayable` notifier on first access so the player
   /// is only instantiated when a synced-lyrics UI actually appears.
@@ -270,6 +275,13 @@ public class AmperKit {
       settings: storage.settings
     )
     curPlayer.addNotifier(notifier: musicHapticsService!)
+
+    skipSilenceService = SkipSilenceService(
+      player: facadeImpl,
+      audioAnalyzer: backendAudioPlayer.audioAnalyzer,
+      settings: storage.settings
+    )
+    curPlayer.addNotifier(notifier: skipSilenceService!)
 
     return facadeImpl
   }
