@@ -51,13 +51,15 @@ public enum AutoEqProfileStore {
   }
 
   /// the bundled profiles, decoded once — the file is read-only
-  public static let profiles: [ParametricEQSetting] = loadProfiles()
+  public static let profiles: [ParametricEQSetting] = loadProfiles(bundle: Bundle(for: BundleToken.self))
 
-  /// reads + parses `AutoEqProfiles.json`; the bundle parameter keeps
-  /// the loader testable — the kit's own bundle is the default
-  public static func loadProfiles(
-    bundle: Bundle = Bundle(for: BundleToken.self)
-  ) -> [ParametricEQSetting] {
+  /// reads + parses `AutoEqProfiles.json` from the kit bundle
+  public static func loadProfiles() -> [ParametricEQSetting] {
+    loadProfiles(bundle: Bundle(for: BundleToken.self))
+  }
+
+  /// the bundle parameter keeps the loader testable
+  static func loadProfiles(bundle: Bundle) -> [ParametricEQSetting] {
     guard let url = bundle.url(forResource: "AutoEqProfiles", withExtension: "json") else {
       os_log(.error, "AutoEQ: AutoEqProfiles.json missing from bundle")
       return []
