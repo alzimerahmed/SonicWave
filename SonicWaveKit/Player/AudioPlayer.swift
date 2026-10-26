@@ -88,7 +88,14 @@ public class AudioPlayer: NSObject, BackendAudioPlayerNotifiable {
     self.backendAudioPlayer.responder = self
     self.backendAudioPlayer.nextPlayablePreloadCB = { () in
       guard !self.isShouldPauseAfterFinishedPlaying else { return nil }
-      guard self.playerStatus.repeatMode != .single else { return nil }
+      // G-1b — repeat-single queues the same track so the loop boundary
+      // rides the engine's gapless queue instead of a fresh `play()`;
+      // AudioStreaming does not deduplicate identical queued URLs and the
+      // preload-match in `handleRequest` compares managed-object identity,
+      // so the queued entry is adopted like any other preload
+      if self.playerStatus.repeatMode == .single {
+        return self.currentlyPlaying
+      }
       // G21 — drain-triggered album append lives here (not in the pure
       // `nextPlayerIndex` getter) so the preload sees the new first track
       self.materializeNextAlbumInQueue()
