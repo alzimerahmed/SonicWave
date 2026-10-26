@@ -1477,3 +1477,24 @@ extension PlayableContainerTypeAppEnum {
     }
   }
 }
+
+extension SpotlightItemType {
+  /// G27: map the kit-side index type onto the intent enum used by
+  /// `IntentManager.getPlayableContainer(account:id:libraryElementType:)`
+  var appEnumType: PlayableContainerTypeAppEnum {
+    switch self {
+    case .song:
+      return .song
+    case .podcastEpisode:
+      return .podcastEpisode
+    case .album:
+      return .album
+    case .artist:
+      return .artist
+    case .playlist:
+      return .playlist
+    case .podcast:
+      return .podcast
+    }
+  }
+}

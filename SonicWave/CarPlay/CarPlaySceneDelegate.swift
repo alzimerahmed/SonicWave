@@ -106,7 +106,7 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
       )
       // Download-observer registration can lazily create MetaManagers via
       // getMeta -> deferred so the connect critical path stays light.
-      Task { @MainActor [weak self] in
+      Task { [weak self] in
         guard let self else { return }
         accountNotificationHandler?.registerCallbackForAllAccounts { [weak self] accountInfo in
           guard let self else { return }
@@ -162,7 +162,7 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
           // HomeManager + fetched results controller creation (synchronous
           // performFetch calls) and the first section population run after
           // the connect path returned control to CarPlay.
-          Task { @MainActor [weak self] in
+          Task { [weak self] in
             guard let self, self.interfaceController != nil,
                   let account = self.activeAccount else { return }
             self.sharedHome = HomeManager(
@@ -179,7 +179,7 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
           }
         }
 
-      Task { @MainActor [weak self] in
+      Task { [weak self] in
         guard let self, self.interfaceController != nil else { return }
         if self.appDelegate.player.currentlyPlaying != nil, self.appDelegate.player.isPlaying {
           self.updatePlayerQueueSection()

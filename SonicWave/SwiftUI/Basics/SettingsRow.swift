@@ -86,6 +86,10 @@ struct SettingsCheckBoxRow: View {
       Toggle(isOn: isOn) {}
         .toggleStyle(.switch)
     }
+    // the label-less Toggle reads as an anonymous switch — merge it
+    // with the row title into one element so VoiceOver announces
+    // "<title>, switch, on/off" instead of two disconnected stops
+    .accessibilityElement(children: .combine)
   }
 }
 
