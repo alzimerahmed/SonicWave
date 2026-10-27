@@ -658,6 +658,27 @@
 		7E51A0010000000000000002 /* SpotlightIndexing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E51A0010000000000000001 /* SpotlightIndexing.swift */; };
 		7E51A0010000000000000004 /* SpotlightIndexer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E51A0010000000000000003 /* SpotlightIndexer.swift */; };
 		7E51A0010000000000000007 /* SpotlightIndexingTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E51A0010000000000000006 /* SpotlightIndexingTest.swift */; };
+		E12A00000000000000000012 /* SonicWaveWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = E12A00000000000000000008 /* SonicWaveWatch.app */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		E12A00000000000000000013 /* SonicWaveWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12A00000000000000000022 /* SonicWaveWatchApp.swift */; };
+		E12A00000000000000000014 /* WatchSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12A00000000000000000023 /* WatchSessionManager.swift */; };
+		E12A00000000000000000015 /* NowPlayingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12A00000000000000000024 /* NowPlayingView.swift */; };
+		E12A00000000000000000016 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = E12A00000000000000000021 /* Localizable.xcstrings */; };
+		E12A00000000000000000017 /* SonicWaveAppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 50D7709E2E4F1D1C0075D3BF /* SonicWaveAppIcon.icon */; };
+		E12A00000000000000000018 /* WatchShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12A00000000000000000029 /* WatchShared.swift */; };
+		E12A00000000000000000030 /* WatchShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12A00000000000000000029 /* WatchShared.swift */; };
+		E12A00000000000000000031 /* WatchSessionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12A00000000000000000026 /* WatchSessionHandler.swift */; };
+		E12A00000000000000000032 /* WatchStatePublisher.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12A00000000000000000027 /* WatchStatePublisher.swift */; };
+		E12A00000000000000000033 /* WatchBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12A00000000000000000028 /* WatchBridge.swift */; };
+		E12A00000000000000000045 /* SonicWaveKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 50C9D605284FA847007F18D0 /* SonicWaveKit.framework */; };
+		E12A00000000000000000046 /* SonicWaveKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 50C9D605284FA847007F18D0 /* SonicWaveKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		E12A00000000000000000047 /* SonicWaveTVApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12A00000000000000000060 /* SonicWaveTVApp.swift */; };
+		E12A00000000000000000048 /* TVViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12A00000000000000000061 /* TVViewModel.swift */; };
+		E12A00000000000000000049 /* TVArtworkImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12A00000000000000000062 /* TVArtworkImage.swift */; };
+		E12A00000000000000000050 /* TVRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12A00000000000000000063 /* TVRootView.swift */; };
+		E12A00000000000000000051 /* TVLibraryViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12A00000000000000000064 /* TVLibraryViews.swift */; };
+		E12A00000000000000000052 /* TVNowPlayingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12A00000000000000000065 /* TVNowPlayingView.swift */; };
+		E12A00000000000000000053 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = E12A00000000000000000059 /* Localizable.xcstrings */; };
+		E12A00000000000000000054 /* SonicWaveAppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 50D7709E2E4F1D1C0075D3BF /* SonicWaveAppIcon.icon */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -688,6 +709,20 @@
 			proxyType = 1;
 			remoteGlobalIDString = 7ED1CD010000000000000004;
 			remoteInfo = SonicWaveWidgets;
+		};
+		E12A00000000000000000009 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 508385DC21C5965B00C4BB32 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E12A00000000000000000004;
+			remoteInfo = SonicWaveWatch;
+		};
+		E12A00000000000000000043 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 508385DC21C5965B00C4BB32 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 50C9D604284FA847007F18D0;
+			remoteInfo = SonicWaveKit;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -721,6 +756,28 @@
 			dstSubfolderSpec = 10;
 			files = (
 			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E12A00000000000000000011 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				E12A00000000000000000012 /* SonicWaveWatch.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E12A00000000000000000037 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				E12A00000000000000000046 /* SonicWaveKit.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -1412,6 +1469,25 @@
 		11F1E5A00000000000000010 /* OutputTargetsVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputTargetsVC.swift; sourceTree = "<group>"; };
 		11F1E5A00000000000000011 /* MusicFolderSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicFolderSettingsView.swift; sourceTree = "<group>"; };
 		11F1E5A00000000000000012 /* LidarrSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LidarrSettingsView.swift; sourceTree = "<group>"; };
+		E12A00000000000000000008 /* SonicWaveWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SonicWaveWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E12A00000000000000000020 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		E12A00000000000000000021 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		E12A00000000000000000022 /* SonicWaveWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SonicWaveWatchApp.swift; sourceTree = "<group>"; };
+		E12A00000000000000000023 /* WatchSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSessionManager.swift; sourceTree = "<group>"; };
+		E12A00000000000000000024 /* NowPlayingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingView.swift; sourceTree = "<group>"; };
+		E12A00000000000000000026 /* WatchSessionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSessionHandler.swift; sourceTree = "<group>"; };
+		E12A00000000000000000027 /* WatchStatePublisher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchStatePublisher.swift; sourceTree = "<group>"; };
+		E12A00000000000000000028 /* WatchBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchBridge.swift; sourceTree = "<group>"; };
+		E12A00000000000000000029 /* WatchShared.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchShared.swift; sourceTree = "<group>"; };
+		E12A00000000000000000042 /* SonicWaveTV.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SonicWaveTV.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E12A00000000000000000058 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		E12A00000000000000000059 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		E12A00000000000000000060 /* SonicWaveTVApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SonicWaveTVApp.swift; sourceTree = "<group>"; };
+		E12A00000000000000000061 /* TVViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVViewModel.swift; sourceTree = "<group>"; };
+		E12A00000000000000000062 /* TVArtworkImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVArtworkImage.swift; sourceTree = "<group>"; };
+		E12A00000000000000000063 /* TVRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVRootView.swift; sourceTree = "<group>"; };
+		E12A00000000000000000064 /* TVLibraryViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVLibraryViews.swift; sourceTree = "<group>"; };
+		E12A00000000000000000065 /* TVNowPlayingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVNowPlayingView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1460,6 +1536,21 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E12A00000000000000000002 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E12A00000000000000000035 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E12A00000000000000000045 /* SonicWaveKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1726,6 +1817,8 @@
 				50C9D606284FA847007F18D0 /* SonicWaveKit */,
 				50C9D614284FA847007F18D0 /* SonicWaveKitTests */,
 				7ED1CC010000000000000001 /* SonicWaveWidgets */,
+				E12A00000000000000000019 /* SonicWaveWatch */,
+				E12A00000000000000000055 /* SonicWaveTV */,
 				508385E521C5965B00C4BB32 /* Products */,
 				5091857E23A753C800A8891E /* Frameworks */,
 			);
@@ -1738,6 +1831,8 @@
 				50C9D605284FA847007F18D0 /* SonicWaveKit.framework */,
 				50C9D60E284FA847007F18D0 /* SonicWaveKitTests.xctest */,
 				7ED1CA010000000000000001 /* SonicWaveWidgets.appex */,
+				E12A00000000000000000008 /* SonicWaveWatch.app */,
+				E12A00000000000000000042 /* SonicWaveTV.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1768,6 +1863,7 @@
 				50ACAF1327B277B50039913C /* SonicWave.entitlements */,
 				641708582C13BF5100BA2619 /* Haptics.swift */,
 				7ED1CC010000000000000002 /* Widgets */,
+				E12A00000000000000000025 /* Watch */,
 			);
 			path = SonicWave;
 			sourceTree = "<group>";
@@ -2643,6 +2739,44 @@
 			path = Analytics;
 			sourceTree = "<group>";
 		};
+		E12A00000000000000000019 /* SonicWaveWatch */ = {
+			isa = PBXGroup;
+			children = (
+				E12A00000000000000000022 /* SonicWaveWatchApp.swift */,
+				E12A00000000000000000023 /* WatchSessionManager.swift */,
+				E12A00000000000000000024 /* NowPlayingView.swift */,
+				E12A00000000000000000021 /* Localizable.xcstrings */,
+				E12A00000000000000000020 /* Info.plist */,
+			);
+			path = SonicWaveWatch;
+			sourceTree = "<group>";
+		};
+		E12A00000000000000000025 /* Watch */ = {
+			isa = PBXGroup;
+			children = (
+				E12A00000000000000000029 /* WatchShared.swift */,
+				E12A00000000000000000026 /* WatchSessionHandler.swift */,
+				E12A00000000000000000027 /* WatchStatePublisher.swift */,
+				E12A00000000000000000028 /* WatchBridge.swift */,
+			);
+			path = Watch;
+			sourceTree = "<group>";
+		};
+		E12A00000000000000000055 /* SonicWaveTV */ = {
+			isa = PBXGroup;
+			children = (
+				E12A00000000000000000060 /* SonicWaveTVApp.swift */,
+				E12A00000000000000000061 /* TVViewModel.swift */,
+				E12A00000000000000000062 /* TVArtworkImage.swift */,
+				E12A00000000000000000063 /* TVRootView.swift */,
+				E12A00000000000000000064 /* TVLibraryViews.swift */,
+				E12A00000000000000000065 /* TVNowPlayingView.swift */,
+				E12A00000000000000000059 /* Localizable.xcstrings */,
+				E12A00000000000000000058 /* Info.plist */,
+			);
+			path = SonicWaveTV;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -2666,6 +2800,7 @@
 				508385E221C5965B00C4BB32 /* Resources */,
 				5054687F2625CC61008005EC /* Embed Frameworks */,
 				50253FA1284A5EEB00BCCFB2 /* Embed Foundation Extensions */,
+				E12A00000000000000000011 /* Embed Watch Content */,
 				50C1CD9E2C93340900629993 /* CopyFiles */,
 			);
 			buildRules = (
@@ -2673,6 +2808,7 @@
 			dependencies = (
 				50C9D619284FA847007F18D0 /* PBXTargetDependency */,
 				7ED1CE010000000000000002 /* PBXTargetDependency */,
+				E12A00000000000000000010 /* PBXTargetDependency */,
 			);
 			name = SonicWave;
 			packageProductDependencies = (
@@ -2756,6 +2892,42 @@
 			productReference = 7ED1CA010000000000000001 /* SonicWaveWidgets.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		E12A00000000000000000004 /* SonicWaveWatch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E12A00000000000000000005 /* Build configuration list for PBXNativeTarget "SonicWaveWatch" */;
+			buildPhases = (
+				E12A00000000000000000001 /* Sources */,
+				E12A00000000000000000002 /* Frameworks */,
+				E12A00000000000000000003 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SonicWaveWatch;
+			productName = SonicWaveWatch;
+			productReference = E12A00000000000000000008 /* SonicWaveWatch.app */;
+			productType = "com.apple.product-type.application";
+		};
+		E12A00000000000000000038 /* SonicWaveTV */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E12A00000000000000000039 /* Build configuration list for PBXNativeTarget "SonicWaveTV" */;
+			buildPhases = (
+				E12A00000000000000000034 /* Sources */,
+				E12A00000000000000000035 /* Frameworks */,
+				E12A00000000000000000036 /* Resources */,
+				E12A00000000000000000037 /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E12A00000000000000000044 /* PBXTargetDependency */,
+			);
+			name = SonicWaveTV;
+			productName = SonicWaveTV;
+			productReference = E12A00000000000000000042 /* SonicWaveTV.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -2789,6 +2961,12 @@
 					7ED1CD010000000000000004 = {
 						CreatedOnToolsVersion = 26.0;
 					};
+					E12A00000000000000000004 = {
+						CreatedOnToolsVersion = 26.0;
+					};
+					E12A00000000000000000038 = {
+						CreatedOnToolsVersion = 26.0;
+					};
 				};
 			};
 			buildConfigurationList = 508385DF21C5965B00C4BB32 /* Build configuration list for PBXProject "SonicWave" */;
@@ -2820,6 +2998,8 @@
 				50C9D604284FA847007F18D0 /* SonicWaveKit */,
 				50C9D60D284FA847007F18D0 /* SonicWaveKitTests */,
 				7ED1CD010000000000000004 /* SonicWaveWidgets */,
+				E12A00000000000000000004 /* SonicWaveWatch */,
+				E12A00000000000000000038 /* SonicWaveTV */,
 			);
 		};
 /* End PBXProject section */
@@ -2927,6 +3107,24 @@
 			files = (
 				7ED1CB010000000000000002 /* Assets.xcassets in Resources */,
 				7ED1CB010000000000000003 /* Localizable.xcstrings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E12A00000000000000000003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E12A00000000000000000016 /* Localizable.xcstrings in Resources */,
+				E12A00000000000000000017 /* SonicWaveAppIcon.icon in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E12A00000000000000000036 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E12A00000000000000000053 /* Localizable.xcstrings in Resources */,
+				E12A00000000000000000054 /* SonicWaveAppIcon.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3124,6 +3322,10 @@
 				504262B12BF5FBDE00B5EF38 /* Intents.intentdefinition in Sources */,
 				504262B42BF5FC3D00B5EF38 /* NSUserActivity+IntentData.swift in Sources */,
 				7ED1CB010000000000000014 /* IntentResultView.swift in Sources */,
+				E12A00000000000000000030 /* WatchShared.swift in Sources */,
+				E12A00000000000000000031 /* WatchSessionHandler.swift in Sources */,
+				E12A00000000000000000032 /* WatchStatePublisher.swift in Sources */,
+				E12A00000000000000000033 /* WatchBridge.swift in Sources */,
 				50C16C1021E5463E00F086F0 /* ArtistsVC.swift in Sources */,
 				50065EB421F0584D0066FC32 /* PlaylistSelectorVC.swift in Sources */,
 				507BA5C72F01BCA300B4EA8B /* SetRepeatIntent.swift in Sources */,
@@ -3533,6 +3735,30 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E12A00000000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E12A00000000000000000013 /* SonicWaveWatchApp.swift in Sources */,
+				E12A00000000000000000014 /* WatchSessionManager.swift in Sources */,
+				E12A00000000000000000015 /* NowPlayingView.swift in Sources */,
+				E12A00000000000000000018 /* WatchShared.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E12A00000000000000000034 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E12A00000000000000000047 /* SonicWaveTVApp.swift in Sources */,
+				E12A00000000000000000048 /* TVViewModel.swift in Sources */,
+				E12A00000000000000000049 /* TVArtworkImage.swift in Sources */,
+				E12A00000000000000000050 /* TVRootView.swift in Sources */,
+				E12A00000000000000000051 /* TVLibraryViews.swift in Sources */,
+				E12A00000000000000000052 /* TVNowPlayingView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -3555,6 +3781,16 @@
 			isa = PBXTargetDependency;
 			target = 7ED1CD010000000000000004 /* SonicWaveWidgets */;
 			targetProxy = 7ED1CE010000000000000001 /* PBXContainerItemProxy */;
+		};
+		E12A00000000000000000010 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E12A00000000000000000004 /* SonicWaveWatch */;
+			targetProxy = E12A00000000000000000009 /* PBXContainerItemProxy */;
+		};
+		E12A00000000000000000044 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 50C9D604284FA847007F18D0 /* SonicWaveKit */;
+			targetProxy = E12A00000000000000000043 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -3808,7 +4044,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.alzimerahmed.SonicWaveKit";
 				PRODUCT_NAME = SonicWaveKit;
 				SKIP_INSTALL = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator appletvos appletvsimulator";
 				SUPPORTS_MACCATALYST = YES;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -3825,7 +4061,8 @@
 				SWIFT_UPCOMING_FEATURE_ISOLATED_DEFAULT_VALUES = YES;
 				SWIFT_UPCOMING_FEATURE_REGION_BASED_ISOLATION = YES;
 				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = "1,2,3";
+				TVOS_DEPLOYMENT_TARGET = 26.0;
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
 			};
@@ -3859,7 +4096,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.alzimerahmed.SonicWaveKit";
 				PRODUCT_NAME = SonicWaveKit;
 				SKIP_INSTALL = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator appletvos appletvsimulator";
 				SUPPORTS_MACCATALYST = YES;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -3876,7 +4113,8 @@
 				SWIFT_UPCOMING_FEATURE_ISOLATED_DEFAULT_VALUES = YES;
 				SWIFT_UPCOMING_FEATURE_REGION_BASED_ISOLATION = YES;
 				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = "1,2,3";
+				TVOS_DEPLOYMENT_TARGET = 26.0;
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
 			};
@@ -4032,6 +4270,158 @@
 			};
 			name = Release;
 		};
+		E12A00000000000000000006 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = SonicWaveAppIcon;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = SonicWaveWatch/Info.plist;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Alzimer Ahmed. All rights reserved.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 2.1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.alzimerahmed.SonicWave.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = NO;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_UPCOMING_FEATURE_CONCISE_MAGIC_FILE = YES;
+				SWIFT_UPCOMING_FEATURE_DEPRECATE_APPLICATION_MAIN = YES;
+				SWIFT_UPCOMING_FEATURE_DISABLE_OUTWARD_ACTOR_ISOLATION = YES;
+				SWIFT_UPCOMING_FEATURE_FORWARD_TRAILING_CLOSURES = YES;
+				SWIFT_UPCOMING_FEATURE_GLOBAL_CONCURRENCY = YES;
+				SWIFT_UPCOMING_FEATURE_IMPLICIT_OPEN_EXISTENTIALS = YES;
+				SWIFT_UPCOMING_FEATURE_IMPORT_OBJC_FORWARD_DECLS = YES;
+				SWIFT_UPCOMING_FEATURE_INFER_SENDABLE_FROM_CAPTURES = YES;
+				SWIFT_UPCOMING_FEATURE_ISOLATED_DEFAULT_VALUES = YES;
+				SWIFT_UPCOMING_FEATURE_REGION_BASED_ISOLATION = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Debug;
+		};
+		E12A00000000000000000007 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = SonicWaveAppIcon;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = SonicWaveWatch/Info.plist;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Alzimer Ahmed. All rights reserved.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 2.1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.alzimerahmed.SonicWave.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = NO;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_UPCOMING_FEATURE_CONCISE_MAGIC_FILE = YES;
+				SWIFT_UPCOMING_FEATURE_DEPRECATE_APPLICATION_MAIN = YES;
+				SWIFT_UPCOMING_FEATURE_DISABLE_OUTWARD_ACTOR_ISOLATION = YES;
+				SWIFT_UPCOMING_FEATURE_FORWARD_TRAILING_CLOSURES = YES;
+				SWIFT_UPCOMING_FEATURE_GLOBAL_CONCURRENCY = YES;
+				SWIFT_UPCOMING_FEATURE_IMPLICIT_OPEN_EXISTENTIALS = YES;
+				SWIFT_UPCOMING_FEATURE_IMPORT_OBJC_FORWARD_DECLS = YES;
+				SWIFT_UPCOMING_FEATURE_INFER_SENDABLE_FROM_CAPTURES = YES;
+				SWIFT_UPCOMING_FEATURE_ISOLATED_DEFAULT_VALUES = YES;
+				SWIFT_UPCOMING_FEATURE_REGION_BASED_ISOLATION = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
+		E12A00000000000000000040 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = SonicWaveAppIcon;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = SonicWaveTV/Info.plist;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Alzimer Ahmed. All rights reserved.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 2.1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.alzimerahmed.SonicWave;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = appletvos;
+				SKIP_INSTALL = NO;
+				SUPPORTED_PLATFORMS = "appletvos appletvsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_UPCOMING_FEATURE_CONCISE_MAGIC_FILE = YES;
+				SWIFT_UPCOMING_FEATURE_DEPRECATE_APPLICATION_MAIN = YES;
+				SWIFT_UPCOMING_FEATURE_DISABLE_OUTWARD_ACTOR_ISOLATION = YES;
+				SWIFT_UPCOMING_FEATURE_FORWARD_TRAILING_CLOSURES = YES;
+				SWIFT_UPCOMING_FEATURE_GLOBAL_CONCURRENCY = YES;
+				SWIFT_UPCOMING_FEATURE_IMPLICIT_OPEN_EXISTENTIALS = YES;
+				SWIFT_UPCOMING_FEATURE_IMPORT_OBJC_FORWARD_DECLS = YES;
+				SWIFT_UPCOMING_FEATURE_INFER_SENDABLE_FROM_CAPTURES = YES;
+				SWIFT_UPCOMING_FEATURE_ISOLATED_DEFAULT_VALUES = YES;
+				SWIFT_UPCOMING_FEATURE_REGION_BASED_ISOLATION = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 3;
+				TVOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Debug;
+		};
+		E12A00000000000000000041 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = SonicWaveAppIcon;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = SonicWaveTV/Info.plist;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Alzimer Ahmed. All rights reserved.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 2.1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.alzimerahmed.SonicWave;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = appletvos;
+				SKIP_INSTALL = NO;
+				SUPPORTED_PLATFORMS = "appletvos appletvsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_UPCOMING_FEATURE_CONCISE_MAGIC_FILE = YES;
+				SWIFT_UPCOMING_FEATURE_DEPRECATE_APPLICATION_MAIN = YES;
+				SWIFT_UPCOMING_FEATURE_DISABLE_OUTWARD_ACTOR_ISOLATION = YES;
+				SWIFT_UPCOMING_FEATURE_FORWARD_TRAILING_CLOSURES = YES;
+				SWIFT_UPCOMING_FEATURE_GLOBAL_CONCURRENCY = YES;
+				SWIFT_UPCOMING_FEATURE_IMPLICIT_OPEN_EXISTENTIALS = YES;
+				SWIFT_UPCOMING_FEATURE_IMPORT_OBJC_FORWARD_DECLS = YES;
+				SWIFT_UPCOMING_FEATURE_INFER_SENDABLE_FROM_CAPTURES = YES;
+				SWIFT_UPCOMING_FEATURE_ISOLATED_DEFAULT_VALUES = YES;
+				SWIFT_UPCOMING_FEATURE_REGION_BASED_ISOLATION = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 3;
+				TVOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -4076,6 +4466,24 @@
 			buildConfigurations = (
 				7ED1CF010000000000000001 /* Debug */,
 				7ED1CF010000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E12A00000000000000000005 /* Build configuration list for PBXNativeTarget "SonicWaveWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E12A00000000000000000006 /* Debug */,
+				E12A00000000000000000007 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E12A00000000000000000039 /* Build configuration list for PBXNativeTarget "SonicWaveTV" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E12A00000000000000000040 /* Debug */,
+				E12A00000000000000000041 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
