@@ -35,12 +35,9 @@ struct TVPlayerSnapshot: Equatable {
   var album = ""
   var isPlaying = false
   var isRadio = false
-  var isSeekable = false
   var elapsed: Double = 0
   var duration: Double = 0
   var contextName = ""
-  /// local file path of the current artwork, if downloaded
-  var artworkPath: String?
 }
 
 // MARK: - TVViewModel
@@ -104,6 +101,13 @@ final class TVViewModel: ObservableObject {
     storage.settings.accounts.getSetting(entity.account?.info).read.themePreference
   }
 
+  /// theme for surfaces with no entity (empty-library states, the
+  /// no-playable artwork branch) — `getSetting(nil)` reads the
+  /// account-agnostic defaults
+  var defaultThemePreference: ThemePreference {
+    storage.settings.accounts.getSetting(nil).read.themePreference
+  }
+
   func artworkDisplayPreference(
     for entity: AbstractLibraryEntity
   ) -> ArtworkDisplayPreference {
@@ -122,6 +126,10 @@ final class TVViewModel: ObservableObject {
     AmperKit.shared.libraryUpdater.performSmallBlockingLibraryUpdatesIfNeeded()
     AmperKit.shared.eventLogger.supressAlerts = true
 
+    // NOTE: `libraryUpdater.isVisualUpadateNeeded` is deliberately NOT
+    // checked (no `UpdateVC` surface on tvOS) — a fresh tvOS container is
+    // always `.newestVersion` today, but a future `LibrarySyncVersion`
+    // bump must revisit this for upgraded installs
     refreshAccountState()
     guard hasAccount else { return }
     for accountInfo in storage.settings.accounts.allAccounts {
@@ -147,7 +155,16 @@ final class TVViewModel: ObservableObject {
 
   // MARK: login (LoginVC.login equivalent)
 
-  func login(serverUrl: String, username: String, password: String) async {
+  /// `allowUntrustedCertificates` mirrors `LoginVC`'s toggle — self-hosted
+  /// servers with self-signed certs fail validation otherwise; the kit's
+  /// `AccountSessionSecurity` TOFU pinning handles them from there.
+  /// (`httpHeaders` stay iOS-only for now — no tvOS editing surface.)
+  func login(
+    serverUrl: String,
+    username: String,
+    password: String,
+    allowUntrustedCertificates: Bool = false
+  ) async {
     errorMessage = nil
     let trimmedUrl = serverUrl.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !trimmedUrl.isEmpty else {
@@ -172,6 +189,7 @@ final class TVViewModel: ObservableObject {
       username: username,
       password: password
     )
+    credentials.allowUntrustedServerCertificates = allowUntrustedCertificates
     var accountInfo = Account.createInfo(credentials: credentials)
     guard !storage.settings.accounts.allAccounts.contains(accountInfo) else {
       errorMessage = "Account already added!"
@@ -203,6 +221,10 @@ final class TVViewModel: ObservableObject {
         userInfo: nil
       )
       isConnecting = false
+      // flip `hasAccount` BEFORE `syncInitial` — the root router needs it
+      // to leave `TVLoginView` for `TVSyncView`, otherwise the live
+      // Connect button invites a duplicate login while sync runs
+      refreshAccountState()
       await syncInitial(account: meta.account)
     } catch {
       isConnecting = false
@@ -317,9 +339,6 @@ final class TVViewModel: ObservableObject {
       return
     }
     let radioInfo = playable.isRadio ? player.currentRadioNowPlaying : nil
-    let preference = storage.settings.accounts
-      .getSetting(playable.account?.info)
-      .read.artworkDisplayPreference
     snapshot = TVPlayerSnapshot(
       hasTrack: true,
       title: radioInfo?.title ?? playable.title,
@@ -329,11 +348,9 @@ final class TVViewModel: ObservableObject {
       album: playable.asSong?.album?.name ?? "",
       isPlaying: player.isPlaying,
       isRadio: playable.isRadio,
-      isSeekable: player.isSeekable,
       elapsed: player.elapsedTime,
       duration: player.duration,
-      contextName: player.contextName,
-      artworkPath: playable.imagePath(setting: preference)
+      contextName: player.contextName
     )
   }
 }
@@ -351,6 +368,12 @@ extension TVViewModel: MusicPlayable {
   func didPlaylistChange() { refreshSnapshot() }
   func didArtworkChange() { refreshSnapshot() }
   func didNowPlayingInfoChange() { refreshSnapshot() }
+  /// the kit's defaults for these live in a non-public extension —
+  /// invisible cross-module, so they must be implemented here;
+  /// the snapshot carries no shuffle/repeat/rate state → honest no-ops
+  func didShuffleChange() {}
+  func didRepeatChange() {}
+  func didPlaybackRateChange() {}
 }
 
 // MARK: SyncCallbacks

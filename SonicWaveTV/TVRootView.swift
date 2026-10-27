@@ -55,6 +55,9 @@ struct TVLoginView: View {
   @State private var serverUrl = ""
   @State private var username = ""
   @State private var password = ""
+  /// self-hosted servers with self-signed certs — mirrors the iOS
+  /// `LoginVC` toggle; the kit pins the leaf key on first contact (TOFU)
+  @State private var allowUntrustedCertificates = false
 
   var body: some View {
     VStack(spacing: 30) {
@@ -78,6 +81,9 @@ struct TVLoginView: View {
           .frame(width: 700)
         SecureField("Password", text: $password)
           .frame(width: 700)
+        Toggle("Allow untrusted certificates", isOn: $allowUntrustedCertificates)
+          .frame(width: 700)
+          .accessibilityHint("Enable only for self-signed server certificates")
       }
 
       if let error = model.errorMessage {
@@ -93,7 +99,8 @@ struct TVLoginView: View {
           await model.login(
             serverUrl: serverUrl,
             username: username,
-            password: password
+            password: password,
+            allowUntrustedCertificates: allowUntrustedCertificates
           )
         }
       } label: {
