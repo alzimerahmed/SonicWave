@@ -679,6 +679,7 @@
 		E12A00000000000000000052 /* TVNowPlayingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12A00000000000000000065 /* TVNowPlayingView.swift */; };
 		E12A00000000000000000053 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = E12A00000000000000000059 /* Localizable.xcstrings */; };
 		E12A00000000000000000054 /* SonicWaveAppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 50D7709E2E4F1D1C0075D3BF /* SonicWaveAppIcon.icon */; };
+		E12A00000000000000000066 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 508385EE21C5965E00C4BB32 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -3125,6 +3126,7 @@
 			files = (
 				E12A00000000000000000053 /* Localizable.xcstrings in Resources */,
 				E12A00000000000000000054 /* SonicWaveAppIcon.icon in Resources */,
+				E12A00000000000000000066 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

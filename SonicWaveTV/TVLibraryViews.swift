@@ -382,6 +382,8 @@ struct TVEmptyLibraryView: View {
 /// H:MM:SS shortening) instead of duplicating it.
 enum TVFormat {
   static func duration(_ seconds: Int) -> String {
-    ClockTime(timeInSeconds: seconds).asShortString()
+    // `ClockTime` doesn't clamp negatives — callers pass playable
+    // durations, but keep the old impl's `0:00` floor for safety
+    ClockTime(timeInSeconds: max(0, seconds)).asShortString()
   }
 }
