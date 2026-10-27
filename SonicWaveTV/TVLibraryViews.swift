@@ -84,30 +84,40 @@ struct TVAlbumsView: View {
 
   var body: some View {
     NavigationStack {
-      ScrollView {
-        LazyVGrid(
-          columns: [GridItem(.adaptive(minimum: 220), spacing: 40)],
-          spacing: 40
-        ) {
-          ForEach(model.albums, id: \.id) { album in
-            NavigationLink {
-              TVAlbumDetailView(album: album)
-            } label: {
-              TVEntityCard(
-                artwork: TVArtworkImage(
-                  entity: album,
-                  themePreference: model.themePreference(for: album),
-                  artworkDisplayPreference: model
-                    .artworkDisplayPreference(for: album)
-                ),
-                title: album.name,
-                subtitle: album.artist?.name ?? ""
-              )
+      Group {
+        if model.albums.isEmpty {
+          TVEmptyLibraryView(
+            artworkType: .album,
+            title: "No albums",
+            message: "Add music on your server, then reload."
+          )
+        } else {
+          ScrollView {
+            LazyVGrid(
+              columns: [GridItem(.adaptive(minimum: 220), spacing: 40)],
+              spacing: 40
+            ) {
+              ForEach(model.albums, id: \.id) { album in
+                NavigationLink {
+                  TVAlbumDetailView(album: album)
+                } label: {
+                  TVEntityCard(
+                    artwork: TVArtworkImage(
+                      entity: album,
+                      themePreference: model.themePreference(for: album),
+                      artworkDisplayPreference: model
+                        .artworkDisplayPreference(for: album)
+                    ),
+                    title: album.name,
+                    subtitle: album.artist?.name ?? ""
+                  )
+                }
+                .buttonStyle(.card)
+              }
             }
-            .buttonStyle(.borderless)
+            .padding(60)
           }
         }
-        .padding(60)
       }
       .navigationTitle("Albums")
     }
@@ -178,30 +188,42 @@ struct TVArtistsView: View {
 
   var body: some View {
     NavigationStack {
-      ScrollView {
-        LazyVGrid(
-          columns: [GridItem(.adaptive(minimum: 220), spacing: 40)],
-          spacing: 40
-        ) {
-          ForEach(model.artists, id: \.id) { artist in
-            NavigationLink {
-              TVArtistDetailView(artist: artist)
-            } label: {
-              TVEntityCard(
-                artwork: TVArtworkImage(
-                  entity: artist,
-                  themePreference: model.themePreference(for: artist),
-                  artworkDisplayPreference: model
-                    .artworkDisplayPreference(for: artist)
-                ),
-                title: artist.name,
-                subtitle: "\(artist.albums.count) albums"
-              )
+      Group {
+        if model.artists.isEmpty {
+          TVEmptyLibraryView(
+            artworkType: .artist,
+            title: "No artists",
+            message: "Add music on your server, then reload."
+          )
+        } else {
+          ScrollView {
+            LazyVGrid(
+              columns: [GridItem(.adaptive(minimum: 220), spacing: 40)],
+              spacing: 40
+            ) {
+              ForEach(model.artists, id: \.id) { artist in
+                NavigationLink {
+                  TVArtistDetailView(artist: artist)
+                } label: {
+                  TVEntityCard(
+                    artwork: TVArtworkImage(
+                      entity: artist,
+                      themePreference: model.themePreference(for: artist),
+                      artworkDisplayPreference: model
+                        .artworkDisplayPreference(for: artist)
+                    ),
+                    title: artist.name,
+                    // `albums.count` materializes every wrapper —
+                    // the MO count is already maintained
+                    subtitle: "\(artist.albumCount) albums"
+                  )
+                }
+                .buttonStyle(.card)
+              }
             }
-            .buttonStyle(.borderless)
+            .padding(60)
           }
         }
-        .padding(60)
       }
       .navigationTitle("Artists")
     }
@@ -236,7 +258,7 @@ struct TVArtistDetailView: View {
               subtitle: album.artist?.name ?? ""
             )
           }
-          .buttonStyle(.borderless)
+          .buttonStyle(.card)
         }
       }
       .padding(60)
@@ -252,11 +274,21 @@ struct TVPlaylistsView: View {
 
   var body: some View {
     NavigationStack {
-      List(model.playlists, id: \.id) { playlist in
-        NavigationLink {
-          TVPlaylistDetailView(playlist: playlist)
-        } label: {
-          Label(playlist.name, systemImage: "music.note.list")
+      Group {
+        if model.playlists.isEmpty {
+          TVEmptyLibraryView(
+            artworkType: .playlist,
+            title: "No playlists",
+            message: "Create playlists on your server, then reload."
+          )
+        } else {
+          List(model.playlists, id: \.id) { playlist in
+            NavigationLink {
+              TVPlaylistDetailView(playlist: playlist)
+            } label: {
+              Label(playlist.name, systemImage: "music.note.list")
+            }
+          }
         }
       }
       .navigationTitle("Playlists")
@@ -307,20 +339,49 @@ struct TVPlaylistDetailView: View {
   }
 }
 
+// MARK: - TVEmptyLibraryView
+
+/// Shared empty-library state (design-system §5.6): themed generated
+/// placeholder art + one-line copy + one action — never a blank grid
+/// under a nav title.
+struct TVEmptyLibraryView: View {
+  @EnvironmentObject private var model: TVViewModel
+  let artworkType: ArtworkType
+  let title: String
+  let message: String
+
+  var body: some View {
+    VStack(spacing: 24) {
+      Image(
+        uiImage: .getGeneratedArtwork(
+          theme: model.defaultThemePreference,
+          artworkType: artworkType
+        )
+      )
+      .resizable()
+      .aspectRatio(contentMode: .fill)
+      .frame(width: 200, height: 200)
+      .clipShape(RoundedRectangle(cornerRadius: 5))
+      .accessibilityHidden(true)
+      Text(title)
+        .font(.title3)
+      Text(message)
+        .font(.callout)
+        .foregroundStyle(.secondary)
+      Button("Reload") {
+        model.loadLibrary()
+      }
+      .accessibilityHint("Fetches the library again")
+    }
+  }
+}
+
 // MARK: - TVFormat
 
-/// Small shared formatters — tabular durations only.
+/// Small shared formatters — delegates to the kit's `ClockTime` (same
+/// H:MM:SS shortening) instead of duplicating it.
 enum TVFormat {
   static func duration(_ seconds: Int) -> String {
-    let total = max(0, seconds)
-    if total >= 3600 {
-      return String(
-        format: "%d:%02d:%02d",
-        total / 3600,
-        (total % 3600) / 60,
-        total % 60
-      )
-    }
-    return String(format: "%d:%02d", total / 60, total % 60)
+    ClockTime(timeInSeconds: seconds).asShortString()
   }
 }

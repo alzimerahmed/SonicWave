@@ -35,9 +35,15 @@ struct TVArtworkImage: View {
   let themePreference: ThemePreference
   let artworkDisplayPreference: ArtworkDisplayPreference
 
+  /// decoded images keyed by file path — `UIImage(contentsOfFile:)`
+  /// re-decodes on every call and Now Playing rebuilds on the ~1s
+  /// elapsed tick. `NSCache` is thread-safe; `nonisolated(unsafe)`
+  /// only silences the strict-concurrency static check
+  private nonisolated(unsafe) static let decodeCache =
+    NSCache<NSString, UIImage>()
+
   var body: some View {
-    if let path = entity.imagePath(setting: artworkDisplayPreference),
-       let image = UIImage(contentsOfFile: path) {
+    if let image = decodedImage {
       Image(uiImage: image)
         .resizable()
         .aspectRatio(contentMode: .fill)
@@ -51,5 +57,17 @@ struct TVArtworkImage: View {
       .resizable()
       .aspectRatio(contentMode: .fill)
     }
+  }
+
+  private var decodedImage: UIImage? {
+    guard let path = entity.imagePath(setting: artworkDisplayPreference)
+    else { return nil }
+    let key = path as NSString
+    if let cached = Self.decodeCache.object(forKey: key) {
+      return cached
+    }
+    guard let image = UIImage(contentsOfFile: path) else { return nil }
+    Self.decodeCache.setObject(image, forKey: key)
+    return image
   }
 }

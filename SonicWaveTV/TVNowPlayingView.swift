@@ -92,14 +92,16 @@ struct TVNowPlayingView: View {
         artworkDisplayPreference: model.artworkDisplayPreference(for: playable)
       )
     } else {
-      RoundedRectangle(cornerRadius: 5)
-        .fill(.quaternary)
-        .overlay {
-          Image(systemName: "music.note")
-            .font(.largeTitle)
-            .foregroundStyle(.secondary)
-            .accessibilityHidden(true)
-        }
+      // no entity for the fallback chain — same themed generated art
+      // the kit produces, never a gray placeholder rectangle
+      Image(
+        uiImage: .getGeneratedArtwork(
+          theme: model.defaultThemePreference,
+          artworkType: .song
+        )
+      )
+      .resizable()
+      .aspectRatio(contentMode: .fill)
     }
   }
 
