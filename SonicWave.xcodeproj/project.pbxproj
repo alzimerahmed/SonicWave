@@ -2005,7 +2005,7 @@
 				5095F98B23C8389E008B0805 /* MusicPlayerTest.swift */,
 				5011712D27453D1300B7C08D /* PlayQueueHandlerTest.swift */,
 				6AC5D101000000000000000B /* PlayQueueSyncPolicyTest.swift */,
-				7E8D2B010000000000000008 /* AlbumShuffleTest.swift */,
+				7E8D2B010000000000000007 /* AlbumShuffleTest.swift */,
 				7E8D2D010000000000000007 /* ParametricEQTest.swift */,
 				7E8D2E010000000000000001 /* SkipSilenceServiceTest.swift */,
 			);
