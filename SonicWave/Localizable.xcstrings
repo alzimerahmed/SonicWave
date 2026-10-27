@@ -1,6 +1,18 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "  Gain %lld%%" : {
+      "comment" : "Jukebox header: current playback gain",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "  Gain %lld%%"
+          }
+        }
+      }
+    },
     "%@ Blend" : {
       "comment" : "Genre blend mix card title",
       "extractionState" : "manual",
@@ -121,6 +133,18 @@
         }
       }
     },
+    "API Key" : {
+      "comment" : "Lidarr settings row",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API Key"
+          }
+        }
+      }
+    },
     "About" : {
       "comment" : "Artist bio sheet header",
       "extractionState" : "manual",
@@ -129,6 +153,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "About"
+          }
+        }
+      }
+    },
+    "AirPlay and Bluetooth outputs" : {
+      "comment" : "Output target row detail: local output",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AirPlay and Bluetooth outputs"
           }
         }
       }
@@ -177,6 +213,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Albums appear here once they are synced to your library."
+          }
+        }
+      }
+    },
+    "All Folders" : {
+      "comment" : "Music folder picker: no filter",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All Folders"
+          }
+        }
+      }
+    },
+    "All Time" : {
+      "comment" : "Listening stats period label",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All Time"
           }
         }
       }
@@ -277,6 +337,54 @@
         }
       }
     },
+    "Bookmark %@" : {
+      "comment" : "Fallback title for a bookmark with no resolvable name (media id)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bookmark %@"
+          }
+        }
+      }
+    },
+    "Bookmark current position" : {
+      "comment" : "VoiceOver label for the add-bookmark button",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bookmark current position"
+          }
+        }
+      }
+    },
+    "Bookmarks" : {
+      "comment" : "Bookmarks screen title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bookmarks"
+          }
+        }
+      }
+    },
+    "Bookmarks Not Supported" : {
+      "comment" : "Bookmarks empty state: server lacks the API",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bookmarks Not Supported"
+          }
+        }
+      }
+    },
     "Browse by Decade" : {
       "comment" : "Albums menu action: open decade browse",
       "extractionState" : "manual",
@@ -285,6 +393,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Browse by Decade"
+          }
+        }
+      }
+    },
+    "Cancel" : {
+      "comment" : "Cancel action",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        }
+      }
+    },
+    "Check the connection and pull to retry." : {
+      "comment" : "Empty state: retry hint",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check the connection and pull to retry."
           }
         }
       }
@@ -313,6 +445,18 @@
         }
       }
     },
+    "Clear Jukebox Playlist?" : {
+      "comment" : "Jukebox clear confirmation title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear Jukebox Playlist?"
+          }
+        }
+      }
+    },
     "Clear Listening History" : {
       "comment" : "Settings row: delete all recorded play events",
       "extractionState" : "manual",
@@ -333,6 +477,42 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Copy Link"
+          }
+        }
+      }
+    },
+    "Couldn't Load Bookmarks" : {
+      "comment" : "Bookmarks empty state: load failure",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't Load Bookmarks"
+          }
+        }
+      }
+    },
+    "Couldn't Load Jukebox" : {
+      "comment" : "Jukebox empty state: load failure",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't Load Jukebox"
+          }
+        }
+      }
+    },
+    "Couldn't load music folders. Check the connection and try again." : {
+      "comment" : "Music folder picker: load failure",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't load music folders. Check the connection and try again."
           }
         }
       }
@@ -421,6 +601,18 @@
         }
       }
     },
+    "DLNA devices need to be on the same network" : {
+      "comment" : "Output target picker: zero results hint",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DLNA devices need to be on the same network"
+          }
+        }
+      }
+    },
     "Dark" : {
       "comment" : "Black Mode preference option: forces the dark interface",
       "extractionState" : "manual",
@@ -493,6 +685,18 @@
         }
       }
     },
+    "Delete" : {
+      "comment" : "Swipe action: delete",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete"
+          }
+        }
+      }
+    },
     "Dislike" : {
       "comment" : "Context menu action: mark a song with the local thumbs-down flag",
       "extractionState" : "manual",
@@ -553,6 +757,30 @@
         }
       }
     },
+    "Enqueue current track" : {
+      "comment" : "VoiceOver label for the jukebox enqueue button",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enqueue current track"
+          }
+        }
+      }
+    },
+    "Enqueue the currently playing track with +." : {
+      "comment" : "Jukebox empty state: how to add a track",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enqueue the currently playing track with +."
+          }
+        }
+      }
+    },
     "Expired %@" : {
       "comment" : "Share list: expiry date (tense changes on expiry)",
       "extractionState" : "manual",
@@ -589,18 +817,6 @@
         }
       }
     },
-    "Favorites and high-rated songs you barely play" : {
-      "comment" : "Deep cuts mix card subtitle",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Favorites and high-rated songs you barely play"
-          }
-        }
-      }
-    },
     "Favorites Radio" : {
       "comment" : "Favorites radio mix card title",
       "extractionState" : "manual",
@@ -613,6 +829,18 @@
         }
       }
     },
+    "Favorites and high-rated songs you barely play" : {
+      "comment" : "Deep cuts mix card subtitle",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favorites and high-rated songs you barely play"
+          }
+        }
+      }
+    },
     "For servers behind a reverse proxy — links are generated from this base URL." : {
       "comment" : "Sharing settings footer",
       "extractionState" : "manual",
@@ -621,6 +849,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "For servers behind a reverse proxy — links are generated from this base URL."
+          }
+        }
+      }
+    },
+    "Found under Settings → General → Security in Lidarr. The key is stored in Keychain, not in settings. With both fields set, artist menus get a “Request in Lidarr” action." : {
+      "comment" : "Lidarr settings footer",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Found under Settings → General → Security in Lidarr. The key is stored in Keychain, not in settings. With both fields set, artist menus get a “Request in Lidarr” action."
           }
         }
       }
@@ -661,6 +901,66 @@
         }
       }
     },
+    "Jukebox" : {
+      "comment" : "Server jukebox screen title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jukebox"
+          }
+        }
+      }
+    },
+    "Jukebox Playlist Is Empty" : {
+      "comment" : "Jukebox empty state",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jukebox Playlist Is Empty"
+          }
+        }
+      }
+    },
+    "Last 7 Days" : {
+      "comment" : "Listening stats recap period title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last 7 Days"
+          }
+        }
+      }
+    },
+    "Last Month" : {
+      "comment" : "Listening stats recap period title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last Month"
+          }
+        }
+      }
+    },
+    "Last Year" : {
+      "comment" : "Listening stats recap period title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last Year"
+          }
+        }
+      }
+    },
     "Last played" : {
       "comment" : "Smart playlist rule field",
       "extractionState" : "manual",
@@ -669,6 +969,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Last played"
+          }
+        }
+      }
+    },
+    "Lidarr" : {
+      "comment" : "Lidarr settings title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lidarr"
+          }
+        }
+      }
+    },
+    "Lidarr Settings → General → API Key" : {
+      "comment" : "Lidarr API key field placeholder",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lidarr Settings → General → API Key"
           }
         }
       }
@@ -829,6 +1153,30 @@
         }
       }
     },
+    "Month" : {
+      "comment" : "Listening stats period label",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Month"
+          }
+        }
+      }
+    },
+    "Music Folder" : {
+      "comment" : "Music folder picker title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Music Folder"
+          }
+        }
+      }
+    },
     "Music Haptics" : {
       "comment" : "Settings row title: beat-synced haptic feedback during playback",
       "extractionState" : "manual",
@@ -841,6 +1189,18 @@
         }
       }
     },
+    "Music folders are not supported by this server." : {
+      "comment" : "Music folder picker: not-supported note",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Music folders are not supported by this server."
+          }
+        }
+      }
+    },
     "No Albums in the %lds" : {
       "comment" : "Empty state title for decade browse",
       "extractionState" : "manual",
@@ -849,6 +1209,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No Albums in the %lds"
+          }
+        }
+      }
+    },
+    "No Bookmarks" : {
+      "comment" : "Bookmarks empty state",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Bookmarks"
+          }
+        }
+      }
+    },
+    "No Jukebox on This Server" : {
+      "comment" : "Jukebox empty state: not supported",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Jukebox on This Server"
           }
         }
       }
@@ -897,6 +1281,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No Songs"
+          }
+        }
+      }
+    },
+    "No UPnP Renderers Found" : {
+      "comment" : "Output target picker: scan completed, zero results",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No UPnP Renderers Found"
           }
         }
       }
@@ -1069,6 +1465,18 @@
         }
       }
     },
+    "Play To" : {
+      "comment" : "Output target picker title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play To"
+          }
+        }
+      }
+    },
     "Play count" : {
       "comment" : "Smart playlist rule field",
       "extractionState" : "manual",
@@ -1077,6 +1485,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Play count"
+          }
+        }
+      }
+    },
+    "Play on the server's own output" : {
+      "comment" : "Output target row detail: jukebox",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play on the server's own output"
           }
         }
       }
@@ -1093,6 +1513,18 @@
         }
       }
     },
+    "Plays on the server's own output — not on this device." : {
+      "comment" : "Jukebox header explanation",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plays on the server's own output — not on this device."
+          }
+        }
+      }
+    },
     "Public URL Override" : {
       "comment" : "Account settings row: base URL for share links behind a reverse proxy",
       "extractionState" : "manual",
@@ -1101,6 +1533,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Public URL Override"
+          }
+        }
+      }
+    },
+    "Pushes the current track's stream URL" : {
+      "comment" : "Output target row detail: UPnP renderer",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pushes the current track's stream URL"
           }
         }
       }
@@ -1177,6 +1621,42 @@
         }
       }
     },
+    "Removes all tracks from the server-side playlist." : {
+      "comment" : "Jukebox clear confirmation message",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Removes all tracks from the server-side playlist."
+          }
+        }
+      }
+    },
+    "Request in Lidarr" : {
+      "comment" : "Context menu action: send artist add-request to Lidarr",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Request in Lidarr"
+          }
+        }
+      }
+    },
+    "Rescan for devices" : {
+      "comment" : "VoiceOver label for the UPnP rescan button",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rescan for devices"
+          }
+        }
+      }
+    },
     "Revoke" : {
       "comment" : "Manage Shares row action + confirmation button",
       "extractionState" : "manual",
@@ -1221,6 +1701,42 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Same as Active Profile"
+          }
+        }
+      }
+    },
+    "Searching for UPnP devices…" : {
+      "comment" : "Output target picker: discovery in progress",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Searching for UPnP devices…"
+          }
+        }
+      }
+    },
+    "Server Jukebox" : {
+      "comment" : "Output target row: jukebox",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server Jukebox"
+          }
+        }
+      }
+    },
+    "Server URL" : {
+      "comment" : "Lidarr settings row",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server URL"
           }
         }
       }
@@ -1369,6 +1885,18 @@
         }
       }
     },
+    "Skip" : {
+      "comment" : "Jukebox control",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skip"
+          }
+        }
+      }
+    },
     "Skip Silence" : {
       "comment" : "Player settings: podcast skip-silence toggle title",
       "extractionState" : "manual",
@@ -1389,18 +1917,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Skips"
-          }
-        }
-      }
-    },
-    "Speeds up silent passages while listening to podcasts. Music is never sped up." : {
-      "comment" : "Skip Silence setting footer",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Speeds up silent passages while listening to podcasts. Music is never sped up."
           }
         }
       }
@@ -1477,6 +1993,18 @@
         }
       }
     },
+    "Speeds up silent passages while listening to podcasts. Music is never sped up." : {
+      "comment" : "Skip Silence setting footer",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Speeds up silent passages while listening to podcasts. Music is never sped up."
+          }
+        }
+      }
+    },
     "Spotlight Indexing" : {
       "comment" : "Settings row title: index library into iOS Spotlight search",
       "extractionState" : "manual",
@@ -1485,6 +2013,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Spotlight Indexing"
+          }
+        }
+      }
+    },
+    "Stop" : {
+      "comment" : "Jukebox control",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stop"
+          }
+        }
+      }
+    },
+    "Subsonic needs the jukebox role enabled for this user; Ampache needs a configured localplay instance." : {
+      "comment" : "Jukebox empty state: not-supported hint",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subsonic needs the jukebox role enabled for this user; Ampache needs a configured localplay instance."
           }
         }
       }
@@ -1525,6 +2077,42 @@
         }
       }
     },
+    "Tap + while a song or podcast episode is playing to save its position." : {
+      "comment" : "Bookmarks empty state: how to add one",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap + while a song or podcast episode is playing to save its position."
+          }
+        }
+      }
+    },
+    "The library shows only this folder after the next resync — use Resync Library on the Account screen to apply it now. Search and genres stay server-wide; the folder list itself is browsable under Directories." : {
+      "comment" : "Music folder picker footer",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The library shows only this folder after the next resync — use Resync Library on the Account screen to apply it now. Search and genres stay server-wide; the folder list itself is browsable under Directories."
+          }
+        }
+      }
+    },
+    "The network scan reported an error — try rescanning." : {
+      "comment" : "Output target picker: scan error hint",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The network scan reported an error — try rescanning."
+          }
+        }
+      }
+    },
     "The public link stops working immediately." : {
       "comment" : "Revoke confirmation body",
       "extractionState" : "manual",
@@ -1533,6 +2121,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The public link stops working immediately."
+          }
+        }
+      }
+    },
+    "This Device" : {
+      "comment" : "Output target row: local output",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This Device"
+          }
+        }
+      }
+    },
+    "This build is missing the multicast networking entitlement — nothing is wrong with your network." : {
+      "comment" : "Output target picker: multicast entitlement hint",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This build is missing the multicast networking entitlement — nothing is wrong with your network."
           }
         }
       }
@@ -1569,6 +2181,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This permanently deletes all recorded listening history. Listening stats are stored only on this device."
+          }
+        }
+      }
+    },
+    "This server exposes only one music folder — nothing to select." : {
+      "comment" : "Music folder picker: single folder note",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This server exposes only one music folder — nothing to select."
+          }
+        }
+      }
+    },
+    "This server has no bookmark API." : {
+      "comment" : "Bookmarks empty state: not-supported hint",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This server has no bookmark API."
           }
         }
       }
@@ -1705,6 +2341,30 @@
         }
       }
     },
+    "UPnP Discovery Failed" : {
+      "comment" : "Output target picker: scan error",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "UPnP Discovery Failed"
+          }
+        }
+      }
+    },
+    "UPnP Discovery Isn't Available" : {
+      "comment" : "Output target picker: multicast entitlement missing",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "UPnP Discovery Isn't Available"
+          }
+        }
+      }
+    },
     "Unknown Output" : {
       "comment" : "EQ settings: fallback when no audio output name is available",
       "extractionState" : "manual",
@@ -1749,6 +2409,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Vivid"
+          }
+        }
+      }
+    },
+    "Week" : {
+      "comment" : "Listening stats period label",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Week"
           }
         }
       }
@@ -1941,6 +2613,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "is within the last"
+          }
+        }
+      }
+    },
+    "not in library" : {
+      "comment" : "Bookmark row detail: media is not in the local library",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "not in library"
+          }
+        }
+      }
+    },
+    "playing" : {
+      "comment" : "Jukebox row: currently playing marker",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "playing"
           }
         }
       }

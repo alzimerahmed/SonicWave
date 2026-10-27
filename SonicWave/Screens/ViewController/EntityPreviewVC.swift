@@ -979,7 +979,10 @@ class EntityPreviewActionBuilder {
   /// G25: lookup → best name match → `POST artist`; honest toast either way
   private func createLidarrAction(artist: Artist) -> UIAction {
     UIAction(
-      title: "Request in Lidarr",
+      title: NSLocalizedString(
+        "Request in Lidarr",
+        comment: "Context menu action: send artist add-request to Lidarr"
+      ),
       image: UIImage(systemName: "antenna.radiowaves.left.and.right")
     ) { _ in
       guard let client = artist.account.flatMap({ LidarrApiClient.configured(for: $0.info) })
