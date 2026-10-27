@@ -69,14 +69,17 @@ jobs:
 
       - name: Package unsigned IPA
         run: |
-          APP="SonicWave.xcarchive/Products/Applications/SonicWave.app"
+          echo "== archive contents =="
+          find SonicWave.xcarchive -maxdepth 4 -name "*.app" -o -name "*.appex" | sort
+          APP=$(find SonicWave.xcarchive/Products -maxdepth 3 -name "*.app" -type d | head -1)
+          echo "app bundle: $APP"
           test -d "$APP"
           VERSION="${GITHUB_REF_NAME#v}"
           mkdir -p Payload dist
           cp -R "$APP" Payload/
-          (cd Payload && zip -qry "../dist/SonicWave-${VERSION}-unsigned.ipa" SonicWave.app)
+          (cd Payload && zip -qry "../dist/SonicWave-${VERSION}-unsigned.ipa" "$(basename "$APP")")
           # also ship the raw .app for users who prefer direct tools
-          (cd SonicWave.xcarchive/Products/Applications && zip -qry "../../../dist/SonicWave-${VERSION}-unsigned-app.zip" SonicWave.app)
+          (cd "$(dirname "$APP")" && zip -qry "$OLDPWD/dist/SonicWave-${VERSION}-unsigned-app.zip" "$(basename "$APP")")
           ls -lh dist/
 
       - name: Publish GitHub Release
