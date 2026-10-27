@@ -74,7 +74,7 @@ jobs:
         # GHA's default shell already runs bash with -eo pipefail, so xcodebuild's
         # exit code propagates through tee.
         run: >
-          xcodebuild build-for-testing
+          set -o pipefail && xcodebuild build-for-testing
           -project "$XCODE_PROJECT" -scheme "$XCODE_SCHEME"
           -configuration Debug
           -destination "$IOS_DESTINATION"
@@ -89,7 +89,7 @@ jobs:
         # SonicWaveUITests refs removed) — build-for-testing resolves every
         # TestableReference, so the fix had to land in the scheme itself.
         run: >
-          xcodebuild test-without-building
+          set -o pipefail && xcodebuild test-without-building
           -project "$XCODE_PROJECT" -scheme "$XCODE_SCHEME"
           -destination "$IOS_DESTINATION"
           -derivedDataPath "$DERIVED_DATA"
@@ -143,7 +143,7 @@ jobs:
       # SwiftFormat phase lives on SonicWaveKitTests and never runs here.
       - name: Build for Mac Catalyst (unsigned)
         run: >
-          xcodebuild build
+          set -o pipefail && xcodebuild build
           -project "$XCODE_PROJECT" -scheme "$XCODE_SCHEME"
           -configuration Debug
           -destination 'platform=macOS,variant=Mac Catalyst'
@@ -176,7 +176,7 @@ jobs:
 
       - name: Build watchOS app (unsigned)
         run: >
-          xcodebuild build
+          set -o pipefail && xcodebuild build
           -project "$XCODE_PROJECT" -scheme SonicWaveWatch
           -configuration Debug
           -destination 'generic/platform=watchOS Simulator'
@@ -223,7 +223,7 @@ jobs:
 
       - name: Build tvOS app (unsigned)
         run: >
-          xcodebuild build
+          set -o pipefail && xcodebuild build
           -project "$XCODE_PROJECT" -scheme SonicWaveTV
           -configuration Debug
           -destination 'generic/platform=tvOS Simulator'
