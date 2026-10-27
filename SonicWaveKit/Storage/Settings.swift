@@ -461,6 +461,17 @@ public struct UserSettings: Sendable, Codable {
     get { _isSpotlightIndexingEnabled ?? true }
     set { _isSpotlightIndexingEnabled = newValue }
   }
+
+  /// listening analytics (G14): `ListeningHistoryTracker` records one
+  /// `PlayEvent` per finished listening session. Defaults ON (opt-out) —
+  /// the data never leaves the device; the toggle stops capture only,
+  /// "Clear Listening History" removes what was already recorded.
+  // optional backing to stay decodable for settings stored before this key existed
+  private var _isListeningHistoryEnabled: Bool? = nil
+  public var isListeningHistoryEnabled: Bool {
+    get { _isListeningHistoryEnabled ?? true }
+    set { _isListeningHistoryEnabled = newValue }
+  }
 }
 
 // MARK: - AccountSetting

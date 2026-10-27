@@ -201,6 +201,23 @@ public class MetaManager {
     return scrobbleSyncer!
   }
 
+  /// G14 listening analytics — per-account `PlayEvent` recorder on the
+  /// same `MusicPlayable` notifier seam as the scrobbler (its account
+  /// guard makes multi-account registration safe)
+  private var listeningHistoryTracker: ListeningHistoryTracker?
+  internal func createListeningHistoryTracker(
+    player: PlayerFacade
+  )
+    -> ListeningHistoryTracker {
+    if let listeningHistoryTracker { return listeningHistoryTracker }
+    listeningHistoryTracker = ListeningHistoryTracker(
+      player: player,
+      account: account,
+      storage: storage
+    )
+    return listeningHistoryTracker!
+  }
+
   public lazy var playableDownloadManager: DownloadManageable = {
     let getDownloadDelegateCB = { @MainActor in
       return self.playableDownloadDelegate
@@ -363,6 +380,7 @@ public class MetaManager {
     backgroundLibrarySyncer.start()
     let scrobbler = createScrobbleSyncer(player: player)
     player.addNotifier(notifier: scrobbler)
+    player.addNotifier(notifier: createListeningHistoryTracker(player: player))
     let queueSyncer = createPlayQueueSyncer(player: player)
     player.addNotifier(notifier: queueSyncer)
     queueSyncer.start()
@@ -377,6 +395,7 @@ public class MetaManager {
     let scrobbler = createScrobbleSyncer(player: player)
     player.addNotifier(notifier: scrobbler)
     scrobbler.start()
+    player.addNotifier(notifier: createListeningHistoryTracker(player: player))
     let queueSyncer = createPlayQueueSyncer(player: player)
     player.addNotifier(notifier: queueSyncer)
     queueSyncer.start()
@@ -386,6 +405,8 @@ public class MetaManager {
     os_log("Start meta managers", log: self.log, type: .info)
     scrobbleSyncer?.stop()
     scrobbleSyncer = nil
+    listeningHistoryTracker?.stop()
+    listeningHistoryTracker = nil
     playQueueSyncer?.stop()
     playQueueSyncer = nil
     backgroundLibrarySyncer.stop()
