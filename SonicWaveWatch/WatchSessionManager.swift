@@ -22,7 +22,10 @@
 import Foundation
 import os.log
 import SwiftUI
-import WatchConnectivity
+// `WCSessionDelegate` callbacks + `sendMessage` handlers capture
+// non-Sendable `replyHandler`/payloads — unaudited API, same
+// `@preconcurrency` rationale as the iOS-side `WatchSessionHandler`
+@preconcurrency import WatchConnectivity
 
 // MARK: - WatchSessionManager
 
@@ -77,6 +80,9 @@ final class WatchSessionManager: NSObject, ObservableObject {
     var message: [String: Any] = [
       WatchKey.kind: WatchMessageKind.command.rawValue,
       WatchKey.command: command.rawValue,
+      // `transferUserInfo` replays verbatim on next launch — the phone
+      // drops commands older than `WatchSessionHandler.maxCommandAge`
+      WatchKey.sentAt: Date(),
     ]
     if command == .setVolume {
       message[WatchKey.volume] = volume
@@ -91,13 +97,20 @@ final class WatchSessionManager: NSObject, ObservableObject {
             self?.apply(stateDictionary: reply)
           }
         },
-        errorHandler: { error in
+        errorHandler: { [weak self] error in
           os_log(
             "Watch command send failed: %s",
             log: log,
             type: .error,
             error.localizedDescription
           )
+          // a press must never silently no-op — queue it as a
+          // background transfer (wakes the phone app) and apply the
+          // same optimistic effect the unreachable path uses
+          WCSession.default.transferUserInfo(message)
+          Task { @MainActor in
+            self?.applyOptimisticEffect(of: command)
+          }
         }
       )
     } else {
@@ -191,7 +204,7 @@ extension WatchSessionManager: WCSessionDelegate {
     }
   }
 
-  nonisolated func sessionCompanionStateDidChange(_ session: WCSession) {
+  nonisolated func sessionCompanionAppInstalledDidChange(_ session: WCSession) {
     Task { @MainActor in
       isCompanionAppInstalled = session.isCompanionAppInstalled
       isReachable = session.isReachable

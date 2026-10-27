@@ -61,6 +61,9 @@ public enum WatchKey {
   /// file-transfer metadata key — artwork files are tagged with the
   /// playable id they belong to so the watch can match art to state
   public static let artworkTrackId = "artworkTrackId"
+  /// command send instant — `transferUserInfo` payloads replay verbatim
+  /// on next launch, so the phone drops commands older than ~60s
+  public static let sentAt = "sentAt"
 }
 
 // MARK: - WatchQueueItem
