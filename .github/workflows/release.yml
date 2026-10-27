@@ -59,7 +59,7 @@ jobs:
       - name: Build (unsigned, Release)
         run: |
           set -o pipefail
-          xcodebuild build
+          xcodebuild build-for-testing
           -project "$XCODE_PROJECT" -scheme "$XCODE_SCHEME"
           -configuration Release
           -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest'
