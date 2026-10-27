@@ -82,3 +82,4 @@ docs/
 .spm-source-packages/
 *.xcresult/
 xcodebuild-*.log
+.playwright-mcp/
