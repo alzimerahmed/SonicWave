@@ -24,7 +24,7 @@
 	<false/>
 	<key>WKWatchKitApp</key>
 	<true/>
-	<key>WKWatchCompanionAppBundleIdentifier</key>
+	<key>WKCompanionAppBundleIdentifier</key>
 	<string>com.alzimerahmed.SonicWave</string>
 </dict>
 </plist>
