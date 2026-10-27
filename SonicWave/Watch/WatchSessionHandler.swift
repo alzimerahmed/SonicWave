@@ -43,6 +43,10 @@ import SonicWaveKit
     private let stateProvider: () -> WatchNowPlaying
     private var isStarted = false
 
+    /// `transferUserInfo` commands replay verbatim on next launch — a
+    /// "pause" tapped yesterday must not fire today
+    static let maxCommandAge: TimeInterval = 60
+
     init(player: PlayerFacade, stateProvider: @escaping () -> WatchNowPlaying) {
       self.player = player
       self.stateProvider = stateProvider
@@ -99,6 +103,15 @@ import SonicWaveKit
           os_log("Dropping unknown watch command", log: log, type: .info)
           return stateProvider().asDictionary
         }
+        if let sentAt = message[WatchKey.sentAt] as? Date,
+           Date().timeIntervalSince(sentAt) > Self.maxCommandAge {
+          os_log(
+            "Dropping stale watch command (replayed transferUserInfo)",
+            log: log,
+            type: .info
+          )
+          return stateProvider().asDictionary
+        }
         execute(command, message: message)
       }
       return stateProvider().asDictionary
@@ -137,6 +150,27 @@ import SonicWaveKit
           type: .error,
           error.localizedDescription
         )
+        return
+      }
+      guard activationState == .activated else { return }
+      Task { @MainActor in
+        // activation is async — the publisher's seed `publishNow()`
+        // guards `.activated` and drops early publishes, so reseed the
+        // context here (latest-wins: this is just the current state)
+        do {
+          try WCSession.default
+            .updateApplicationContext(self.stateProvider().asDictionary)
+        } catch {
+          os_log(
+            "Watch state reseed after activation failed: %s",
+            log: OSLog(
+              subsystem: "com.alzimerahmed.SonicWave",
+              category: "WatchSessionHandler"
+            ),
+            type: .error,
+            error.localizedDescription
+          )
+        }
       }
     }
 

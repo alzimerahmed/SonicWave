@@ -19,6 +19,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+import CryptoKit
 import Foundation
 import os.log
 import SonicWaveKit
@@ -141,22 +142,27 @@ import UIKit
     // MARK: artwork transfer
 
     /// transfers a downscaled JPEG of the current artwork — once per
-    /// track; a `nil` artwork path just leaves the watch on its
-    /// placeholder (which is honest, not a hollow surface)
+    /// track. No cached file → the themed generated artwork is rendered
+    /// and sent instead, so the watch never sits on a placeholder
+    /// rectangle (it can't reach the kit's `getGeneratedArtwork` itself)
     private func publishArtwork(for state: WatchNowPlaying) {
       guard state.hasNowPlaying,
-            state.trackId != lastArtworkTrackId else { return }
-      let preference = storage.settings.accounts
-        .getSetting(
-          player.currentlyPlaying?.account?.info
+            state.trackId != lastArtworkTrackId,
+            let playable = player.currentlyPlaying else { return }
+      let accountSettings = storage.settings.accounts
+        .getSetting(playable.account?.info)
+        .read
+      let image = playable
+        .imagePath(setting: accountSettings.artworkDisplayPreference)
+        .flatMap { UIImage(contentsOfFile: $0) }
+        ?? .getGeneratedArtwork(
+          theme: accountSettings.themePreference,
+          artworkType: playable.getDefaultArtworkType()
         )
-        .read.artworkDisplayPreference
-      guard let sourcePath = player.currentlyPlaying?
-        .imagePath(setting: preference),
-        let transferURL = makeArtworkTransferFile(
-          sourcePath: sourcePath,
-          trackId: state.trackId
-        ) else {
+      guard let transferURL = makeArtworkTransferFile(
+        image: image,
+        trackId: state.trackId
+      ) else {
         // nothing to send — mark so we don't re-probe on every event
         lastArtworkTrackId = state.trackId
         return
@@ -168,18 +174,16 @@ import UIKit
       )
     }
 
-    /// renders the cached artwork file down to watch size and writes it
-    /// to a temp JPEG — `transferFile` requires a file URL
+    /// renders the artwork down to watch size and writes it to a temp
+    /// JPEG — `transferFile` requires a file URL
     private func makeArtworkTransferFile(
-      sourcePath: String,
+      image: UIImage,
       trackId: String
     ) -> URL? {
-      guard let image = UIImage(contentsOfFile: sourcePath) else { return nil }
-      let targetSize = min(
-        Self.artworkPixelSize,
-        max(image.size.width, image.size.height)
-      )
-      let scale = targetSize / max(image.size.width, image.size.height)
+      let maxDimension = max(image.size.width, image.size.height)
+      guard maxDimension > 0 else { return nil }
+      let targetSize = min(Self.artworkPixelSize, maxDimension)
+      let scale = targetSize / maxDimension
       let size = CGSize(
         width: image.size.width * scale,
         height: image.size.height * scale
@@ -191,7 +195,7 @@ import UIKit
         image.draw(in: CGRect(origin: .zero, size: size))
       }
       let url = FileManager.default.temporaryDirectory
-        .appendingPathComponent("watch-art-\(trackId.hashValue).jpg")
+        .appendingPathComponent(Self.artworkFileName(forTrackId: trackId))
       do {
         try data.write(to: url, options: .atomic)
         return url
@@ -204,6 +208,17 @@ import UIKit
         )
         return nil
       }
+    }
+
+    /// stable, collision-safe temp-file key: 128-bit SHA-256 of the
+    /// track id (same pattern as `WidgetStatePublisher.artworkFileName`)
+    /// — `hashValue` is per-process-randomized and could collide
+    private static func artworkFileName(forTrackId trackId: String) -> String {
+      let digest = SHA256.hash(data: Data(trackId.utf8))
+      let hex = digest.prefix(16)
+        .map { String(format: "%02x", $0) }
+        .joined()
+      return "watch-art-\(hex).jpg"
     }
   }
 #endif
