@@ -42,7 +42,7 @@ public enum WatchMessageKind: String {
 
 /// Transport commands the watch can send. Remote control only — the
 /// watch never touches the library or the server directly.
-public enum WatchCommand: String {
+public enum WatchCommand: String, Sendable {
   case togglePlayPause
   case playNext
   case playPreviousOrReplay

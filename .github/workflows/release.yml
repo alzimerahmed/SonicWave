@@ -55,7 +55,8 @@ jobs:
       # Release configuration — minify/optimizations are exercised here that
       # Debug CI never sees.
       - name: Archive (unsigned, Release)
-        run: >
+        run: |
+          set -o pipefail
           xcodebuild archive
           -project "$XCODE_PROJECT" -scheme "$XCODE_SCHEME"
           -configuration Release
@@ -66,6 +67,7 @@ jobs:
           CODE_SIGNING_ALLOWED=NO
           CODE_SIGNING_REQUIRED=NO
           2>&1 | tee xcodebuild-archive.log
+          ! grep -qE '\*\* (ARCHIVE|BUILD) FAILED \*\*' xcodebuild-archive.log
 
       - name: Package unsigned IPA
         run: |

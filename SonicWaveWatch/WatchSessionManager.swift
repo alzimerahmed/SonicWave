@@ -97,8 +97,9 @@ final class WatchSessionManager: NSObject, ObservableObject {
       WCSession.default.sendMessage(
         message,
         replyHandler: { [weak self] reply in
+          nonisolated(unsafe) let replyDict = reply
           Task { @MainActor in
-            self?.apply(stateDictionary: reply)
+            self?.apply(stateDictionary: replyDict)
           }
         },
         errorHandler: { [weak self] error in
@@ -112,8 +113,9 @@ final class WatchSessionManager: NSObject, ObservableObject {
           // background transfer (wakes the phone app) and apply the
           // same optimistic effect the unreachable path uses
           WCSession.default.transferUserInfo(message)
+          nonisolated(unsafe) let fallbackCommand = command
           Task { @MainActor in
-            self?.applyOptimisticEffect(of: command)
+            self?.applyOptimisticEffect(of: fallbackCommand)
           }
         }
       )
@@ -219,8 +221,9 @@ extension WatchSessionManager: WCSessionDelegate {
     _ session: WCSession,
     didReceiveApplicationContext applicationContext: [String: Any]
   ) {
+    nonisolated(unsafe) let ctx = applicationContext
     Task { @MainActor in
-      apply(stateDictionary: applicationContext)
+      apply(stateDictionary: ctx)
     }
   }
 
