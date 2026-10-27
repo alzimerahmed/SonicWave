@@ -49,7 +49,11 @@ public enum LidarrKeychain {
 
   @discardableResult
   public static func delete(accountIdent: String) -> OSStatus {
-    helper.delete(account: accountIdent)
+    let status = helper.delete(account: accountIdent)
+    // deleting a key that was never stored IS a successful clear —
+    // reporting errSecItemNotFound as failure makes "clear the field"
+    // log an error that means nothing
+    return status == errSecItemNotFound ? errSecSuccess : status
   }
 }
 
@@ -101,8 +105,6 @@ public final class LidarrApiClient: Sendable {
     else { return nil }
     return LidarrApiClient(baseUrl: baseUrl, apiKey: apiKey)
   }
-
-  private var decoder: JSONDecoder { JSONDecoder() }
 
   private func request(path: String, queryItems: [URLQueryItem] = []) throws -> URLRequest {
     guard var urlComp = URLComponents(url: baseUrl, resolvingAgainstBaseURL: false) else {

@@ -47,7 +47,12 @@ struct LidarrSettingsView: View {
       .updateSetting(accountInfo) { accountSettings in
         accountSettings.lidarrUrl = trimmed.isEmpty ? nil : trimmed
       }
-    let status = LidarrKeychain.save(apiKey: apiKey.trimmingCharacters(in: .whitespaces), accountIdent: accountInfo.ident)
+    // whitespacesAndNewlines — a pasted key keeps a trailing newline
+    // otherwise and silently fails auth
+    let status = LidarrKeychain.save(
+      apiKey: apiKey.trimmingCharacters(in: .whitespacesAndNewlines),
+      accountIdent: accountInfo.ident
+    )
     if status != errSecSuccess {
       appDelegate.eventLogger.info(
         topic: "Lidarr",
@@ -62,21 +67,33 @@ struct LidarrSettingsView: View {
       SettingsList {
         SettingsSection(
           content: {
-            SettingsRow(title: "Server URL", orientation: .vertical) {
+            SettingsRow(
+              title: String(localized: "Server URL", comment: "Lidarr settings row"),
+              orientation: .vertical
+            ) {
               TextField("http://nas:8686", text: $baseUrl)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .keyboardType(.URL)
                 .onSubmit { save() }
             }
-            SettingsRow(title: "API Key", orientation: .vertical) {
-              SecureField("Lidarr Settings → General → API Key", text: $apiKey)
+            SettingsRow(
+              title: String(localized: "API Key", comment: "Lidarr settings row"),
+              orientation: .vertical
+            ) {
+              SecureField(
+                String(localized: "Lidarr Settings → General → API Key", comment: "Lidarr API key field placeholder"),
+                text: $apiKey
+              )
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .onSubmit { save() }
             }
           },
-          footer: "Found under Settings → General → Security in Lidarr. The key is stored in Keychain, not in settings. With both fields set, artist menus get a “Request in Lidarr” action."
+          footer: String(
+            localized: "Found under Settings → General → Security in Lidarr. The key is stored in Keychain, not in settings. With both fields set, artist menus get a “Request in Lidarr” action.",
+            comment: "Lidarr settings footer"
+          )
         )
       }
     }
