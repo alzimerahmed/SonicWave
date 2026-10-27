@@ -667,10 +667,6 @@ public class LibraryStorage: PlayableFileCachable {
     saveContext()
   }
 
-  func deletePlayEvent(_ playEvent: PlayEvent) {
-    context.delete(playEvent.managedObject)
-  }
-
   func deleteRadio(_ radio: Radio) {
     context.delete(radio.managedObject)
   }

@@ -123,4 +123,11 @@ public class PlayEvent: NSObject {
     guard let object = object as? PlayEvent else { return false }
     return managedObject == object.managedObject
   }
+
+  // NSObject contract: a custom `isEqual` needs the matching `hash` —
+  // same convention as the sibling wrappers (`hash(into:)` on
+  // `managedObject`, which reduces to `managedObject.hash` here)
+  override public var hash: Int {
+    managedObject.hash
+  }
 }
