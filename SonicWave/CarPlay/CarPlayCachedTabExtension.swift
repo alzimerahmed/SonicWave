@@ -32,6 +32,10 @@ extension LibraryDisplayType {
       return true
     case .directories, .downloads, .radios, .songs:
       return false
+    // bookmarks needs the live server API; listeningStats is a dense
+    // table — neither belongs on the CarPlay glance UI
+    case .bookmarks, .listeningStats:
+      return false
     case .playlists:
       return false // playlists have their own tab
     }
@@ -89,7 +93,7 @@ extension CarPlaySceneDelegate {
         sectionToDisplay = albumsRecentCachedSection
       case .radios:
         sectionToDisplay = radioSection
-      case .directories, .downloads, .playlists, .songs:
+      case .bookmarks, .directories, .downloads, .listeningStats, .playlists, .songs:
         break // do nothing
       }
       guard let sectionToDisplay else { completion(); return }
