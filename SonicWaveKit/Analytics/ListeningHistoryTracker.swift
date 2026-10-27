@@ -145,6 +145,10 @@ public class ListeningHistoryTracker {
     guard storage.settings.user.isListeningHistoryEnabled else { return }
 
     let event = storage.main.library.createPlayEvent(account: account)
+    // stamped at session END on purpose: a play that spans a period
+    // boundary counts in the window where it finished — the listener
+    // still had the track audible then. (Session-start stamping would
+    // hide a just-finished play behind the cutoff instead.)
     event.date = Date()
     event.playable = song
     event.title = song.title

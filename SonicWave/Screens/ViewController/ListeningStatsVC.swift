@@ -62,6 +62,9 @@ class ListeningStatsVC: UITableViewController {
   )
   private var period: ListeningPeriod = .week
   private var stats: ListeningStats?
+  /// playable id → Song, prefetched once per reload — cells must not
+  /// run a `getSong` fetch per render
+  private var representativeSongs = [String: Song]()
   private var hasAnyEvents = false
   private var sections = [SectionKind]()
 
@@ -144,6 +147,7 @@ class ListeningStatsVC: UITableViewController {
     } else {
       stats = nil
     }
+    prefetchRepresentativeSongs()
     rebuildSections()
     updateContentUnavailable()
     navigationItem.rightBarButtonItem?.isEnabled = stats?.isEmpty == false
@@ -224,9 +228,26 @@ class ListeningStatsVC: UITableViewController {
     )
   }
 
+  /// one fetch pass per reload — the chart lists are bounded
+  /// (topLimit), so a flat id→Song map keeps `cellForRowAt` fetch-free
+  private func prefetchRepresentativeSongs() {
+    var songs = [String: Song]()
+    if let stats {
+      let library = appDelegate.storage.main.library
+      let ids = (stats.topSongs + stats.topArtists + stats.topAlbums)
+        .compactMap { $0.representativePlayableId }
+      for id in Set(ids) {
+        if let song = library.getSong(for: account, id: id) {
+          songs[id] = song
+        }
+      }
+    }
+    representativeSongs = songs
+  }
+
   private func representativeSong(of entry: ListeningTopEntry) -> Song? {
     guard let playableId = entry.representativePlayableId else { return nil }
-    return appDelegate.storage.main.library.getSong(for: account, id: playableId)
+    return representativeSongs[playableId]
   }
 
   // MARK: actions
@@ -234,7 +255,7 @@ class ListeningStatsVC: UITableViewController {
   @objc
   private func shareRecap() {
     guard let stats, !stats.isEmpty else { return }
-    let text = ListeningStatsAggregator.recapText(for: stats)
+    let text = ListeningStatsAggregator.recapText(for: stats, periodTitle: stats.period.recapTitle)
     let activityVC = UIActivityViewController(activityItems: [text], applicationActivities: nil)
     activityVC.popoverPresentationController?.barButtonItem = navigationItem.rightBarButtonItem
     present(activityVC, animated: true)
@@ -384,5 +405,39 @@ class ListeningStatsVC: UITableViewController {
       )
     }
     return parts.joined(separator: "\n")
+  }
+}
+
+// MARK: - ListeningPeriod + display strings
+
+/// display strings live in the app target so they resolve through the
+/// app's `Localizable.xcstrings` — the kit keeps the raw semantics
+private extension ListeningPeriod {
+  var displayName: String {
+    switch self {
+    case .week:
+      String(localized: "Week", comment: "Listening stats period label")
+    case .month:
+      String(localized: "Month", comment: "Listening stats period label")
+    case .year:
+      String(localized: "Year", comment: "Listening stats period label")
+    case .allTime:
+      String(localized: "All Time", comment: "Listening stats period label")
+    }
+  }
+
+  /// recap-share phrasing ("Last 7 Days", …) — kept separate from
+  /// `displayName` so the compact segmented labels stay short
+  var recapTitle: String {
+    switch self {
+    case .week:
+      String(localized: "Last 7 Days", comment: "Listening stats recap period title")
+    case .month:
+      String(localized: "Last Month", comment: "Listening stats recap period title")
+    case .year:
+      String(localized: "Last Year", comment: "Listening stats recap period title")
+    case .allTime:
+      String(localized: "All Time", comment: "Listening stats recap period title")
+    }
   }
 }

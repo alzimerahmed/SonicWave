@@ -37,8 +37,6 @@ class ListeningStatsTest: XCTestCase {
     account = library.getAccount(info: TestAccountInfo.create1())
   }
 
-  override func tearDown() {}
-
   // MARK: Migration chain (v52)
 
   func testMigrationVersionChainReachesV52() {
@@ -251,7 +249,7 @@ class ListeningStatsTest: XCTestCase {
       ],
       period: .week
     )
-    let recap = ListeningStatsAggregator.recapText(for: stats)
+    let recap = ListeningStatsAggregator.recapText(for: stats, periodTitle: "Last 7 Days")
     XCTAssertTrue(recap.contains("Last 7 Days"))
     XCTAssertTrue(recap.contains("2 plays"))
     XCTAssertTrue(recap.contains("Solo (2 plays)"))

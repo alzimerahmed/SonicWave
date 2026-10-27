@@ -33,25 +33,9 @@ public enum ListeningPeriod: Int, CaseIterable, Sendable {
   case year
   case allTime
 
-  public var displayName: String {
-    switch self {
-    case .week: return "Week"
-    case .month: return "Month"
-    case .year: return "Year"
-    case .allTime: return "All Time"
-    }
-  }
-
-  /// recap-share phrasing ("Last 7 Days", …) — kept separate from
-  /// `displayName` so the compact segmented labels stay short
-  public var recapTitle: String {
-    switch self {
-    case .week: return "Last 7 Days"
-    case .month: return "Last Month"
-    case .year: return "Last Year"
-    case .allTime: return "All Time"
-    }
-  }
+  // display strings (`displayName`/`recapTitle`) intentionally live in
+  // the app target — `String(localized:)` resolves against the app
+  // bundle's Localizable.xcstrings, not the framework's
 
   /// rolling cutoff; `nil` = unbounded (fetch everything)
   public func startDate(from now: Date, calendar: Calendar = .current) -> Date? {
@@ -281,10 +265,12 @@ public enum ListeningStatsAggregator {
   }
 
   /// plain-text recap for the share sheet — honest numbers only; when
-  /// nothing charted the caller shows the empty state instead
-  public static func recapText(for stats: ListeningStats) -> String {
+  /// nothing charted the caller shows the empty state instead.
+  /// `periodTitle` is caller-supplied because localized display strings
+  /// live in the app target (its bundle owns `Localizable.xcstrings`).
+  public static func recapText(for stats: ListeningStats, periodTitle: String) -> String {
     var lines = [String]()
-    lines.append("SonicWave Recap — \(stats.period.recapTitle)")
+    lines.append("SonicWave Recap — \(periodTitle)")
     lines.append(
       "\(stats.secondsListened.asDurationShortString) of music · \(stats.playCount) plays across \(stats.uniqueSongCount) songs"
     )
