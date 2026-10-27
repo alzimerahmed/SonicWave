@@ -23,39 +23,10 @@ import Foundation
 import Network
 import os.log
 
-// MARK: - OutputDeviceKind / OutputDevice
-
-/// G10/G11 seam: a remote playback target the app can hand audio to.
-/// `.chromecast` is a placeholder for the deferred Cast integration —
-/// the Google Cast iOS SDK is proprietary (Google Cast SDK Additional
-/// Developer Terms), not GPLv3-compatible to bundle, so the kind exists
-/// for the picker seam but is never produced (see research.md ADR).
-public enum OutputDeviceKind: String, Sendable {
-  case thisDevice
-  /// server-side player (Subsonic `jukeboxControl` / Ampache `localplay`)
-  case serverJukebox
-  case upnpRenderer
-  case chromecast // deferred — proprietary SDK, never produced today
-}
-
-public struct OutputDevice: Sendable, Equatable, Identifiable {
-  public var id: String
-  public var name: String
-  public var kind: OutputDeviceKind
-  public var detail: String?
-
-  public init(id: String, name: String, kind: OutputDeviceKind, detail: String? = nil) {
-    self.id = id
-    self.name = name
-    self.kind = kind
-    self.detail = detail
-  }
-}
-
 // MARK: - UpnpDevice
 
 /// A discovered UPnP/DLNA media renderer with an AVTransport service —
-/// the only UPnP profile we drive (`SetAVTransportURI`/`Play`/`Stop`).
+/// the only UPnP profile we drive (`SetAVTransportURI`/`Play`).
 public struct UpnpDevice: Sendable, Equatable, Identifiable {
   public var id: String { usn }
   public var usn: String
@@ -249,8 +220,10 @@ final class UpnpDeviceDescriptionParser: NSObject, XMLParserDelegate {
 ///
 /// Platform caveat: iOS blocks multicast UDP without the
 /// `com.apple.developer.networking.multicast` entitlement — unsigned CI
-/// can't carry it, so discovery here degrades to an empty list instead
-/// of failing (a manual-URL path is the documented follow-up).
+/// can't carry it, so discovery throws `DiscoveryError` instead of
+/// pretending the LAN is empty (a manual-URL path is the documented
+/// follow-up). An empty result genuinely means "searched, nothing
+/// answered".
 public actor UpnpDiscovery {
   private let log = OSLog(subsystem: "com.alzimerahmed.SonicWave", category: "UPnP")
   private let session: URLSession
@@ -259,14 +232,21 @@ public actor UpnpDiscovery {
     self.session = session
   }
 
-  /// `NWMulticastGroup` join fails without the multicast entitlement —
-  /// surfaced as a typed result so callers can distinguish "network
-  /// blocked us" from "no renderers on the LAN".
+  /// Distinguishes "the network blocked us" from "no renderers on the
+  /// LAN" so the picker can render an honest state for each.
   public enum DiscoveryError: Error, Sendable {
+    /// the multicast group could not be joined — on device this is
+    /// almost always the missing
+    /// `com.apple.developer.networking.multicast` entitlement (needs a
+    /// signed build); EPERM/EACCES from the listener lands here too
     case multicastUnavailable
+    /// the joined group reported a transport error mid-listen
+    case transportFailed(String)
   }
 
-  public func discover(timeoutSeconds: Double = 3.0) async -> [UpnpDevice] {
+  /// `throws DiscoveryError` when the LAN can't even be searched —
+  /// only an empty *success* means "searched, nothing answered"
+  public func discover(timeoutSeconds: Double = 3.0) async throws -> [UpnpDevice] {
     do {
       let locations = try await collectLocations(timeoutSeconds: timeoutSeconds)
       var devices = [UpnpDevice]()
@@ -278,12 +258,12 @@ public actor UpnpDiscovery {
       return devices
     } catch {
       os_log(
-        "SSDP discovery unavailable (multicast entitlement?): %{public}s",
+        "SSDP discovery failed: %{public}s",
         log: self.log,
         type: .info,
         String(describing: error)
       )
-      return []
+      throw error
     }
   }
 
@@ -293,9 +273,23 @@ public actor UpnpDiscovery {
       host: NWEndpoint.Host(SsdpMessages.multicastHost),
       port: NWEndpoint.Port(rawValue: UInt16(clamping: SsdpMessages.multicastPort)) ?? 1900
     )
-    let group = try NWMulticastGroup(with: endpoint)
+    let group: NWMulticastGroup
+    do {
+      group = try NWMulticastGroup(with: endpoint)
+    } catch {
+      // group creation is rejected without the multicast entitlement —
+      // a capability failure, not "no renderers found"
+      throw DiscoveryError.multicastUnavailable
+    }
     let box = LocationBox()
-    group.setReceiveHandler { message, content, _ in
+    group.setReceiveHandler { _, content, error in
+      // a missing multicast entitlement can also surface here (EPERM)
+      // instead of at creation — record it so the timeout path throws
+      // instead of reporting a falsely empty LAN
+      if let error {
+        box.record(error: Self.discoveryError(for: error))
+        return
+      }
       guard let content, let text = String(data: content, encoding: .utf8) else { return }
       let parsed = SsdpMessages.parseResponse(text)
       guard let raw = parsed.location, let url = URL(string: raw) else { return }
@@ -316,7 +310,18 @@ public actor UpnpDiscovery {
 
     try await Task.sleep(for: .seconds(timeoutSeconds))
     connection.cancel()
+    if let error = box.firstError { throw error }
     return box.snapshot()
+  }
+
+  /// EPERM/EACCES on the listener = the multicast entitlement is
+  /// missing on this build — that's "unavailable", not a LAN error
+  private static func discoveryError(for error: NWError) -> DiscoveryError {
+    if case .posix(let code) = error,
+       code == .EPERM || code == .EACCES {
+      return .multicastUnavailable
+    }
+    return .transportFailed(String(describing: error))
   }
 
   private func fetchDevice(at location: URL) async -> UpnpDevice? {
@@ -348,6 +353,7 @@ public actor UpnpDiscovery {
     private let lock = NSLock()
     private var seen = Set<String>()
     private var urls = [URL]()
+    private var recordedError: DiscoveryError?
 
     func append(_ url: URL, usn: String?) {
       lock.lock()
@@ -356,6 +362,18 @@ public actor UpnpDiscovery {
       guard !seen.contains(key) else { return }
       seen.insert(key)
       urls.append(url)
+    }
+
+    func record(error: DiscoveryError) {
+      lock.lock()
+      defer { lock.unlock() }
+      if recordedError == nil { recordedError = error }
+    }
+
+    var firstError: DiscoveryError? {
+      lock.lock()
+      defer { lock.unlock() }
+      return recordedError
     }
 
     func snapshot() -> [URL] {
@@ -405,10 +423,6 @@ public actor UpnpAvTransport {
       action: "Play",
       arguments: [("InstanceID", "0"), ("Speed", "1")]
     )
-  }
-
-  public func stop() async throws {
-    try await send(action: "Stop", arguments: [("InstanceID", "0")])
   }
 
   private func send(action: String, arguments: [(name: String, value: String)]) async throws {

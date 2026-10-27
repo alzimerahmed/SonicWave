@@ -36,7 +36,11 @@ import UIKit
 class OutputTargetsVC: UITableViewController {
   private let account: Account
   private var upnpDevices = [UpnpDevice]()
-  private var isDiscovering = true
+  private var isDiscovering = false
+  /// non-nil when the LAN couldn't even be searched (entitlement or
+  /// transport failure) — an empty `upnpDevices` alone means the scan
+  /// ran and genuinely found nothing
+  private var discoveryError: UpnpDiscovery.DiscoveryError?
   /// nil = still probing; server capability asked once per open
   private var jukeboxSupported: Bool?
 
@@ -57,7 +61,7 @@ class OutputTargetsVC: UITableViewController {
 
   override func viewDidLoad() {
     super.viewDidLoad()
-    title = "Play To"
+    title = String(localized: "Play To", comment: "Output target picker title")
     tableView.register(UITableViewCell.self, forCellReuseIdentifier: "outputCell")
     tableView.backgroundColor = .backgroundColor
     navigationItem.rightBarButtonItem = UIBarButtonItem(
@@ -66,7 +70,10 @@ class OutputTargetsVC: UITableViewController {
       target: self,
       action: #selector(rescan)
     )
-    navigationItem.rightBarButtonItem?.accessibilityLabel = "Rescan for devices"
+    navigationItem.rightBarButtonItem?.accessibilityLabel = String(
+      localized: "Rescan for devices",
+      comment: "VoiceOver label for the UPnP rescan button"
+    )
 
     probeJukebox()
     rescan()
@@ -85,12 +92,25 @@ class OutputTargetsVC: UITableViewController {
 
   @objc
   private func rescan() {
+    // re-entrancy guard — rapid Rescan taps must not stack
+    // overlapping `discover()` tasks
+    guard !isDiscovering else { return }
     isDiscovering = true
+    discoveryError = nil
+    navigationItem.rightBarButtonItem?.isEnabled = false
     tableView.reloadData()
     Task { @MainActor in
-      let found = await discovery.discover()
-      upnpDevices = found
+      do {
+        upnpDevices = try await discovery.discover()
+      } catch let error as UpnpDiscovery.DiscoveryError {
+        upnpDevices = []
+        discoveryError = error
+      } catch {
+        upnpDevices = []
+        discoveryError = .transportFailed(String(describing: error))
+      }
       isDiscovering = false
+      navigationItem.rightBarButtonItem?.isEnabled = true
       tableView.reloadData()
     }
   }
@@ -137,6 +157,9 @@ class OutputTargetsVC: UITableViewController {
     case upnp(Int)
     case discovering
     case upnpEmpty
+    /// the scan itself failed (entitlement/transport) — distinct from
+    /// a completed scan that found zero renderers
+    case upnpUnavailable
   }
 
   private var rows: [RowKind] {
@@ -151,6 +174,8 @@ class OutputTargetsVC: UITableViewController {
     }
     if isDiscovering {
       rows.append(.discovering)
+    } else if discoveryError != nil {
+      rows.append(.upnpUnavailable)
     } else if upnpDevices.isEmpty {
       rows.append(.upnpEmpty)
     } else {
@@ -169,31 +194,74 @@ class OutputTargetsVC: UITableViewController {
     var content = cell.defaultContentConfiguration()
     switch rows[indexPath.row] {
     case .airplay:
-      content.text = "This Device"
-      content.secondaryText = "AirPlay and Bluetooth outputs"
+      content.text = String(localized: "This Device", comment: "Output target row: local output")
+      content.secondaryText = String(
+        localized: "AirPlay and Bluetooth outputs",
+        comment: "Output target row detail: local output"
+      )
       content.image = UIImage(systemName: "airplayaudio")
       cell.accessoryType = .disclosureIndicator
     case .jukebox:
-      content.text = "Server Jukebox"
-      content.secondaryText = "Play on the server's own output"
+      content.text = String(localized: "Server Jukebox", comment: "Output target row: jukebox")
+      content.secondaryText = String(
+        localized: "Play on the server's own output",
+        comment: "Output target row detail: jukebox"
+      )
       content.image = UIImage(systemName: "hifispeaker")
       cell.accessoryType = .disclosureIndicator
     case .discovering:
-      content.text = "Searching for UPnP devices…"
+      content.text = String(
+        localized: "Searching for UPnP devices…",
+        comment: "Output target picker: discovery in progress"
+      )
       content.secondaryText = nil
       content.image = UIImage(systemName: "antenna.radiowaves.left.and.right")
       cell.accessoryType = .none
       cell.selectionStyle = .none
     case .upnpEmpty:
-      content.text = "No UPnP Renderers Found"
-      content.secondaryText = "DLNA devices need to be on the same network"
+      content.text = String(
+        localized: "No UPnP Renderers Found",
+        comment: "Output target picker: scan completed, zero results"
+      )
+      content.secondaryText = String(
+        localized: "DLNA devices need to be on the same network",
+        comment: "Output target picker: zero results hint"
+      )
       content.image = UIImage(systemName: "antenna.radiowaves.left.and.right")
+      cell.accessoryType = .none
+      cell.selectionStyle = .none
+    case .upnpUnavailable:
+      if case .transportFailed? = discoveryError {
+        content.text = String(
+          localized: "UPnP Discovery Failed",
+          comment: "Output target picker: scan error"
+        )
+        content.secondaryText = String(
+          localized: "The network scan reported an error — try rescanning.",
+          comment: "Output target picker: scan error hint"
+        )
+      } else {
+        // `.multicastUnavailable` — honest about the entitlement, not
+        // blaming the user's LAN
+        content.text = String(
+          localized: "UPnP Discovery Isn't Available",
+          comment: "Output target picker: multicast entitlement missing"
+        )
+        content.secondaryText = String(
+          localized: "This build is missing the multicast networking entitlement — nothing is wrong with your network.",
+          comment: "Output target picker: multicast entitlement hint"
+        )
+      }
+      content.image = UIImage(systemName: "antenna.radiowaves.left.and.right.slash")
       cell.accessoryType = .none
       cell.selectionStyle = .none
     case let .upnp(index):
       let device = upnpDevices[index]
       content.text = device.friendlyName
-      content.secondaryText = "Pushes the current track's stream URL"
+      content.secondaryText = String(
+        localized: "Pushes the current track's stream URL",
+        comment: "Output target row detail: UPnP renderer"
+      )
       content.image = UIImage(systemName: "tv")
       cell.accessoryType = .none
       cell.selectionStyle = .default
@@ -222,7 +290,7 @@ class OutputTargetsVC: UITableViewController {
       navigationController?.pushViewController(JukeboxVC(account: account), animated: true)
     case let .upnp(index):
       playOnRenderer(upnpDevices[index])
-    case .discovering, .upnpEmpty:
+    case .discovering, .upnpEmpty, .upnpUnavailable:
       break
     }
   }
