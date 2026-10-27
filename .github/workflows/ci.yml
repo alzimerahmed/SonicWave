@@ -160,3 +160,83 @@ jobs:
           path: xcodebuild-catalyst.log
           if-no-files-found: ignore
           retention-days: 7
+
+  watchos-build:
+    # G15: SonicWaveWatch app — standalone watchOS target, no kit dep.
+    # Generic watchOS destination (no simulator runtime needed for build).
+    name: watchOS Build
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Build watchOS app (unsigned)
+        run: >
+          xcodebuild build
+          -project "$XCODE_PROJECT" -scheme SonicWaveWatch
+          -configuration Debug
+          -destination 'generic/platform=watchOS Simulator'
+          -derivedDataPath "$DERIVED_DATA"
+          CODE_SIGNING_ALLOWED=NO
+          2>&1 | tee xcodebuild-watchos.log
+
+      - name: Upload log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-failure-logs-watchos
+          path: xcodebuild-watchos.log
+          if-no-files-found: ignore
+          retention-days: 7
+
+  tvos-build:
+    # G28: SonicWaveTV app + SonicWaveKit built for tvOS (kit now declares
+    # appletvos/appletvsimulator in SUPPORTED_PLATFORMS).
+    name: tvOS Build
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Cache SPM checkouts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.SPM_PACKAGES_DIR }}
+            ~/Library/Caches/org.swift.swiftpm
+          key: ${{ runner.os }}-xcode-spm-${{ hashFiles('**/Package.resolved') }}
+          restore-keys: ${{ runner.os }}-xcode-spm-
+
+      - name: Resolve Swift package dependencies
+        run: >
+          xcodebuild -resolvePackageDependencies
+          -project "$XCODE_PROJECT" -scheme SonicWaveTV
+          -clonedSourcePackagesDirPath "$SPM_PACKAGES_DIR"
+
+      - name: Build tvOS app (unsigned)
+        run: >
+          xcodebuild build
+          -project "$XCODE_PROJECT" -scheme SonicWaveTV
+          -configuration Debug
+          -destination 'generic/platform=tvOS Simulator'
+          -derivedDataPath "$DERIVED_DATA"
+          -clonedSourcePackagesDirPath "$SPM_PACKAGES_DIR"
+          CODE_SIGNING_ALLOWED=NO
+          2>&1 | tee xcodebuild-tvos.log
+
+      - name: Upload log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-failure-logs-tvos
+          path: xcodebuild-tvos.log
+          if-no-files-found: ignore
+          retention-days: 7
