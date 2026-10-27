@@ -69,6 +69,9 @@ public final class AudioAnalyzer: ObservableObject, AudioAnalyzerProtocol {
     var needsFFT = false
     /// RMS publish throttle — counts buffers since the last publish
     var buffersSinceRmsPublish = 0
+    /// FFT publish throttle — the magnitudes path publishes at ~57 Hz,
+    /// not the ~170 Hz raw buffer rate (displays can't use it anyway)
+    var buffersSinceFftPublish = 0
   }
   nonisolated(unsafe) private var tapState = TapState()
   private let tapStateLock = NSLock()
@@ -85,6 +88,10 @@ public final class AudioAnalyzer: ObservableObject, AudioAnalyzerProtocol {
   /// buffers land at ~170 Hz (44.1 kHz), so every 8th buffer publishes;
   /// the 0.4 s silence gate needs nothing faster
   private static let rmsPublishEveryNthBuffer = 8
+  /// Magnitudes/FFT publishes at ~57 Hz — every 3rd buffer at the
+  /// ~170 Hz buffer rate; FFT compute + SwiftUI invalidation are skipped
+  /// on the other two
+  private static let fftPublishEveryNthBuffer = 3
 
   public init(fftSize: Int = 256, windowType: WindowType = .hannWindow) {
     self.fftSize = fftSize
@@ -123,7 +130,13 @@ public final class AudioAnalyzer: ObservableObject, AudioAnalyzerProtocol {
     // means this buffer publishes nothing
     let state = tapStateLock.withLock { () -> TapState? in
       guard tapState.isActive, tapState.isPlaying else { return nil }
-      if tapState.needsFFT { return tapState }
+      if tapState.needsFFT {
+        tapState.buffersSinceFftPublish += 1
+        guard tapState.buffersSinceFftPublish >= Self.fftPublishEveryNthBuffer
+        else { return nil }
+        tapState.buffersSinceFftPublish = 0
+        return tapState
+      }
       tapState.buffersSinceRmsPublish += 1
       guard tapState.buffersSinceRmsPublish >= Self.rmsPublishEveryNthBuffer
       else { return nil }

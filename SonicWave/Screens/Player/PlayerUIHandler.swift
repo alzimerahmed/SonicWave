@@ -117,9 +117,16 @@ class PlayerUIHandler: NSObject {
 
     button.setImage(buttonImg, for: UIControl.State.normal)
     button.configuration?.image = buttonImg
+    if player.isPlaying {
+      button.accessibilityLabel = player.isStopInsteadOfPause ? "Stop" : "Pause"
+    } else {
+      button.accessibilityLabel = "Play"
+    }
   }
 
   func refreshSkipButtons(skipBackwardButton: UIButton, skipForwardButton: UIButton) {
+    skipBackwardButton.accessibilityLabel = "Skip backward"
+    skipForwardButton.accessibilityLabel = "Skip forward"
     switch player.playerMode {
     case .music:
       skipBackwardButton.isHidden = !appDelegate.storage.settings.user.isShowMusicPlayerSkipButtons
@@ -176,6 +183,14 @@ class PlayerUIHandler: NSObject {
     previousButton.configuration?.image = previouseImg
     nextButton.setImage(nextImg, for: UIControl.State.normal)
     nextButton.configuration?.image = nextImg
+    switch player.playerMode {
+    case .music:
+      previousButton.accessibilityLabel = "Previous track"
+      nextButton.accessibilityLabel = "Next track"
+    case .podcast:
+      previousButton.accessibilityLabel = "Skip back 15 seconds"
+      nextButton.accessibilityLabel = "Skip forward 30 seconds"
+    }
   }
 
   func refreshRepeatButton(repeatButton: UIButton) {
@@ -208,6 +223,14 @@ class PlayerUIHandler: NSObject {
       #endif
     }
     repeatButton.isSelected = isSelected
+    switch player.repeatMode {
+    case .off:
+      repeatButton.accessibilityLabel = "Repeat off"
+    case .all:
+      repeatButton.accessibilityLabel = "Repeat all"
+    case .single:
+      repeatButton.accessibilityLabel = "Repeat one"
+    }
   }
 
   func refreshShuffleButton(shuffleButton: UIButton) {
@@ -230,6 +253,7 @@ class PlayerUIHandler: NSObject {
     }
     shuffleButton.isEnabled = appDelegate.storage.settings.user.isPlayerShuffleButtonEnabled
     shuffleButton.isSelected = player.isShuffle
+    shuffleButton.accessibilityLabel = "Shuffle"
   }
 
   func refreshAutoplayButton(autoplayButton: UIButton) {
@@ -249,9 +273,11 @@ class PlayerUIHandler: NSObject {
     }
     autoplayButton.isEnabled = player.playerMode == .music
     autoplayButton.isSelected = isActive
+    autoplayButton.accessibilityLabel = "Autoplay similar music"
   }
 
   func refreshDisplayPlaylistButton(displayPlaylistButton: UIButton) {
+    displayPlaylistButton.accessibilityLabel = "Toggle player display style"
     let isSelected = appDelegate.storage.settings.user.playerDisplayStyle == .compact
 
     switch style {
@@ -266,6 +292,7 @@ class PlayerUIHandler: NSObject {
   }
 
   func refreshDisplayLyrisButton(displayLyricsButton: UIButton) {
+    displayLyricsButton.accessibilityLabel = "Toggle lyrics"
     let isSelected = appDelegate.storage.settings.user.isPlayerLyricsDisplayed
 
     switch style {
@@ -280,6 +307,7 @@ class PlayerUIHandler: NSObject {
     optionsButton: UIButton?,
     menuCreateCB: @escaping () -> [UIMenuElement]
   ) {
+    optionsButton?.accessibilityLabel = "Player options"
     optionsButton?.showsMenuAsPrimaryAction = true
     optionsButton?.menu = UIMenu.lazyMenu(title: "Player Options") {
       menuCreateCB()
@@ -428,6 +456,7 @@ class PlayerUIHandler: NSObject {
   ) {
     timeSlider.preferredBehavioralStyle = .pad
     timeSlider.sliderStyle = .thumbless
+    timeSlider.accessibilityLabel = "Playback position"
     if let currentlyPlaying = player.currentlyPlaying {
       let supportTimeInteraction = !currentlyPlaying.isRadio
       // scrubbing is additionally gated on the entry being seekable —

@@ -250,8 +250,8 @@ public actor UpnpDiscovery {
     do {
       let locations = try await collectLocations(timeoutSeconds: timeoutSeconds)
       var devices = [UpnpDevice]()
-      for location in locations {
-        if let device = await fetchDevice(at: location) {
+      for (location, usn) in locations {
+        if let device = await fetchDevice(at: location, usn: usn) {
           devices.append(device)
         }
       }
@@ -268,7 +268,7 @@ public actor UpnpDiscovery {
   }
 
   /// LOCATION headers from responders, deduplicated
-  private func collectLocations(timeoutSeconds: Double) async throws -> [URL] {
+  private func collectLocations(timeoutSeconds: Double) async throws -> [(URL, String?)] {
     let endpoint = NWEndpoint.hostPort(
       host: NWEndpoint.Host(SsdpMessages.multicastHost),
       port: NWEndpoint.Port(rawValue: UInt16(clamping: SsdpMessages.multicastPort)) ?? 1900
@@ -308,8 +308,8 @@ public actor UpnpDiscovery {
       completion: .contentProcessed { _ in }
     )
 
+    defer { connection.cancel() }
     try await Task.sleep(for: .seconds(timeoutSeconds))
-    connection.cancel()
     if let error = box.firstError { throw error }
     return box.snapshot()
   }
@@ -324,19 +324,23 @@ public actor UpnpDiscovery {
     return .transportFailed(String(describing: error))
   }
 
-  private func fetchDevice(at location: URL) async -> UpnpDevice? {
+  private func fetchDevice(at location: URL, usn: String?) async -> UpnpDevice? {
     do {
-      let (data, _) = try await session.data(from: location)
+      var request = URLRequest(url: location)
+      request.timeoutInterval = 10
+      let (data, _) = try await session.data(for: request)
       let parser = UpnpDeviceDescriptionParser()
       let xmlParser = XMLParser(data: data)
       xmlParser.delegate = parser
+      xmlParser.shouldResolveExternalEntities = false
       xmlParser.parse()
       guard let controlPath = parser.avTransportControlUrl,
             let serviceType = parser.avTransportServiceType,
-            let controlUrl = URL(string: controlPath, relativeTo: location)?.absoluteURL
+            let controlUrl = URL(string: controlPath, relativeTo: location)?.absoluteURL,
+            isSameOrigin(controlUrl, as: location)
       else { return nil }
       return UpnpDevice(
-        usn: location.absoluteString,
+        usn: usn ?? location.absoluteString,
         friendlyName: parser.friendlyName ?? location.host ?? "UPnP renderer",
         descriptionUrl: location,
         avTransportControlUrl: controlUrl,
@@ -347,12 +351,27 @@ public actor UpnpDiscovery {
     }
   }
 
+  /// The control URL must stay on the device that answered M-SEARCH —
+  /// a rogue responder could otherwise point us at a URL it controls
+  /// and harvest the credentials embedded in the stream URI.
+  private func isSameOrigin(_ url: URL, as other: URL) -> Bool {
+    guard let scheme = url.scheme?.lowercased(),
+          scheme == other.scheme?.lowercased(),
+          let host = url.host?.lowercased(),
+          host == other.host?.lowercased()
+    else { return false }
+    let port = url.port ?? (scheme == "https" ? 443 : 80)
+    let otherScheme = other.scheme?.lowercased()
+    let otherPort = other.port ?? (otherScheme == "https" ? 443 : 80)
+    return port == otherPort
+  }
+
   /// Lock-protected collector — the receive handler fires on a private
   /// queue while `discover` awaits on the actor.
   private final class LocationBox: @unchecked Sendable {
     private let lock = NSLock()
     private var seen = Set<String>()
-    private var urls = [URL]()
+    private var entries = [(URL, String?)]()
     private var recordedError: DiscoveryError?
 
     func append(_ url: URL, usn: String?) {
@@ -361,7 +380,7 @@ public actor UpnpDiscovery {
       let key = usn ?? url.absoluteString
       guard !seen.contains(key) else { return }
       seen.insert(key)
-      urls.append(url)
+      entries.append((url, usn))
     }
 
     func record(error: DiscoveryError) {
@@ -376,10 +395,10 @@ public actor UpnpDiscovery {
       return recordedError
     }
 
-    func snapshot() -> [URL] {
+    func snapshot() -> [(URL, String?)] {
       lock.lock()
       defer { lock.unlock() }
-      return urls
+      return entries
     }
   }
 }

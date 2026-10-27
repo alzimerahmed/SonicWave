@@ -103,6 +103,7 @@ class RatingView: UIView {
       button.tag = i + 1 // Tags 1-5 represent star ratings
       button.tintColor = Self.starColor
       button.setImage(.starEmpty, for: .normal)
+      button.accessibilityLabel = "Rate \(i + 1) of \(starCount) stars"
 
       let config = UIImage.SymbolConfiguration(pointSize: starSize, weight: .regular)
       button.setPreferredSymbolConfiguration(config, forImageIn: .normal)
@@ -142,8 +143,7 @@ class RatingView: UIView {
     delegate?.ratingView(self, didChangeRating: rating)
 
     // Haptic feedback
-    let generator = UIImpactFeedbackGenerator(style: .light)
-    generator.impactOccurred()
+    Haptics.light.vibrate(isHapticsEnabled: appDelegate.storage.settings.user.isHapticsEnabled)
   }
 
   @objc
@@ -154,8 +154,7 @@ class RatingView: UIView {
     delegate?.ratingView(self, didChangeRating: rating)
 
     // Haptic feedback
-    let generator = UIImpactFeedbackGenerator(style: .medium)
-    generator.impactOccurred()
+    Haptics.medium.vibrate(isHapticsEnabled: appDelegate.storage.settings.user.isHapticsEnabled)
   }
 
   // MARK: - Public Methods
@@ -181,7 +180,8 @@ class RatingView: UIView {
       let isFilled = starNumber <= rating
       button.setImage(isFilled ? .starFill : .starEmpty, for: .normal)
 
-      // Apply reduced opacity when disabled
+      // Apply reduced opacity + disabled state (VoiceOver reads "dimmed")
+      button.isEnabled = isRatingEnabled
       if isRatingEnabled {
         button.alpha = 1.0
       } else {

@@ -249,7 +249,10 @@ final class SubsonicServerApi: URLCleanser, Sendable {
     urlComp.addQueryItem(name: "c", value: "SonicWave")
 
     if version < SubsonicVersion.authenticationTokenRequiredServerApi {
-      urlComp.addQueryItem(name: "p", value: password)
+      // `enc:<hex>` is the spec's obfuscated form for legacy servers — keeps
+      // the raw password out of access logs (still plaintext-equivalent, but
+      // no longer greppable)
+      urlComp.addQueryItem(name: "p", value: "enc:\(Data(password.utf8).map { String(format: "%02x", $0) }.joined())")
     } else {
       let salt = String.generateRandomString(ofLength: 16)
       let authenticationToken = generateAuthenticationToken(password: password, salt: salt)

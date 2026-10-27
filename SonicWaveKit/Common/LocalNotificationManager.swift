@@ -101,7 +101,7 @@ public class LocalNotificationManager {
         "account-\(account.ident)-podcast-\(podcastEpisode.podcast?.id ?? "0")-episode-\(podcastEpisode.id)"
       do {
         let fileIdentifier = identifier + ".png"
-        let artworkUrl = createLocalUrl(
+        let artworkUrl = try createLocalUrl(
           forImage: LibraryEntityImage.getImageToDisplayImmediately(
             libraryEntity: podcastEpisode,
             themePreference: storage.settings.accounts.getSetting(account.info).read
@@ -167,18 +167,7 @@ public class LocalNotificationManager {
     #endif
   }
 
-  nonisolated public func listPendingNotifications() {
-    #if canImport(UserNotifications)
-      Task {
-        let notifications = await UNUserNotificationCenter.current().pendingNotificationRequests()
-        for notification in notifications {
-          print(notification)
-        }
-      }
-    #endif
-  }
-
-  #if canImport(UserNotifications)
+  #if canImport(UserNotifications)  #if canImport(UserNotifications)
     nonisolated private func notify(request: UNNotificationRequest) async {
       let settings = await UNUserNotificationCenter.current().notificationSettings()
       switch settings.authorizationStatus {
@@ -193,14 +182,16 @@ public class LocalNotificationManager {
       }
     }
 
-    private func createLocalUrl(forImage image: UIImage, fileIdentifier: String) -> URL {
+    private func createLocalUrl(forImage image: UIImage, fileIdentifier: String) throws -> URL {
       let tempDirectoryURL = NSURL.fileURL(withPath: NSTemporaryDirectory(), isDirectory: true)
       let url = tempDirectoryURL.appendingPathComponent(fileIdentifier)
       var imgData = image.pngData()
       if imgData == nil {
         imgData = UIImage.appIcon.pngData()
       }
-      try! imgData!.write(to: url, options: Data.WritingOptions.atomic)
+      if let imgData {
+        try imgData.write(to: url, options: Data.WritingOptions.atomic)
+      }
       return url
     }
   #endif

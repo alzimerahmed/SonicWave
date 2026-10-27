@@ -68,7 +68,7 @@ struct CoreDataMigrationStep {
   )
     -> NSMappingModel? {
     NSMappingModel(
-      from: [Bundle.main],
+      from: [Bundle.main, Bundle(for: CoreDataPersistentManager.self)],
       forSourceModel: sourceModel,
       destinationModel: destinationModel
     )

@@ -532,6 +532,9 @@ class LargeCurrentlyPlayingPlayerView: UIView, UIGestureRecognizerDelegate {
   }
 
   public func showVisualizer() {
+    // vestibular safety: continuous audio-reactive motion stays off under
+    // Reduce Motion — the static artwork remains visible instead
+    guard !UIAccessibility.isReduceMotionEnabled else { return }
     visualizerHostingView?.updateVisualizerType(
       appDelegate.storage.settings.user.selectedVisualizerType
     )

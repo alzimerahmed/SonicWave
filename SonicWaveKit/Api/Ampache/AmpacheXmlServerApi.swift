@@ -287,10 +287,12 @@ final class AmpacheXmlServerApi: URLCleanser, Sendable {
     }
     if let error = parser.parserError {
       os_log("Error during AuthPars: %s", log: self.log, type: .error, error.localizedDescription)
+      // no response body here — a malformed handshake reply can still carry
+      // the <auth> token and it gets persisted into the event log otherwise
       throw ResponseError(
         type: .xml,
         cleansedURL: response.url?.asCleansedURL(cleanser: self),
-        data: response.data
+        data: nil
       )
     }
     if success, let auth = curDelegate.authHandshake {

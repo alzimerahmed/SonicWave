@@ -40,6 +40,8 @@ extension MarqueeLabel {
     if type != .continuous {
       type = .continuous
     }
+    // Reduce Motion: freeze the scroll instead of animating forever
+    holdScrolling = UIAccessibility.isReduceMotionEnabled
     speed = .rate(30.0)
     if fadeLength != 10.0 {
       fadeLength = 10.0

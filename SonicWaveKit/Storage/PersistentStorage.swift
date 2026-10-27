@@ -200,7 +200,7 @@ protocol CoreDataManagable {
 
 public class CoreDataPersistentManager: CoreDataManagable {
   nonisolated(unsafe) public static let managedObjectModel: NSManagedObjectModel =
-    .mergedModel(from: [Bundle.main])!
+    .mergedModel(from: [Bundle.main, Bundle(for: CoreDataPersistentManager.self)])!
 
   lazy var persistentContainer: NSPersistentContainer = {
     /*
@@ -257,7 +257,7 @@ public class CoreDataPersistentManager: CoreDataManagable {
 extension NSPersistentContainer {
   static fileprivate func configureContext(_ contextToConfigure: NSManagedObjectContext) {
     contextToConfigure.automaticallyMergesChangesFromParent = true
-    contextToConfigure.retainsRegisteredObjects = true
+    contextToConfigure.retainsRegisteredObjects = false
     contextToConfigure
       .mergePolicy = NSMergePolicy(merge: .mergeByPropertyObjectTrumpMergePolicyType)
   }

@@ -422,6 +422,7 @@ class PlayableTableCell: BasicTableCell {
     let durationTrailing = isDisplayOptionButton ?
       ((traitCollection.horizontalSizeClass == .regular) ? 30 : 30.0) : 0.0
 
+    optionsButton.accessibilityLabel = "Options"
     optionsButton.isHidden = !isDisplayOptionButton
     if isDisplayOptionButton {
       optionsButton.showsMenuAsPrimaryAction = true

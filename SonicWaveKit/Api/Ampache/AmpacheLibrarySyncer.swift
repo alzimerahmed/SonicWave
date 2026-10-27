@@ -89,7 +89,7 @@ class AmpacheLibrarySyncer: CommonLibrarySyncer, LibrarySyncer {
       Int(ceil(Double(auth.artistCount) / Double(AmpacheXmlServerApi.maxItemCountToPollAtOnce)))
     )
     try await withThrowingTaskGroup(of: Void.self) { taskGroup in
-      for index in Array(0 ... pollCountArtist) {
+      for index in Array(0 ..< pollCountArtist) {
         taskGroup.addTask { @MainActor @Sendable in
           let artistsResponse = try await self.ampacheXmlServerApi
             .requestArtists(startIndex: index * AmpacheXmlServerApi.maxItemCountToPollAtOnce)
@@ -130,7 +130,7 @@ class AmpacheLibrarySyncer: CommonLibrarySyncer, LibrarySyncer {
       Int(ceil(Double(auth.albumCount) / Double(AmpacheXmlServerApi.maxItemCountToPollAtOnce)))
     )
     try await withThrowingTaskGroup(of: Void.self) { taskGroup in
-      for index in Array(0 ... pollCountAlbum) {
+      for index in Array(0 ..< pollCountAlbum) {
         taskGroup.addTask { @MainActor @Sendable in
           let albumsResponse = try await self.ampacheXmlServerApi
             .requestAlbums(startIndex: index * AmpacheXmlServerApi.maxItemCountToPollAtOnce)

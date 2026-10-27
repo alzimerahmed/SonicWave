@@ -55,6 +55,7 @@ extension PopupPlayerVC {
   }
 
   func refreshOptionButton(button: UIButton, rootView: UIViewController?) {
+    button.accessibilityLabel = "Song options"
     var config = UIButton.Configuration.playerRound()
     config.image = .ellipsis
     config.baseForegroundColor = .label
@@ -79,12 +80,15 @@ extension PopupPlayerVC {
     case .music:
       if let playableInfo = player.currentlyPlaying,
          playableInfo.isSong {
+        button.accessibilityLabel = playableInfo.isFavorite
+          ? "Remove from favorites" : "Mark as favorite"
         config.image = playableInfo.isFavorite ? .heartFill : .heartEmpty
         config.baseForegroundColor = appDelegate.storage.settings.user
           .isOnlineMode ? .redHeart : .label
         button.isEnabled = appDelegate.storage.settings.user.isOnlineMode
       } else if let playableInfo = player.currentlyPlaying,
                 let radio = playableInfo.asRadio {
+        button.accessibilityLabel = "Open radio station website"
         config.image = .followLink
         config.baseForegroundColor = .label
         button.isEnabled = radio.siteURL != nil
@@ -94,6 +98,7 @@ extension PopupPlayerVC {
         button.isEnabled = false
       }
     case .podcast:
+      button.accessibilityLabel = "Episode info"
       config.image = .info
       config.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(scale: .large)
       config.baseForegroundColor = .label
@@ -135,17 +140,25 @@ extension PopupPlayerVC {
 
     // §2.4 artwork-adaptive layer: extract up to four dominant colors so
     // the most saturated one can become the accent; the account's
-    // `artworkTintIntensity` decides how far the tint reaches.
-    let extracted = (try? artwork.dominantColors(max: 4)) ?? []
-    artworkTint = ArtworkTintPalette(
-      extractedColors: extracted,
-      fallbackTheme: accountSetting.themePreference,
-      intensity: accountSetting.artworkTintIntensity,
-      isTrueBlack: appDelegate.isTrueBlackActive(in: traitCollection)
-    )
-    artworkGradientColors = artworkTint.gradientColors
-    applyGradientBackground(isAnimated: true)
-    applyArtworkTint()
+    // `artworkTintIntensity` decides how far the tint reaches. Pixel scan
+    // runs off-main — it's hitched the track-change animation before.
+    let themePreference = accountSetting.themePreference
+    let tintIntensity = accountSetting.artworkTintIntensity
+    Task.detached { [weak self] in
+      let extracted = (try? artwork.dominantColors(max: 4)) ?? []
+      await MainActor.run {
+        guard let self else { return }
+        artworkTint = ArtworkTintPalette(
+          extractedColors: extracted,
+          fallbackTheme: themePreference,
+          intensity: tintIntensity,
+          isTrueBlack: appDelegate.isTrueBlackActive(in: traitCollection)
+        )
+        artworkGradientColors = artworkTint.gradientColors
+        applyGradientBackground(isAnimated: true)
+        applyArtworkTint()
+      }
+    }
   }
 
   /// pushes the resolved `sonicArtwork*` palette into the surfaces that

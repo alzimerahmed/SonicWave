@@ -130,6 +130,9 @@ class PlayerControlView: UIView, UIGestureRecognizerDelegate {
     playerModeButton.tintColor = .label
     volumeButton.tintColor = .label
     optionsButton.imageView?.tintColor = .label
+    airplayButton.accessibilityLabel = "Play to another device"
+    playerModeButton.accessibilityLabel = "Switch between music and podcast mode"
+    volumeButton.accessibilityLabel = "Volume"
     applySonicStyling()
     addPaneSwipeGestures()
     refreshPlayer()

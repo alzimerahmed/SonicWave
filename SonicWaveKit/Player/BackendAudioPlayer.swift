@@ -171,6 +171,9 @@ class BackendAudioPlayer: NSObject {
   }
   /// next-track stream insert for a crossfade is in flight (async)
   private var isCrossfadePreparing = false
+  /// bumped on every begin/abort so a stale async insert can't corrupt a
+  /// newer crossfade that already claimed the spare engine
+  private var crossfadeGeneration = 0
   /// a fade is running: outgoing ramps to 0, incoming to `volumePlayer`
   private var isCrossfading = false
   /// state the 30 Hz fade ramp touches — read and written from both
@@ -477,19 +480,22 @@ class BackendAudioPlayer: NSObject {
     spareReplayGainValue = nextPlayable.replayGainTrackGain
     applyReplayGain()
     sparePlayer?.volume = 0
+    crossfadeGeneration += 1
     if isCachedInsert {
       insertCachedPlayable(playable: nextPlayable, queueType: .crossfade)
       nextPreloadedPlayable = nextPlayable
       startCrossfadeFade()
     } else {
       isCrossfadePreparing = true
+      let generation = crossfadeGeneration
       Task { @MainActor in
         do {
           try await insertStreamPlayable(playable: nextPlayable, queueType: .crossfade)
           // the pending insert landed after an abort (pause/stop/manual
-          // skip cleared the flag) or on a stale queue — drop it instead
-          // of fading it in
-          let wasAborted = !self.isCrossfadePreparing
+          // skip cleared the flag), on a stale queue, or a newer crossfade
+          // already took over — drop it instead of fading it in
+          let wasAborted =
+            !self.isCrossfadePreparing || self.crossfadeGeneration != generation
           self.isCrossfadePreparing = false
           guard !wasAborted, !self.isPreloadedNextStale else {
             self.discardSpareInsert()
@@ -634,6 +640,7 @@ class BackendAudioPlayer: NSObject {
     crossfadeTimer = nil
     isCrossfading = false
     isCrossfadePreparing = false
+    crossfadeGeneration += 1
     sparePlayer?.stop()
     // a mid-tick abort serializes against the ramp lock — the tick
     // either finishes its volume writes first (then this reset wins)

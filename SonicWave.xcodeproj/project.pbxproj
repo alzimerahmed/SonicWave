@@ -3952,8 +3952,8 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.1.1;
-				"MARKETING_VERSION[sdk=macosx*]" = 2.1.1;
+				MARKETING_VERSION = 1.0.0;
+				"MARKETING_VERSION[sdk=macosx*]" = 1.0.0;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Alzimer Ahmed. All rights reserved.";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.alzimerahmed.SonicWave";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -3992,8 +3992,8 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.1.1;
-				"MARKETING_VERSION[sdk=macosx*]" = 2.1.1;
+				MARKETING_VERSION = 1.0.0;
+				"MARKETING_VERSION[sdk=macosx*]" = 1.0.0;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Alzimer Ahmed. All rights reserved.";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.alzimerahmed.SonicWave";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -4203,8 +4203,8 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.1.1;
-				"MARKETING_VERSION[sdk=macosx*]" = 2.1.1;
+				MARKETING_VERSION = 1.0.0;
+				"MARKETING_VERSION[sdk=macosx*]" = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.alzimerahmed.SonicWave.Widgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = NO;
@@ -4246,8 +4246,8 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.1.1;
-				"MARKETING_VERSION[sdk=macosx*]" = 2.1.1;
+				MARKETING_VERSION = 1.0.0;
+				"MARKETING_VERSION[sdk=macosx*]" = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.alzimerahmed.SonicWave.Widgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = NO;
@@ -4286,7 +4286,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.1.1;
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.alzimerahmed.SonicWave.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -4324,7 +4324,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.1.1;
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.alzimerahmed.SonicWave.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -4362,7 +4362,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.1.1;
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.alzimerahmed.SonicWave;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = appletvos;
@@ -4400,7 +4400,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.1.1;
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.alzimerahmed.SonicWave;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = appletvos;
@@ -4715,7 +4715,7 @@
 				506B3A3823B4539D00E31F21 /* SonicWave v2.xcdatamodel */,
 				500BB49621CAAA2700D367CF /* SonicWave.xcdatamodel */,
 			);
-			currentVersion = 5F51B0010000000000000001 /* SonicWave v51.xcdatamodel */;
+			currentVersion = A752B0090000000000000001 /* SonicWave v52.xcdatamodel */;
 			path = SonicWave.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;

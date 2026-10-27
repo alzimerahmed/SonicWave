@@ -183,13 +183,14 @@ class MiniPlayerView: UIView {
   }()
 
   fileprivate lazy var moreButton: UIButton = {
-    let button = UIButton()
+    let button = MinimumHitAreaButton()
     button.setImage(
       .ellipsis.withConfiguration(UIImage.SymbolConfiguration(scale: .medium))
         .withRenderingMode(.alwaysTemplate),
       for: .normal
     )
     button.imageView?.tintColor = .label
+    button.accessibilityLabel = "Song options"
     button.showsMenuAsPrimaryAction = true
     return button
   }()
@@ -201,7 +202,7 @@ class MiniPlayerView: UIView {
         UIImage
           .SymbolConfiguration(pointSize: PlayerUIHandler.playButtonImagePointSize)
       )
-    let button = UIButton(configuration: config)
+    let button = MinimumHitAreaButton(configuration: config)
     button.tintColor = .label
     button.addTarget(self, action: #selector(Self.playButtonPushed), for: .touchUpInside)
     return button
@@ -216,7 +217,7 @@ class MiniPlayerView: UIView {
   fileprivate lazy var previousButton: UIButton = {
     var config = UIButton.Configuration.plain()
     config.image = .backwardFill.withConfiguration(UIImage.SymbolConfiguration(scale: .large))
-    let button = UIButton(configuration: config)
+    let button = MinimumHitAreaButton(configuration: config)
     button.tintColor = .label
     button.addTarget(self, action: #selector(Self.previousButtonPushed), for: .touchUpInside)
     return button
@@ -230,7 +231,7 @@ class MiniPlayerView: UIView {
   fileprivate lazy var nextButton: UIButton = {
     var config = UIButton.Configuration.plain()
     config.image = .forwardFill.withConfiguration(UIImage.SymbolConfiguration(scale: .large))
-    let button = UIButton(configuration: config)
+    let button = MinimumHitAreaButton(configuration: config)
     button.tintColor = .label
     button.addTarget(self, action: #selector(Self.nextButtonPushed), for: .touchUpInside)
     return button
@@ -244,7 +245,7 @@ class MiniPlayerView: UIView {
   fileprivate lazy var repeatButton: UIButton = {
     var config = UIButton.Configuration.plain()
     config.image = .repeatMenu.withConfiguration(UIImage.SymbolConfiguration(scale: .medium))
-    let button = UIButton(configuration: config)
+    let button = MinimumHitAreaButton(configuration: config)
     button.addTarget(self, action: #selector(Self.repeatButtonPushed), for: .touchUpInside)
     button
       .cornerConfiguration =
@@ -261,7 +262,7 @@ class MiniPlayerView: UIView {
   fileprivate lazy var shuffleButton: UIButton = {
     var config = UIButton.Configuration.plain()
     config.image = .shuffle.withConfiguration(UIImage.SymbolConfiguration(scale: .medium))
-    let button = UIButton(configuration: config)
+    let button = MinimumHitAreaButton(configuration: config)
     button.addTarget(self, action: #selector(Self.shuffleButtonPushed), for: .touchUpInside)
     button
       .cornerConfiguration =
@@ -282,7 +283,7 @@ class MiniPlayerView: UIView {
         UIImage
           .SymbolConfiguration(pointSize: PlayerUIHandler.bigButtonImagePointSize)
       )
-    let button = UIButton(configuration: config)
+    let button = MinimumHitAreaButton(configuration: config)
     button.tintColor = .label
     button.addTarget(self, action: #selector(Self.lyricsPressed), for: .touchUpInside)
     return button
@@ -308,8 +309,9 @@ class MiniPlayerView: UIView {
         UIImage
           .SymbolConfiguration(pointSize: PlayerUIHandler.bigButtonImagePointSize)
       )
-    let button = UIButton(configuration: config)
+    let button = MinimumHitAreaButton(configuration: config)
     button.tintColor = .label
+    button.accessibilityLabel = "Toggle playlist view"
     button.addTarget(self, action: #selector(Self.playlistPressed), for: .touchUpInside)
     return button
   }()
@@ -334,8 +336,9 @@ class MiniPlayerView: UIView {
         UIImage
           .SymbolConfiguration(pointSize: PlayerUIHandler.bigButtonImagePointSize)
       )
-    let button = UIButton(configuration: config)
+    let button = MinimumHitAreaButton(configuration: config)
     button.tintColor = .label
+    button.accessibilityLabel = "Play to another device"
     button.addTarget(self, action: #selector(Self.airplayButtonPushed), for: .touchUpInside)
     return button
   }()
@@ -355,8 +358,9 @@ class MiniPlayerView: UIView {
         UIImage
           .SymbolConfiguration(pointSize: PlayerUIHandler.bigButtonImagePointSize)
       )
-    let button = UIButton(configuration: config)
+    let button = MinimumHitAreaButton(configuration: config)
     button.tintColor = .label
+    button.accessibilityLabel = "Volume"
     button.addTarget(self, action: #selector(Self.volumeButtonPushed), for: .touchUpInside)
     return button
   }()

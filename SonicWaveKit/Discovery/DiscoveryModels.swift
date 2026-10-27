@@ -254,8 +254,9 @@ public enum ShareUrlRewriter {
     urlComp.scheme = baseComp.scheme ?? urlComp.scheme
     urlComp.host = baseComp.host
     urlComp.port = baseComp.port
-    urlComp.user = baseComp.user
-    urlComp.password = baseComp.password
+    // never propagate userinfo — a public share link must not carry credentials
+    urlComp.user = nil
+    urlComp.password = nil
     // the override may carry a subpath (reverse proxy) — prepend it so
     // `/share/<id>` resolves under `/music/share/<id>`, not the domain root
     let basePath = baseComp.path

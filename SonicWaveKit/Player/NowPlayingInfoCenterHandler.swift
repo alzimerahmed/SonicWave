@@ -172,9 +172,15 @@ extension NowPlayingInfoCenterHandler: MusicPlayable {
   }
 
   public func didElapsedTimeChange() {
-    if let curPlayable = musicPlayer.currentlyPlaying {
-      updateNowPlayingInfo(playable: curPlayable)
-    }
+    // 1 Hz tick — patch only the timing keys instead of rebuilding the whole
+    // now-playing dictionary (artwork download kick, settings decode) each second
+    guard musicPlayer.currentlyPlaying != nil else { return }
+    var info = nowPlayingInfoCenter.nowPlayingInfo ?? [:]
+    info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = backendAudioPlayer.elapsedTime
+    info[MPNowPlayingInfoPropertyPlaybackRate] = NSNumber(
+      value: backendAudioPlayer.playbackRate.asDouble
+    )
+    nowPlayingInfoCenter.nowPlayingInfo = info
   }
 
   public func didPlaylistChange() {}

@@ -23,7 +23,6 @@ import Foundation
 import os.log
 
 class GenericXmlParser: NSObject, XMLParserDelegate {
-  static let debugPrint = false
   /// Background tasks that produce to much CPU load will be terminated by iOS:
   /// Event:               cpu usage
   /// Action taken:    Process killed
@@ -66,9 +65,6 @@ class GenericXmlParser: NSObject, XMLParserDelegate {
     attributes attributeDict: [String: String]
   ) {
     buffer = ""
-    if Self.debugPrint {
-      os_log("<%s, %s>", log: log, type: .debug, elementName, attributeDict.description)
-    }
   }
 
   func parser(
@@ -77,32 +73,10 @@ class GenericXmlParser: NSObject, XMLParserDelegate {
     namespaceURI: String?,
     qualifiedName qName: String?
   ) {
-    if Self.debugPrint {
-      if !buffer.isEmpty {
-        os_log("%s", log: log, type: .debug, buffer)
-      }
-      os_log("</%s>", log: log, type: .debug, elementName)
-    }
     buffer = ""
     let elapsedTime = DispatchTime.now().uptimeNanoseconds - startTime.uptimeNanoseconds
     if elapsedTime > Self.activeTimeDurationNanoSec {
-      if Self.debugPrint {
-        os_log(
-          "Parsing took longer then %f milliseconds",
-          log: log,
-          type: .debug,
-          Double(Double(Self.activeTimeDurationNanoSec) / 1_000_000)
-        )
-      }
       if performanceMonitor.shouldSlowDownExecution {
-        if Self.debugPrint {
-          os_log(
-            "Parsing took long: sleep for %f milliseconds to reduce CPU load",
-            log: log,
-            type: .debug,
-            Double(Double(Self.sleepTimeDurationMicroSec) / 1_000)
-          )
-        }
         usleep(Self.sleepTimeDurationMicroSec)
       }
       startTime = DispatchTime.now()

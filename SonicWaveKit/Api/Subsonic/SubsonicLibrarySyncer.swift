@@ -140,7 +140,7 @@ class SubsonicLibrarySyncer: CommonLibrarySyncer, LibrarySyncer {
       }
       statusNotifyier?.notifySyncStarted(ofType: .album, totalCount: pollCountArtist)
       try await withThrowingTaskGroup(of: Void.self) { taskGroup in
-        for index in Array(0 ... pollCountArtist) {
+        for index in Array(0 ..< pollCountArtist) {
           taskGroup.addTask { @MainActor @Sendable in
             let albumsResponse = try await self.subsonicServerApi.requestAlbums(
               offset: index * Self.maxItemCountToPollAtOnce,
@@ -1192,7 +1192,7 @@ class SubsonicLibrarySyncer: CommonLibrarySyncer, LibrarySyncer {
     os_log("Upload OrderChange on playlist \"%s\"", log: log, type: .info, playlist.name)
     try await validatePlaylistId(playlist: playlist)
     let songIdsToAdd = playlist.playables.compactMap { $0.id }
-    let songIndicesToRemove = Array(0 ... songIdsToAdd.count - 1)
+    let songIndicesToRemove = Array(0 ..< songIdsToAdd.count)
     let response = try await subsonicServerApi.requestPlaylistUpdate(
       id: playlist.id,
       name: playlist.name,

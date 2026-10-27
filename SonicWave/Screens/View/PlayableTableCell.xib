@@ -132,7 +132,7 @@
                             <fontDescription key="fontDescription" type="system" pointSize="14"/>
                         </variation>
                     </label>
-                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" preferredBehavioralStyle="pad" translatesAutoresizingMaskIntoConstraints="NO" id="SRF-Yt-kwz" userLabel="Options Button">
+                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" preferredBehavioralStyle="pad" translatesAutoresizingMaskIntoConstraints="NO" id="SRF-Yt-kwz" customClass="MinimumHitAreaButton" customModule="SonicWave" userLabel="Options Button">
                         <rect key="frame" x="559" y="12.5" width="30" height="45"/>
                         <constraints>
                             <constraint firstAttribute="width" constant="30" id="im2-Rb-wis"/>

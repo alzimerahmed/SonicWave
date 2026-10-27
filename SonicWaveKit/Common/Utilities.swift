@@ -394,19 +394,25 @@ extension NSData {
   }
 }
 
-extension Data {
-  public static func fetch(fromUrlString urlString: String) -> Data? {
-    var data: Data?
-    guard let url = URL(string: urlString) else {
-      return nil
+extension String {
+  /// Removes auth/session query params before a server-provided URL is
+  /// persisted to the library (Ampache embeds `ssid`/`auth` tokens in entity
+  /// `<url>` fields; Subsonic URLs can carry `u`/`t`/`s`/`p`). Playback URLs
+  /// are always regenerated — persisted copies must not hold credentials.
+  var strippingAuthQueryItems: String {
+    guard var comp = URLComponents(string: self),
+          comp.queryItems != nil
+    else { return self }
+    let stripped = ["ssid", "auth", "u", "t", "s", "p", "uid"]
+    comp.queryItems = comp.queryItems?.filter {
+      !stripped.contains($0.name.lowercased())
     }
-    do {
-      let dataFromURL = try Data(contentsOf: url)
-      data = dataFromURL
-    } catch {}
-    return data
+    if comp.queryItems?.isEmpty == true { comp.queryItems = nil }
+    return comp.string ?? self
   }
+}
 
+extension Data {
   public var sizeInByte: Int64 {
     Int64(count)
   }

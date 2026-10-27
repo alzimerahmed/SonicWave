@@ -51,7 +51,13 @@ extension LibraryEntityImage {
 
 @MainActor
 public class LibraryEntityImage: RoundedImage {
-  static private let cache: NSCache<NSString, UIImage> = NSCache()
+  static private let cache: NSCache<NSString, UIImage> = {
+    let cache = NSCache<NSString, UIImage>()
+    // decoded artwork at native server resolution runs ~4-36 MB/bitmap —
+    // bound the count so fast-scrolling doesn't pin the whole library
+    cache.countLimit = 300
+    return cache
+  }()
 
   private let appDelegate: AmperKit
 

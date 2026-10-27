@@ -467,10 +467,17 @@ class LoginVC: UIViewController {
   }()
 
   func login() {
-    guard let serverUrl = serverUrlTF.text?.trimmingCharacters(in: .whitespacesAndNewlines),
+    guard var serverUrl = serverUrlTF.text?.trimmingCharacters(in: .whitespacesAndNewlines),
           !serverUrl.isEmpty else {
       showErrorMsg(message: "No server URL given!")
       return
+    }
+    // userinfo (`https://user:pass@host`) must not persist — credentials live
+    // in the dedicated fields (and Keychain), not inside the stored URL
+    if var comp = URLComponents(string: serverUrl), comp.user != nil || comp.password != nil {
+      comp.user = nil
+      comp.password = nil
+      if let stripped = comp.string { serverUrl = stripped }
     }
     guard serverUrl.isHyperTextProtocolProvided else {
       showErrorMsg(message: "Please provide either 'https://' or 'http://' in your server URL.")

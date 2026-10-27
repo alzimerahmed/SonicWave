@@ -20,6 +20,7 @@
 //
 
 import UIKit
+import os.log
 
 // MARK: - AppSettings
 
@@ -775,7 +776,9 @@ public struct AmperfySettings: Sendable, Codable {
           data,
           forKey: PersistentStorage.UserDefaultsKey.SettingsApp.rawValue
         )
-      } catch {}
+      } catch {
+        os_log("Failed to persist app settings: %s", type: .error, error.localizedDescription)
+      }
     }
   }
 
@@ -799,7 +802,9 @@ public struct AmperfySettings: Sendable, Codable {
           data,
           forKey: PersistentStorage.UserDefaultsKey.SettingsUser.rawValue
         )
-      } catch {}
+      } catch {
+        os_log("Failed to persist user settings: %s", type: .error, error.localizedDescription)
+      }
     }
   }
 
@@ -823,7 +828,9 @@ public struct AmperfySettings: Sendable, Codable {
           data,
           forKey: PersistentStorage.UserDefaultsKey.SettingsAccount.rawValue
         )
-      } catch {}
+      } catch {
+        os_log("Failed to persist account settings: %s", type: .error, error.localizedDescription)
+      }
     }
   }
 }

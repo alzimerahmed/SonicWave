@@ -314,10 +314,8 @@ public class LibraryStorage: PlayableFileCachable {
     fetchRequest.sortDescriptors = [NSSortDescriptor(key: keyPathString, ascending: true)]
     fetchRequest.propertiesToGroupBy = [keyPathString]
     fetchRequest.propertiesToFetch = [keyPathString, countExpr]
-    fetchRequest.havingPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
-      getFetchPredicate(forAccount: account),
-      NSPredicate(format: "%@ > 1", countVariableExpr),
-    ])
+    fetchRequest.predicate = getFetchPredicate(forAccount: account)
+    fetchRequest.havingPredicate = NSPredicate(format: "%@ > 1", countVariableExpr)
 
     let results = (try? context.fetch(fetchRequest)) ?? [NSDictionary]()
     return results.compactMap {

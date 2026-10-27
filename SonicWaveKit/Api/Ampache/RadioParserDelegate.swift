@@ -72,7 +72,7 @@ class RadioParserDelegate: AmpacheXmlLibParser {
     case "name":
       radioBuffer?.title = buffer
     case "url":
-      radioBuffer?.url = buffer
+      radioBuffer?.url = buffer.strippingAuthQueryItems
     case "site_url":
       radioBuffer?.siteURL = URL(string: buffer)
     case "live_stream":

@@ -21,6 +21,7 @@
 
 import CoreData
 import Foundation
+import os.log
 
 extension NSFetchedResultsController {
   @objc
@@ -28,7 +29,7 @@ extension NSFetchedResultsController {
     do {
       try performFetch()
     } catch let error as NSError {
-      print("Unable to perform fetch: \(error.localizedDescription)")
+      os_log("Unable to perform fetch: %s", type: .error, error.localizedDescription)
     }
   }
 

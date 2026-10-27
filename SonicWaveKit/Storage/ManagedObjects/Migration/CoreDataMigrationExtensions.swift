@@ -9,8 +9,8 @@ extension NSManagedObjectModel {
   // MARK: - Compatible
 
   static func compatibleModelForStoreMetadata(_ metadata: [String: Any]) -> NSManagedObjectModel? {
-    let mainBundle = Bundle.main
-    return NSManagedObjectModel.mergedModel(from: [mainBundle], forStoreMetadata: metadata)
+    let bundles = [Bundle.main, Bundle(for: CoreDataPersistentManager.self)]
+    return NSManagedObjectModel.mergedModel(from: bundles, forStoreMetadata: metadata)
   }
 }
 
@@ -18,22 +18,25 @@ extension NSManagedObjectModel {
   // MARK: - Resource
 
   static func managedObjectModel(forResource resource: String) -> NSManagedObjectModel {
-    let mainBundle = Bundle.main
+    let bundles = [Bundle.main, Bundle(for: CoreDataPersistentManager.self)]
     let subdirectory = "SonicWave.momd"
 
     var omoURL: URL?
-    if #available(iOS 11, *) {
-      omoURL = mainBundle.url(
+    var momURL: URL?
+    for bundle in bundles {
+      if #available(iOS 11, *) {
+        omoURL = omoURL ?? bundle.url(
+          forResource: resource,
+          withExtension: "omo",
+          subdirectory: subdirectory
+        ) // optimized model file
+      }
+      momURL = momURL ?? bundle.url(
         forResource: resource,
-        withExtension: "omo",
+        withExtension: "mom",
         subdirectory: subdirectory
-      ) // optimized model file
+      )
     }
-    let momURL = mainBundle.url(
-      forResource: resource,
-      withExtension: "mom",
-      subdirectory: subdirectory
-    )
 
     guard let url = omoURL ?? momURL else {
       fatalError("unable to find model in bundle")

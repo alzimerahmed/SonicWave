@@ -74,7 +74,7 @@ class PlayableParserDelegate: AmpacheXmlLibParser {
     case "track":
       playableBuffer?.track = Int(buffer) ?? 0
     case "url":
-      playableBuffer?.url = buffer
+      playableBuffer?.url = buffer.strippingAuthQueryItems
     case "year":
       playableBuffer?.year = Int(buffer) ?? 0
     case "time":

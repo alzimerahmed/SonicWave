@@ -211,6 +211,7 @@ class AlbumShuffleHandler {
       let group = groups.remove(at: groupIndex)
       startIndex = group.playables
         .firstIndex(where: { $0.objectID == startPlayable.objectID }) ?? 0
+      groups.shuffle()
       groups.insert(group, at: 0)
     } else {
       groups.shuffle()
