@@ -102,5 +102,7 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>WKCompanionAppBundleIdentifier</key>
+	<string>com.alzimerahmed.SonicWave.watchkitapp</string>
 </dict>
 </plist>

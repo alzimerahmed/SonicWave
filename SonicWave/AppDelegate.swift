@@ -94,6 +94,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     WidgetBridge(player: player, storage: storage)
   }()
 
+  #if canImport(WatchConnectivity)
+    /// watch remote-control bridge (G15) — WCSession handler + state
+    /// publisher; `start()` is idempotent and safe to call from both
+    /// manager-start seams below. WatchConnectivity is absent on
+    /// Catalyst, hence the canImport gate.
+    public lazy var watchBridge = {
+      WatchBridge(player: player, storage: storage)
+    }()
+  #endif
+
   public func getMeta(_ accountInfo: AccountInfo) -> MetaManager {
     AmperKit.shared.getMeta(accountInfo)
   }
@@ -320,6 +330,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
       player.addNotifier(notifier: self)
     }
     widgetBridge.start()
+    #if canImport(WatchConnectivity)
+      watchBridge.start()
+    #endif
     // G27: a sync just completed — (re)build the Spotlight index
     Task { await AmperKit.shared.spotlightIndexer.start(forceFullReindex: true) }
   }
@@ -334,6 +347,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     isAlreadyRegisteredToPlayer = true
     player.addNotifier(notifier: self)
     widgetBridge.start()
+    #if canImport(WatchConnectivity)
+      watchBridge.start()
+    #endif
     // G27: start delta observation; one-time full index if never done
     Task { await AmperKit.shared.spotlightIndexer.start() }
   }
