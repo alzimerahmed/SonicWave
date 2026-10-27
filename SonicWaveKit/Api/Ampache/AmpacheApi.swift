@@ -358,13 +358,16 @@ final class AmpacheApi: BackendApi {
     let requests: [(command: String, oid: String?, type: String?, clear: Bool?)]
     switch action {
     case .get:
-      return getJukeboxPlaylist().map { _ in true }
+      return try await getJukeboxPlaylist().map { _ in true }
     case .start:
       requests = [("play", nil, nil, nil)]
     case .stop:
       requests = [("stop", nil, nil, nil)]
     case let .skip(index, _):
-      // Ampache `skip` accepts no index — usable only as next-track
+      // Ampache `skip` accepts no index — it is strictly "next", so
+      // the requested index is verified against the live playlist in
+      // the request block below (`index` must equal currentIndex + 1,
+      // which is the only contract the one caller uses)
       guard index >= 0 else { return .notSupported }
       requests = [("skip", nil, nil, nil)]
     case let .add(ids):
@@ -376,6 +379,14 @@ final class AmpacheApi: BackendApi {
       return .notSupported
     }
     return try await unsupportedIfMissing {
+      if case let .skip(index, _) = action {
+        // Ampache `skip` is next-only and takes no index — sending it
+        // for any other target would silently land on the wrong entry,
+        // so verify against the live playlist before issuing it
+        guard case .supported(let playlist) = try await getJukeboxPlaylist(),
+              index == playlist.currentIndex + 1
+        else { return .notSupported }
+      }
       for req in requests {
         let response = try await self.ampacheXmlServerApi.requestLocalplay(
           command: req.command,

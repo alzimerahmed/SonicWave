@@ -301,9 +301,9 @@ public struct JukeboxEntry: Sendable, Equatable {
 
 /// G11: server-side jukebox playlist state (Subsonic `jukeboxControl
 /// action=get` / Ampache `localplay` + `localplay_songs`). `isPlaying` is
-/// unknown for Ampache `localplay` — the status answer carries no
-/// transport state, so it reports `true` whenever the playlist is
-/// non-empty and the user asked it to play.
+/// real transport state for Subsonic only — Ampache `localplay_songs`
+/// carries no play state at all, so Ampache payloads always report
+/// `false` rather than guess.
 public struct JukeboxPlaylist: Sendable, Equatable {
   public var currentIndex: Int
   public var isPlaying: Bool
@@ -344,7 +344,9 @@ public enum JukeboxAction: Sendable, Equatable {
   case start
   case stop
   /// jump to the playlist entry at `index` (0-based), `offsetSeconds`
-  /// into it — Subsonic only; Ampache maps this to its `skip` command
+  /// into it — Subsonic only; Ampache has a next-only `skip` command, so
+  /// it verifies `index == currentIndex + 1` before issuing the request
+  /// (any other target has no honest Ampache equivalent → `.notSupported`)
   case skip(index: Int, offsetSeconds: Int)
   /// append media file ids to the jukebox playlist
   case add(ids: [String])
