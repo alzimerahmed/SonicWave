@@ -1,0 +1,174 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Album artwork" : {
+      "comment" : "VoiceOver label for the now-playing artwork image",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Album artwork"
+          }
+        }
+      }
+    },
+    "Install SonicWave on your iPhone to control playback." : {
+      "comment" : "Shown on the watch when the iPhone companion app is missing",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Install SonicWave on your iPhone to control playback."
+          }
+        }
+      }
+    },
+    "LIVE" : {
+      "comment" : "Live radio indicator in Now Playing",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LIVE"
+          }
+        }
+      }
+    },
+    "Next track" : {
+      "comment" : "VoiceOver label for the next-track transport button",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next track"
+          }
+        }
+      }
+    },
+    "No artwork" : {
+      "comment" : "VoiceOver label when no album artwork is available",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No artwork"
+          }
+        }
+      }
+    },
+    "Nothing playing" : {
+      "comment" : "Now Playing empty state title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing playing"
+          }
+        }
+      }
+    },
+    "Open SonicWave on your iPhone for live control" : {
+      "comment" : "Shown when the iPhone app is not reachable",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open SonicWave on your iPhone for live control"
+          }
+        }
+      }
+    },
+    "Pause" : {
+      "comment" : "VoiceOver label for the pause transport button",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pause"
+          }
+        }
+      }
+    },
+    "Play" : {
+      "comment" : "VoiceOver label for the play transport button",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play"
+          }
+        }
+      }
+    },
+    "Playback progress" : {
+      "comment" : "VoiceOver label for the track progress bar",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Playback progress"
+          }
+        }
+      }
+    },
+    "Previous track" : {
+      "comment" : "VoiceOver label for the previous-track transport button",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previous track"
+          }
+        }
+      }
+    },
+    "Start playback on your iPhone" : {
+      "comment" : "Now Playing empty state subtitle",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start playback on your iPhone"
+          }
+        }
+      }
+    },
+    "Up Next" : {
+      "comment" : "Queue glimpse section title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up Next"
+          }
+        }
+      }
+    },
+    "Volume" : {
+      "comment" : "VoiceOver label for the volume slider",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volume"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
