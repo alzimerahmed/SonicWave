@@ -7,6 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A752B0020000000000000002 /* PlayEventMO+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = A752B0020000000000000001 /* PlayEventMO+CoreDataClass.swift */; };
+		A752B0030000000000000002 /* PlayEventMO+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = A752B0030000000000000001 /* PlayEventMO+CoreDataProperties.swift */; };
+		A752B0040000000000000002 /* PlayEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = A752B0040000000000000001 /* PlayEvent.swift */; };
+		A752B0050000000000000002 /* ListeningHistoryTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A752B0050000000000000001 /* ListeningHistoryTracker.swift */; };
+		A752B0060000000000000002 /* ListeningAnalytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = A752B0060000000000000001 /* ListeningAnalytics.swift */; };
+		A752B0070000000000000002 /* ListeningStatsVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = A752B0070000000000000001 /* ListeningStatsVC.swift */; };
+		A752B0080000000000000002 /* ListeningStatsTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A752B0080000000000000001 /* ListeningStatsTest.swift */; };
 		0D15C0DE0000000000000002 /* DiscoveryShelfCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D15C0DE0000000000000001 /* DiscoveryShelfCell.swift */; };
 		0D15C0DE0000000000000004 /* SimilarArtistsShelfCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D15C0DE0000000000000003 /* SimilarArtistsShelfCell.swift */; };
 		0D15C0DE0000000000000006 /* PlayableListVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D15C0DE0000000000000005 /* PlayableListVC.swift */; };
@@ -719,6 +726,14 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A752B0020000000000000001 /* PlayEventMO+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PlayEventMO+CoreDataClass.swift"; sourceTree = "<group>"; };
+		A752B0030000000000000001 /* PlayEventMO+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PlayEventMO+CoreDataProperties.swift"; sourceTree = "<group>"; };
+		A752B0040000000000000001 /* PlayEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayEvent.swift; sourceTree = "<group>"; };
+		A752B0050000000000000001 /* ListeningHistoryTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningHistoryTracker.swift; sourceTree = "<group>"; };
+		A752B0060000000000000001 /* ListeningAnalytics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningAnalytics.swift; sourceTree = "<group>"; };
+		A752B0070000000000000001 /* ListeningStatsVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningStatsVC.swift; sourceTree = "<group>"; };
+		A752B0080000000000000001 /* ListeningStatsTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningStatsTest.swift; sourceTree = "<group>"; };
+		A752B0090000000000000001 /* SonicWave v52.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "SonicWave v52.xcdatamodel"; sourceTree = "<group>"; };
 		0D15C0DE0000000000000001 /* DiscoveryShelfCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveryShelfCell.swift; sourceTree = "<group>"; };
 		0D15C0DE0000000000000003 /* SimilarArtistsShelfCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimilarArtistsShelfCell.swift; sourceTree = "<group>"; };
 		0D15C0DE0000000000000005 /* PlayableListVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayableListVC.swift; sourceTree = "<group>"; };
@@ -1507,6 +1522,8 @@
 				5046DAF22689B97600B3C37E /* AbstractPlayableMO+CoreDataProperties.swift */,
 				50814C9F27D9FF660072738F /* ScrobbleEntryMO+CoreDataClass.swift */,
 				50814CA027D9FF660072738F /* ScrobbleEntryMO+CoreDataProperties.swift */,
+				A752B0020000000000000001 /* PlayEventMO+CoreDataClass.swift */,
+				A752B0030000000000000001 /* PlayEventMO+CoreDataProperties.swift */,
 				505CA1F72B87387600AA81CD /* SearchHistoryItemMO+CoreDataClass.swift */,
 				505CA1F82B87387600AA81CD /* SearchHistoryItemMO+CoreDataProperties.swift */,
 				50F81ED223BF6B1D00EAAC3E /* PlayerMO+CoreDataClass.swift */,
@@ -2010,6 +2027,7 @@
 				50C16BF721E10E7500F086F0 /* Playlist.swift */,
 				50B798A823B6E5FF00551E62 /* PlaylistItem.swift */,
 				50947E0227DA011F00C368D7 /* ScrobbleEntry.swift */,
+				A752B0040000000000000001 /* PlayEvent.swift */,
 				505CA1FD2B8739AE00AA81CD /* SearchHistoryItem.swift */,
 				505905BB261D980C007C34CB /* PlayableContainable.swift */,
 				50CDF20B264BC72800F83EF6 /* LogEntry.swift */,
@@ -2148,6 +2166,7 @@
 				50DEEE03265E25A40073FF20 /* MusicFoldersVC.swift */,
 				11F1E5A00000000000000009 /* JukeboxVC.swift */,
 				11F1E5A00000000000000008 /* BookmarksVC.swift */,
+				A752B0070000000000000001 /* ListeningStatsVC.swift */,
 				50DEEE09265E392C0073FF20 /* IndexesVC.swift */,
 				50DEEE0B265E3F9D0073FF20 /* DirectoriesVC.swift */,
 				507361DF2632BA3B005F151D /* GenresVC.swift */,
@@ -2237,6 +2256,7 @@
 			isa = PBXGroup;
 			children = (
 				5086F87322384A4300546F5A /* Api */,
+				A752B0010000000000000001 /* Analytics */,
 				11F1E5A00000000000002002 /* Lidarr */,
 				11F1E5A00000000000000007 /* LidarrApiClient.swift */,
 				11F1E5A00000000000002001 /* Output */,
@@ -2495,6 +2515,7 @@
 				5095F98D23CA948A008B0805 /* Player */,
 				5095F98E23CA949C008B0805 /* Storage */,
 				7E8D2A01000000000000000F /* Lyrics */,
+				A752B00A0000000000000001 /* Analytics */,
 				50B798B323B8664700551E62 /* HelperTest.swift */,
 			);
 			path = Cases;
@@ -2603,6 +2624,23 @@
 			children = (
 			);
 			path = Lidarr;
+			sourceTree = "<group>";
+		};
+		A752B0010000000000000001 /* Analytics */ = {
+			isa = PBXGroup;
+			children = (
+				A752B0050000000000000001 /* ListeningHistoryTracker.swift */,
+				A752B0060000000000000001 /* ListeningAnalytics.swift */,
+			);
+			path = Analytics;
+			sourceTree = "<group>";
+		};
+		A752B00A0000000000000001 /* Analytics */ = {
+			isa = PBXGroup;
+			children = (
+				A752B0080000000000000001 /* ListeningStatsTest.swift */,
+			);
+			path = Analytics;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -2965,6 +3003,7 @@
 				11F1E5A00000000000001010 /* OutputTargetsVC.swift in Sources */,
 				11F1E5A00000000000001009 /* JukeboxVC.swift in Sources */,
 				11F1E5A00000000000001008 /* BookmarksVC.swift in Sources */,
+				A752B0070000000000000002 /* ListeningStatsVC.swift in Sources */,
 				50AAB9F52F015517004A39C6 /* SeekToPlaybackTimeAppEnum.swift in Sources */,
 				50DEEE0A265E392C0073FF20 /* IndexesVC.swift in Sources */,
 				50E1D39A2B8BEA540001A572 /* SplitVC.swift in Sources */,
@@ -3221,6 +3260,8 @@
 				50CEC6412D1EDE1100D0E696 /* Radio.swift in Sources */,
 				50C9D68C284FAA6C007F18D0 /* ScrobbleEntryMO+CoreDataClass.swift in Sources */,
 				50C9D6A0284FAA6C007F18D0 /* ScrobbleEntryMO+CoreDataProperties.swift in Sources */,
+				A752B0020000000000000002 /* PlayEventMO+CoreDataClass.swift in Sources */,
+				A752B0030000000000000002 /* PlayEventMO+CoreDataProperties.swift in Sources */,
 				50C9D6E9284FACAF007F18D0 /* ArtworkCollection.swift in Sources */,
 				50C9D658284FAA02007F18D0 /* SsXmlParser.swift in Sources */,
 				505CA1FA2B87387600AA81CD /* SearchHistoryItemMO+CoreDataClass.swift in Sources */,
@@ -3305,6 +3346,9 @@
 				50AE79AE2C1E23930085CBB3 /* SsOpenSubsonicExtensionsParserDelegate.swift in Sources */,
 				50C9D671284FAA4D007F18D0 /* Identifyable.swift in Sources */,
 				50C9D6B2284FAA87007F18D0 /* ScrobbleEntry.swift in Sources */,
+				A752B0040000000000000002 /* PlayEvent.swift in Sources */,
+				A752B0050000000000000002 /* ListeningHistoryTracker.swift in Sources */,
+				A752B0060000000000000002 /* ListeningAnalytics.swift in Sources */,
 				50AB3B462F03119800556CE4 /* GenerativeArtView.swift in Sources */,
 				50AB3B472F03119800556CE4 /* WaveformView.swift in Sources */,
 				50AB3B482F03119800556CE4 /* SpectrumBarsView.swift in Sources */,
@@ -3436,6 +3480,7 @@
 				502B8A532EE0D354004CA3AD /* AccountTest.swift in Sources */,
 				5F50B0010000000000000003 /* OfflineFirstSchemaV50Test.swift in Sources */,
 				5F51B0010000000000000003 /* SmartPlaylistSchemaV51Test.swift in Sources */,
+				A752B0080000000000000002 /* ListeningStatsTest.swift in Sources */,
 				6AC5D1010000000000000006 /* SsPlayQueueParserTest.swift in Sources */,
 				6AC5D1010000000000000008 /* SsSavePlayQueueRequestTest.swift in Sources */,
 				11F1E5A00000000000001013 /* Phase11ApiTest.swift in Sources */,
@@ -4207,6 +4252,7 @@
 		500BB49521CAAA2700D367CF /* SonicWave.xcdatamodeld */ = {
 			isa = XCVersionGroup;
 			children = (
+				A752B0090000000000000001 /* SonicWave v52.xcdatamodel */,
 				5F51B0010000000000000001 /* SonicWave v51.xcdatamodel */,
 				5F50B0010000000000000001 /* SonicWave v50.xcdatamodel */,
 				506C314D2EE6D2100011A2C3 /* SonicWave v49.xcdatamodel */,

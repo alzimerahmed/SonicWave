@@ -287,6 +287,24 @@ public class LibraryUpdater {
         type: .info
       )
     }
+    if storage.settings.app.librarySyncVersion < .v24 {
+      storage
+        .settings.app.librarySyncVersion =
+        .v24 // if App crashes don't do this step again -> This step is only for convenience
+      os_log(
+        "Perform blocking library update (START): PlayEvent entity",
+        log: self.log,
+        type: .info
+      )
+      // no backfill needed: PlayEvent rows are created by
+      // ListeningHistoryTracker from now on — pre-v52 listening history
+      // simply starts empty (stats screen shows the empty state)
+      os_log(
+        "Perform blocking library update (DONE): PlayEvent entity",
+        log: self.log,
+        type: .info
+      )
+    }
   }
 
   /// Two-tier storage (G6, CoreDataMigrationVersion v50):

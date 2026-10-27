@@ -64,6 +64,8 @@ enum CoreDataMigrationVersion: String, CaseIterable {
     "SonicWave v50" // Offline-first: AbstractPlayable.downloadTier (cache vs pinned), Playlist.isWatchedForAutoDownload, Player play-queue sync markers, Account.lastLibrarySyncDate
   case v51 =
     "SonicWave v51" // Smart playlists + local dislike: AbstractPlayable.isDisliked, Playlist.isSmartPlaylist/isServerReadOnly/smartCriteriaJson
+  case v52 =
+    "SonicWave v52" // Listening analytics (G14): PlayEvent entity — per-play history rows w/ denormalized track snapshot
 
   // MARK: - Current
 
@@ -180,6 +182,8 @@ enum CoreDataMigrationVersion: String, CaseIterable {
     case .v50:
       return .v51
     case .v51:
+      return .v52
+    case .v52:
       return nil
     }
   }

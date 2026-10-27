@@ -70,6 +70,7 @@ public class LibraryStorage: PlayableFileCachable {
     Radio.typeName,
     Download.typeName,
     ScrobbleEntry.typeName,
+    PlayEvent.typeName,
     SearchHistoryItem.typeName,
     // Accounts are not going to get deleted
   ]
@@ -623,6 +624,51 @@ public class LibraryStorage: PlayableFileCachable {
     let scrobbleEntryMO = ScrobbleEntryMO(context: context)
     scrobbleEntryMO.account = account.managedObject
     return ScrobbleEntry(managedObject: scrobbleEntryMO)
+  }
+
+  /// G14 listening analytics — one row per finished listening session;
+  /// written by `ListeningHistoryTracker` on the main context
+  func createPlayEvent(account: Account) -> PlayEvent {
+    let playEventMO = PlayEventMO(context: context)
+    playEventMO.account = account.managedObject
+    return PlayEvent(managedObject: playEventMO)
+  }
+
+  /// play-event count of an account — `count(for:)` stays in SQLite so
+  /// the stats empty-state check never materializes rows
+  func getPlayEventCount(for account: Account) -> Int {
+    let fetchRequest = PlayEventMO.fetchRequest()
+    fetchRequest.predicate = getFetchPredicate(forAccount: account)
+    return (try? context.count(for: fetchRequest)) ?? 0
+  }
+
+  /// play events of an account, newest first; `since` scopes the fetch
+  /// to the stats period so the DB never returns more than it must
+  func getPlayEvents(for account: Account, since: Date?) -> [PlayEvent] {
+    let fetchRequest = PlayEventMO.fetchRequest()
+    fetchRequest.sortDescriptors = [
+      NSSortDescriptor(key: #keyPath(PlayEventMO.date), ascending: false),
+    ]
+    var predicates = [getFetchPredicate(forAccount: account)]
+    if let since {
+      predicates.append(NSPredicate(format: "%K >= %@", #keyPath(PlayEventMO.date), since as NSDate))
+    }
+    fetchRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
+    let entries = try? context.fetch(fetchRequest)
+    return entries?.compactMap { PlayEvent(managedObject: $0) } ?? [PlayEvent]()
+  }
+
+  /// privacy: "Clear Listening History" — wipes every account's events
+  /// in one batch delete (batch deletes don't fire merge notifications;
+  /// callers on the main context should refetch afterwards anyway)
+  public func deleteAllPlayEvents() {
+    let fetchRequest: NSFetchRequest<NSFetchRequestResult> = PlayEventMO.fetchRequest()
+    clearStorage(fetchRequest: fetchRequest)
+    saveContext()
+  }
+
+  func deletePlayEvent(_ playEvent: PlayEvent) {
+    context.delete(playEvent.managedObject)
   }
 
   func deleteRadio(_ radio: Radio) {
@@ -3150,6 +3196,13 @@ public class LibraryStorage: PlayableFileCachable {
     // Scrobble Entries
     do {
       let request: NSFetchRequest<ScrobbleEntryMO> = ScrobbleEntryMO.fetchRequest()
+      request.predicate = getFetchPredicate(forAccount: account)
+      clearStorage(fetchRequest: request as! NSFetchRequest<NSFetchRequestResult>)
+    }
+
+    // Play Events (listening history)
+    do {
+      let request: NSFetchRequest<PlayEventMO> = PlayEventMO.fetchRequest()
       request.predicate = getFetchPredicate(forAccount: account)
       clearStorage(fetchRequest: request as! NSFetchRequest<NSFetchRequestResult>)
     }

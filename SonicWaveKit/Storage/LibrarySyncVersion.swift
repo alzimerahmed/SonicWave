@@ -45,6 +45,8 @@ public enum LibrarySyncVersion: Int, Comparable, CustomStringConvertible, Sendab
     16 // Offline-first state: AbstractPlayable.downloadTier, play-queue sync markers, Account.lastLibrarySyncDate (CoreDataMigrationVersion v50)
   case v23 =
     17 // Smart playlists + local dislike: AbstractPlayable.isDisliked, Playlist.isSmartPlaylist/isServerReadOnly/smartCriteriaJson (CoreDataMigrationVersion v51)
+  case v24 =
+    18 // Listening analytics: PlayEvent entity (CoreDataMigrationVersion v52)
 
   public var description: String {
     switch self {
@@ -66,6 +68,7 @@ public enum LibrarySyncVersion: Int, Comparable, CustomStringConvertible, Sendab
     case .v21: return "v21"
     case .v22: return "v22"
     case .v23: return "v23"
+    case .v24: return "v24"
     }
   }
 
@@ -73,7 +76,7 @@ public enum LibrarySyncVersion: Int, Comparable, CustomStringConvertible, Sendab
     self == Self.newestVersion
   }
 
-  public static let newestVersion: LibrarySyncVersion = .v23
+  public static let newestVersion: LibrarySyncVersion = .v24
   public static let defaultValue: LibrarySyncVersion = .v6
 
   public static func < (lhs: LibrarySyncVersion, rhs: LibrarySyncVersion) -> Bool {
