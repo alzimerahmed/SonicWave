@@ -4,10 +4,10 @@ name: Release
 # builds an unsigned device archive, packages it as a sideloadable .ipa, and
 # publishes a GitHub Release with the artifact attached.
 #
-# The .ipa is UNSIGNED (CODE_SIGNING_ALLOWED=NO) — this repo has no Apple
-# Developer signing assets. It is sideloadable via AltStore/Sideloadly or can
-# be re-signed by the maintainer. A signed App Store/TestFlight archive is a
-# documented manual step (see docs/ship checklist).
+# Device signing requires an Apple Developer team (the entitled targets
+# cannot be unsigned-provisioned in Xcode 26) — a signed archive remains a
+# manual maintainer step. This workflow ships an unsigned SIMULATOR build
+# (runnable on arm64-Mac iOS Simulators) as the downloadable artifact.
 
 permissions:
   contents: write
@@ -62,7 +62,7 @@ jobs:
           xcodebuild build
           -project "$XCODE_PROJECT" -scheme "$XCODE_SCHEME"
           -configuration Release
-          -destination 'generic/platform=iOS'
+          -destination 'generic/platform=iOS Simulator'
           -derivedDataPath "$DERIVED_DATA"
           -clonedSourcePackagesDirPath "$SPM_PACKAGES_DIR"
           CODE_SIGNING_ALLOWED=NO
@@ -78,15 +78,12 @@ jobs:
         run: |
           echo "== archive contents =="
           find "$DERIVED_DATA/Build/Products" -name "*.app" | sort
-          APP=$(find "$DERIVED_DATA/Build/Products" -name "*.app" -type d -path "*iphoneos*" | head -1)
+          APP=$(find "$DERIVED_DATA/Build/Products" -name "*.app" -type d -path "*iphonesimulator*" | head -1)
           echo "app bundle: $APP"
           test -d "$APP"
           VERSION="${GITHUB_REF_NAME#v}"
-          mkdir -p Payload dist
-          cp -R "$APP" Payload/
-          (cd Payload && zip -qry "../dist/SonicWave-${VERSION}-unsigned.ipa" "$(basename "$APP")")
-          # also ship the raw .app for users who prefer direct tools
-          (cd "$(dirname "$APP")" && zip -qry "$OLDPWD/dist/SonicWave-${VERSION}-unsigned-app.zip" "$(basename "$APP")")
+          mkdir -p dist
+          (cd "$(dirname "$APP")" && zip -qry "$OLDPWD/dist/SonicWave-${VERSION}-simulator-app.zip" "$(basename "$APP")")
           ls -lh dist/
 
       - name: Publish GitHub Release
@@ -95,7 +92,8 @@ jobs:
           name: SonicWave ${{ github.ref_name }}
           generate_release_notes: true
           body: |
-            Unsigned build — sideloadable via AltStore/Sideloadly or re-signable.
+            Unsigned **simulator** build — runs on iOS Simulator (arm64 Mac).
+            A signed device archive remains a manual maintainer step.
             See CHANGELOG.md for the full feature list.
           files: dist/*
           fail_on_unmatched_files: true
