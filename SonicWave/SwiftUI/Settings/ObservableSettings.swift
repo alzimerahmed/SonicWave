@@ -130,6 +130,10 @@ final class Settings: ObservableObject {
   var isLiveActivityEnabled = true
   @Published
   var isSpotlightIndexingEnabled = true
+  /// G14: on-device listening-history capture (`PlayEvent` rows) —
+  /// opt-out; clearing rows lives in Settings next to this toggle
+  @Published
+  var isListeningHistoryEnabled = true
 
   @Published
   var artworkTintIntensity: ArtworkTintIntensity = .defaultValue

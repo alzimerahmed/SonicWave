@@ -13,6 +13,18 @@
         }
       }
     },
+    "%@ of music · %lld plays across %lld songs" : {
+      "comment" : "Listening stats recap summary line",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ of music · %lld plays across %lld songs"
+          }
+        }
+      }
+    },
     "%lds" : {
       "comment" : "Decade label (e.g. \"1980s\")",
       "extractionState" : "manual",
@@ -57,6 +69,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld Songs"
+          }
+        }
+      }
+    },
+    "%lld plays" : {
+      "comment" : "Listening stats entry play count",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld plays"
           }
         }
       }
@@ -277,6 +301,30 @@
         }
       }
     },
+    "Clear" : {
+      "comment" : "Clear listening history confirmation button",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear"
+          }
+        }
+      }
+    },
+    "Clear Listening History" : {
+      "comment" : "Settings row: delete all recorded play events",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear Listening History"
+          }
+        }
+      }
+    },
     "Copy Link" : {
       "comment" : "Manage Shares row action",
       "extractionState" : "manual",
@@ -297,6 +345,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn't load share links. Check the connection and try again."
+          }
+        }
+      }
+    },
+    "Counted Plays" : {
+      "comment" : "Listening stats total row",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Counted Plays"
           }
         }
       }
@@ -613,6 +673,54 @@
         }
       }
     },
+    "Listening History" : {
+      "comment" : "Settings row: on-device listening history capture",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Listening History"
+          }
+        }
+      }
+    },
+    "Listening History Is Off" : {
+      "comment" : "Listening stats empty state: collection disabled",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Listening History Is Off"
+          }
+        }
+      }
+    },
+    "Listening Stats" : {
+      "comment" : "Listening stats screen title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Listening Stats"
+          }
+        }
+      }
+    },
+    "Listening Time" : {
+      "comment" : "Listening stats total row",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Listening Time"
+          }
+        }
+      }
+    },
     "Live Activity" : {
       "comment" : "Live Activity opt-out toggle title",
       "extractionState" : "manual",
@@ -745,6 +853,18 @@
         }
       }
     },
+    "No Listening History Yet" : {
+      "comment" : "Listening stats empty state: nothing recorded",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Listening History Yet"
+          }
+        }
+      }
+    },
     "No Matching Songs" : {
       "comment" : "Empty state title for a smart playlist whose rules match nothing",
       "extractionState" : "manual",
@@ -793,6 +913,18 @@
         }
       }
     },
+    "No plays recorded in this range — try a wider period." : {
+      "comment" : "Listening stats empty state: widen period hint",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No plays recorded in this range — try a wider period."
+          }
+        }
+      }
+    },
     "No share links yet. Create one from a song's, album's or playlist's actions menu." : {
       "comment" : "Manage Shares: empty state hint",
       "extractionState" : "manual",
@@ -813,6 +945,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No songs match these rules right now."
+          }
+        }
+      }
+    },
+    "Nothing In This Period" : {
+      "comment" : "Listening stats empty state: no events in selected period",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing In This Period"
           }
         }
       }
@@ -937,6 +1081,18 @@
         }
       }
     },
+    "Play some music — your listening stats will appear here." : {
+      "comment" : "Listening stats empty state: play music hint",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play some music — your listening stats will appear here."
+          }
+        }
+      }
+    },
     "Public URL Override" : {
       "comment" : "Account settings row: base URL for share links behind a reverse proxy",
       "extractionState" : "manual",
@@ -957,6 +1113,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rating"
+          }
+        }
+      }
+    },
+    "Recap — %@" : {
+      "comment" : "Listening stats recap card title (e.g. 'Recap — Last 7 Days')",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recap — %@"
+          }
+        }
+      }
+    },
+    "Records what you play to power the Listening Stats screen. The data never leaves this device — turning this off stops recording; it does not delete existing history." : {
+      "comment" : "Settings footer: listening history data handling",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Records what you play to power the Listening Stats screen. The data never leaves this device — turning this off stops recording; it does not delete existing history."
           }
         }
       }
@@ -1065,6 +1245,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Share links are public — anyone with the URL can listen. Revoking deletes the link on the server."
+          }
+        }
+      }
+    },
+    "Share recap" : {
+      "comment" : "VoiceOver label for the listening stats share button",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share recap"
           }
         }
       }
@@ -1185,6 +1377,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Skip Silence"
+          }
+        }
+      }
+    },
+    "Skips" : {
+      "comment" : "Listening stats total row",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skips"
           }
         }
       }
@@ -1357,6 +1561,18 @@
         }
       }
     },
+    "This permanently deletes all recorded listening history. Listening stats are stored only on this device." : {
+      "comment" : "Clear listening history confirmation body",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This permanently deletes all recorded listening history. Listening stats are stored only on this device."
+          }
+        }
+      }
+    },
     "Time Machine" : {
       "comment" : "Time-of-day mix card title",
       "extractionState" : "manual",
@@ -1381,6 +1597,42 @@
         }
       }
     },
+    "Top Albums" : {
+      "comment" : "Listening stats section header",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Top Albums"
+          }
+        }
+      }
+    },
+    "Top Artists" : {
+      "comment" : "Listening stats section header",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Top Artists"
+          }
+        }
+      }
+    },
+    "Top Genres" : {
+      "comment" : "Listening stats section header",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Top Genres"
+          }
+        }
+      }
+    },
     "Top Songs" : {
       "comment" : "Artist detail section header",
       "extractionState" : "manual",
@@ -1389,6 +1641,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Top Songs"
+          }
+        }
+      }
+    },
+    "Top artist: %@ (%lld plays)" : {
+      "comment" : "Listening stats recap top artist line",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Top artist: %@ (%lld plays)"
+          }
+        }
+      }
+    },
+    "Totals" : {
+      "comment" : "Listening stats section header",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Totals"
           }
         }
       }
@@ -1413,6 +1689,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "True Black (OLED)"
+          }
+        }
+      }
+    },
+    "Turn it on in Settings to start recording what you play — it never leaves this device." : {
+      "comment" : "Listening stats empty state: collection disabled hint",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn it on in Settings to start recording what you play — it never leaves this device."
           }
         }
       }

@@ -47,6 +47,10 @@ public enum LibraryDisplayType: Int, CaseIterable, Sendable {
   /// `bookmarks`); decode merges cases missing from persisted settings
   /// into `notUsed` so existing installs can enable it via Edit
   case bookmarks = 15
+  /// G14 listening analytics — on-device PlayEvent history recap;
+  /// same decode-merge landing as bookmarks (opt-in via Edit for
+  /// existing installs, default-visible for fresh ones)
+  case listeningStats = 16
 
   public static func createByDisplayName(name: String) -> LibraryDisplayType? {
     .allCases.first {
@@ -86,6 +90,8 @@ public enum LibraryDisplayType: Int, CaseIterable, Sendable {
       return "Radios"
     case .bookmarks:
       return "Bookmarks"
+    case .listeningStats:
+      return "Listening Stats"
     }
   }
 
@@ -121,6 +127,8 @@ public enum LibraryDisplayType: Int, CaseIterable, Sendable {
       return UIImage.radio
     case .bookmarks:
       return UIImage(systemName: "bookmark.fill") ?? UIImage.radio
+    case .listeningStats:
+      return UIImage(systemName: "chart.bar.fill") ?? UIImage.radio
     }
   }
 }
@@ -196,6 +204,7 @@ public struct LibraryDisplaySettings: Sendable, Codable {
         .playlists,
         .podcasts,
         .bookmarks,
+        .listeningStats,
         .radios,
       ]
     )

@@ -361,6 +361,19 @@ class SettingsHostVC: UIViewController {
       Task { await AmperKit.shared.spotlightIndexer.start() }
     }))
 
+    settings.isListeningHistoryEnabled = appDelegate.storage.settings.user
+      .isListeningHistoryEnabled
+    changesAgent.append(settings.$isListeningHistoryEnabled.sink(receiveValue: { newValue in
+      // guarded: the sink fires on the initial assignment too — only
+      // persist on a real user change
+      let hasValueChanged = self.appDelegate.storage.settings.user
+        .isListeningHistoryEnabled != newValue
+      guard hasValueChanged else { return }
+      self.appDelegate.storage.settings.user.isListeningHistoryEnabled = newValue
+      // `ListeningHistoryTracker` reads the flag at write time — an
+      // in-flight session is dropped without a nudge needed here
+    }))
+
     // following account specific setting sinks are assigned.
     // the correct assignment is done in the account switched callback
 

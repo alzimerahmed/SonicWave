@@ -71,6 +71,8 @@ extension LibraryDisplayType {
       return AppStoryboard.Main.segueToRadios(account: account)
     case .bookmarks:
       return AppStoryboard.Main.segueToBookmarks(account: account)
+    case .listeningStats:
+      return AppStoryboard.Main.segueToListeningStats(account: account)
     }
   }
 }

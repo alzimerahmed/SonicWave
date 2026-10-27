@@ -134,6 +134,10 @@ enum AppStoryboard: String {
     BookmarksVC(account: account)
   }
 
+  func segueToListeningStats(account: Account) -> UIViewController {
+    ListeningStatsVC(account: account)
+  }
+
   func segueToGenres(account: Account) -> UIViewController {
     GenresVC(account: account)
   }

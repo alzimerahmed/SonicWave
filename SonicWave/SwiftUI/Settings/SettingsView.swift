@@ -28,6 +28,9 @@ struct SettingsView: View {
   @EnvironmentObject
   private var settings: Settings
 
+  @State
+  private var isShowClearListeningHistoryAlert = false
+
   func screenLockPreventionOffPressed() {
     settings.screenLockPreventionPreference = .never
     UIDevice.current.isBatteryMonitoringEnabled = false
@@ -82,6 +85,50 @@ struct SettingsView: View {
           footer:
           String(
             localized: "Shows your library in Spotlight search. Turning this off removes everything already indexed."
+          )
+        )
+
+        SettingsSection(
+          content: {
+            SettingsCheckBoxRow(
+              title: String(
+                localized: "Listening History",
+                comment: "Settings row: on-device listening history capture"
+              ),
+              isOn: $settings.isListeningHistoryEnabled
+            )
+            SettingsButtonRow(
+              title: String(
+                localized: "Clear Listening History",
+                comment: "Settings row: delete all recorded play events"
+              ),
+              actionType: .destructive
+            ) {
+              isShowClearListeningHistoryAlert = true
+            }
+            .alert(isPresented: $isShowClearListeningHistoryAlert) {
+              Alert(
+                title: Text(String(
+                  localized: "Clear Listening History",
+                  comment: "Clear listening history confirmation title"
+                )),
+                message: Text(String(
+                  localized: "This permanently deletes all recorded listening history. Listening stats are stored only on this device.",
+                  comment: "Clear listening history confirmation body"
+                )),
+                primaryButton: .destructive(Text(String(
+                  localized: "Clear",
+                  comment: "Clear listening history confirmation button"
+                ))) {
+                  appDelegate.storage.main.library.deleteAllPlayEvents()
+                },
+                secondaryButton: .cancel()
+              )
+            }
+          },
+          footer:
+          String(
+            localized: "Records what you play to power the Listening Stats screen. The data never leaves this device — turning this off stops recording; it does not delete existing history."
           )
         )
 
