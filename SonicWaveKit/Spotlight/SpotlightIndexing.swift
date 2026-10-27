@@ -19,15 +19,22 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-import CoreSpotlight
+// CoreSpotlight indexing is API_UNAVAILABLE on tvOS (no system index) —
+// the CS-dependent declarations below are gated; the shared types stay
+// universal so `SpotlightIndexer`'s public API compiles everywhere.
+#if !os(tvOS)
+  import CoreSpotlight
+#endif
 import Foundation
 import UniformTypeIdentifiers
 
-// `CSSearchableItem`/`CSSearchableIndex` are immutable-in-practice CoreSpotlight
-// types that carry no Sendable annotations — hand-off to the indexer actor is
-// safe once the item is fully constructed.
-extension CSSearchableItem: @unchecked @retroactive Sendable {}
-extension CSSearchableIndex: @unchecked @retroactive Sendable {}
+#if !os(tvOS)
+  // `CSSearchableItem`/`CSSearchableIndex` are immutable-in-practice CoreSpotlight
+  // types that carry no Sendable annotations — hand-off to the indexer actor is
+  // safe once the item is fully constructed.
+  extension CSSearchableItem: @unchecked @retroactive Sendable {}
+  extension CSSearchableIndex: @unchecked @retroactive Sendable {}
+#endif
 
 // MARK: - SpotlightItemType
 
@@ -131,45 +138,50 @@ struct SpotlightEntityDescriptor: Sendable {
   let thumbnailFileURL: URL?
   let isAudioContent: Bool
 
-  func makeSearchableItem() -> CSSearchableItem {
-    let attributeSet = CSSearchableItemAttributeSet(
-      contentType: isAudioContent ? .audio : .content
-    )
-    attributeSet.title = title
-    attributeSet.contentDescription = contentDescription
-    attributeSet.keywords = keywords
-    attributeSet.textContent = textContent
-    if rating > 0 {
-      attributeSet.rating = NSNumber(value: rating)
+  #if !os(tvOS)
+    func makeSearchableItem() -> CSSearchableItem {
+      let attributeSet = CSSearchableItemAttributeSet(
+        contentType: isAudioContent ? .audio : .content
+      )
+      attributeSet.title = title
+      attributeSet.contentDescription = contentDescription
+      attributeSet.keywords = keywords
+      attributeSet.textContent = textContent
+      if rating > 0 {
+        attributeSet.rating = NSNumber(value: rating)
+      }
+      if playCount > 0 {
+        attributeSet.playCount = NSNumber(value: playCount)
+      }
+      attributeSet.lastUsedDate = lastUsedDate
+      attributeSet.thumbnailURL = thumbnailFileURL
+      return CSSearchableItem(
+        uniqueIdentifier: identifier.encoded,
+        domainIdentifier: identifier.domainIdentifier,
+        attributeSet: attributeSet
+      )
     }
-    if playCount > 0 {
-      attributeSet.playCount = NSNumber(value: playCount)
-    }
-    attributeSet.lastUsedDate = lastUsedDate
-    attributeSet.thumbnailURL = thumbnailFileURL
-    return CSSearchableItem(
-      uniqueIdentifier: identifier.encoded,
-      domainIdentifier: identifier.domainIdentifier,
-      attributeSet: attributeSet
-    )
-  }
+  #endif
 }
 
 // MARK: - SearchableIndexing
 
-/// Thin async abstraction over `CSSearchableIndex` so the indexer logic is
-/// unit-testable without a device/index (`MOCK_SearchableIndex` in tests).
-public protocol SearchableIndexing: Sendable {
-  func indexItems(_ items: [CSSearchableItem]) async throws
-  func deleteItems(identifiers: [String]) async throws
-  func deleteItems(domainIdentifiers: [String]) async throws
-  func deleteAllItems() async throws
-}
+#if !os(tvOS)
+  /// Thin async abstraction over `CSSearchableIndex` so the indexer logic is
+  /// unit-testable without a device/index (`MOCK_SearchableIndex` in tests).
+  public protocol SearchableIndexing: Sendable {
+    func indexItems(_ items: [CSSearchableItem]) async throws
+    func deleteItems(identifiers: [String]) async throws
+    func deleteItems(domainIdentifiers: [String]) async throws
+    func deleteAllItems() async throws
+  }
+#endif
 
 // MARK: - CSSearchableIndex + SearchableIndexing
 
-extension CSSearchableIndex: SearchableIndexing {
-  public func indexItems(_ items: [CSSearchableItem]) async throws {
+#if !os(tvOS)
+  extension CSSearchableIndex: SearchableIndexing {
+    public func indexItems(_ items: [CSSearchableItem]) async throws {
     try await withCheckedThrowingContinuation {
       (continuation: CheckedContinuation<Void, Error>) in
       indexSearchableItems(items) { error in
@@ -220,4 +232,5 @@ extension CSSearchableIndex: SearchableIndexing {
       }
     }
   }
-}
+  }
+#endif

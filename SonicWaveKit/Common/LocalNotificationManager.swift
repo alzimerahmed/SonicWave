@@ -22,7 +22,9 @@
 import Foundation
 import os.log
 import UIKit
-import UserNotifications
+#if canImport(UserNotifications)
+  import UserNotifications // tvOS has no user-notification surface
+#endif
 
 // MARK: - NotificationContentType
 
@@ -54,35 +56,42 @@ public class LocalNotificationManager {
   }
 
   nonisolated public func hasAuthorizationNotBeenAskedYet() async -> Bool {
-    await Task {
-      let settings = await UNUserNotificationCenter.current().notificationSettings()
-      switch settings.authorizationStatus {
-      case .notDetermined:
-        return true
-      default:
-        break
-      }
+    #if canImport(UserNotifications)
+      return await Task {
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
+        switch settings.authorizationStatus {
+        case .notDetermined:
+          return true
+        default:
+          break
+        }
+        return false
+      }.value
+    #else
       return false
-    }.value
+    #endif
   }
 
   nonisolated public func requestAuthorization() {
-    Task {
-      do {
-        let _ = try await UNUserNotificationCenter.current().requestAuthorization(options: [
-          .alert,
-          .badge,
-          .sound,
-        ])
-      } catch {
-        os_log("Authorization Error: %s", log: self.log, type: .error, error.localizedDescription)
+    #if canImport(UserNotifications)
+      Task {
+        do {
+          let _ = try await UNUserNotificationCenter.current().requestAuthorization(options: [
+            .alert,
+            .badge,
+            .sound,
+          ])
+        } catch {
+          os_log("Authorization Error: %s", log: self.log, type: .error, error.localizedDescription)
+        }
       }
-    }
+    #endif
   }
 
-  public func notify(podcastEpisode: PodcastEpisode) {
-    userStatistics.localNotificationCreated()
-    Task {
+  #if canImport(UserNotifications)
+    public func notify(podcastEpisode: PodcastEpisode) {
+      userStatistics.localNotificationCreated()
+      Task {
       let content = UNMutableNotificationContent()
       content.title = podcastEpisode.creatorName
       content.body = podcastEpisode.title
@@ -127,8 +136,11 @@ public class LocalNotificationManager {
         trigger: trigger
       )
       await self.notify(request: request)
+      }
     }
-  }
+  #else
+    public func notify(podcastEpisode _: PodcastEpisode) {}
+  #endif
 
   public func notifyDebug(title: String, body: String) {
     Task {
@@ -137,53 +149,59 @@ public class LocalNotificationManager {
   }
 
   public func notifyDebugAndWait(title: String, body: String) async {
-    let content = UNMutableNotificationContent()
-    content.title = title
-    content.body = body
-    content.sound = .default
-    let trigger = UNTimeIntervalNotificationTrigger(
-      timeInterval: Self.notificationTimeInterval,
-      repeats: false
-    )
-    let request = UNNotificationRequest(
-      identifier: String.generateRandomString(ofLength: 15),
-      content: content,
-      trigger: trigger
-    )
-    await notify(request: request)
+    #if canImport(UserNotifications)
+      let content = UNMutableNotificationContent()
+      content.title = title
+      content.body = body
+      content.sound = .default
+      let trigger = UNTimeIntervalNotificationTrigger(
+        timeInterval: Self.notificationTimeInterval,
+        repeats: false
+      )
+      let request = UNNotificationRequest(
+        identifier: String.generateRandomString(ofLength: 15),
+        content: content,
+        trigger: trigger
+      )
+      await notify(request: request)
+    #endif
   }
 
   nonisolated public func listPendingNotifications() {
-    Task {
-      let notifications = await UNUserNotificationCenter.current().pendingNotificationRequests()
-      for notification in notifications {
-        print(notification)
+    #if canImport(UserNotifications)
+      Task {
+        let notifications = await UNUserNotificationCenter.current().pendingNotificationRequests()
+        for notification in notifications {
+          print(notification)
+        }
       }
-    }
+    #endif
   }
 
-  nonisolated private func notify(request: UNNotificationRequest) async {
-    let settings = await UNUserNotificationCenter.current().notificationSettings()
-    switch settings.authorizationStatus {
-    case .authorized, .provisional:
-      do {
-        try await UNUserNotificationCenter.current().add(request)
-      } catch {
-        os_log("Request Error: %s", log: self.log, type: .error, error.localizedDescription)
+  #if canImport(UserNotifications)
+    nonisolated private func notify(request: UNNotificationRequest) async {
+      let settings = await UNUserNotificationCenter.current().notificationSettings()
+      switch settings.authorizationStatus {
+      case .authorized, .provisional:
+        do {
+          try await UNUserNotificationCenter.current().add(request)
+        } catch {
+          os_log("Request Error: %s", log: self.log, type: .error, error.localizedDescription)
+        }
+      default:
+        break
       }
-    default:
-      break
     }
-  }
 
-  private func createLocalUrl(forImage image: UIImage, fileIdentifier: String) -> URL {
-    let tempDirectoryURL = NSURL.fileURL(withPath: NSTemporaryDirectory(), isDirectory: true)
-    let url = tempDirectoryURL.appendingPathComponent(fileIdentifier)
-    var imgData = image.pngData()
-    if imgData == nil {
-      imgData = UIImage.appIcon.pngData()
+    private func createLocalUrl(forImage image: UIImage, fileIdentifier: String) -> URL {
+      let tempDirectoryURL = NSURL.fileURL(withPath: NSTemporaryDirectory(), isDirectory: true)
+      let url = tempDirectoryURL.appendingPathComponent(fileIdentifier)
+      var imgData = image.pngData()
+      if imgData == nil {
+        imgData = UIImage.appIcon.pngData()
+      }
+      try! imgData!.write(to: url, options: Data.WritingOptions.atomic)
+      return url
     }
-    try! imgData!.write(to: url, options: Data.WritingOptions.atomic)
-    return url
-  }
+  #endif
 }

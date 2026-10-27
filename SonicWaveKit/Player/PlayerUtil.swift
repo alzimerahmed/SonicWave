@@ -20,7 +20,9 @@
 //
 
 import Foundation
-import Intents
+#if canImport(Intents)
+  import Intents // Intents/SiriKit is unavailable on tvOS
+#endif
 import MediaPlayer
 
 // MARK: - MusicPlayable
@@ -116,20 +118,22 @@ public enum RepeatMode: Int16, CaseIterable {
     }
   }
 
-  public static func fromINPlaybackRepeatMode(mode: INPlaybackRepeatMode) -> RepeatMode {
-    switch mode {
-    case .unknown:
-      return .off
-    case .none:
-      return .off
-    case .all:
-      return .all
-    case .one:
-      return .single
-    @unknown default:
-      return .off
+  #if canImport(Intents)
+    public static func fromINPlaybackRepeatMode(mode: INPlaybackRepeatMode) -> RepeatMode {
+      switch mode {
+      case .unknown:
+        return .off
+      case .none:
+        return .off
+      case .all:
+        return .all
+      case .one:
+        return .single
+      @unknown default:
+        return .off
+      }
     }
-  }
+  #endif
 }
 
 // MARK: - PlaybackRate

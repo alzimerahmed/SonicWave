@@ -20,7 +20,6 @@
 //
 
 import Foundation
-import UserNotifications
 
 public typealias AccountEventCallback = (AccountInfo) -> ()
 public typealias AccountChangedCallback = (AccountInfo?) -> ()

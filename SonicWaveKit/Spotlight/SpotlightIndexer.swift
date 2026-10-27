@@ -20,9 +20,13 @@
 //
 
 import CoreData
-import CoreSpotlight
 import Foundation
 import os.log
+#if !os(tvOS)
+  import CoreSpotlight // index APIs are API_UNAVAILABLE on tvOS
+#endif
+
+#if !os(tvOS)
 
 // MARK: - SpotlightChange
 
@@ -647,3 +651,27 @@ public actor SpotlightIndexer {
     text.count > lyricsTextMaxLength ? String(text.prefix(lyricsTextMaxLength)) : text
   }
 }
+
+#else
+
+// MARK: - SpotlightIndexer (tvOS stub)
+
+/// tvOS has no system Spotlight index (`CSSearchableIndex` is
+/// API_UNAVAILABLE) — this stub keeps `AmperKit.spotlightIndexer` and the
+/// `MetaManager` injection compiling with the same public surface; every
+/// entry point is an honest no-op.
+public actor SpotlightIndexer {
+  init(
+    asyncStorage _: AsyncCoreDataAccessWrapper,
+    settings _: AmperfySettings,
+    performanceMonitor _: ThreadPerformanceMonitor
+  ) {}
+
+  public func start(forceFullReindex _: Bool = false) async {}
+  public func stop() {}
+  public func deleteItems(forAccountIdent _: String) async {}
+  public func reindexPlayable(accountIdent _: String, playableId _: String) async {}
+  public func awaitFullReindex() async {}
+}
+
+#endif

@@ -22,6 +22,10 @@
 import LinkPresentation
 import UIKit
 
+// UIActivityViewController (the share sheet) is unavailable on tvOS —
+// the whole action is iOS-only; the app owns the call sites.
+#if !os(tvOS)
+
 // MARK: - ShareSongAction
 
 /// Presents the iOS share sheet for a single song. If the song is not yet
@@ -199,3 +203,5 @@ private final class SongShareItemSource: NSObject, UIActivityItemSource {
     return metadata
   }
 }
+
+#endif

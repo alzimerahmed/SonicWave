@@ -22,6 +22,10 @@
 import Foundation
 import UIKit
 
+// Home-screen quick actions don't exist on tvOS — the whole handler is
+// iOS-only; nothing in the kit references it, the app owns the call site.
+#if !os(tvOS)
+
 // MARK: - QuickActionsHandler
 
 @MainActor
@@ -256,3 +260,5 @@ extension QuickActionsHandler: MusicPlayable {
   public func didRepeatChange() {}
   public func didPlaybackRateChange() {}
 }
+
+#endif
