@@ -66,6 +66,10 @@ jobs:
           -derivedDataPath "$DERIVED_DATA"
           -clonedSourcePackagesDirPath "$SPM_PACKAGES_DIR"
           CODE_SIGNING_ALLOWED=NO
+          CODE_SIGN_STYLE=Manual
+          CODE_SIGN_IDENTITY=""
+          PROVISIONING_PROFILE_SPECIFIER=""
+          DEVELOPMENT_TEAM=""
           2>&1 | tee xcodebuild-release.log
           ! grep -qE '\*\* (ARCHIVE|BUILD) FAILED \*\*' xcodebuild-release.log
 
