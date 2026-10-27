@@ -342,12 +342,10 @@ class MiniPlayerView: UIView {
 
   @IBAction
   func airplayButtonPushed(_ sender: UIButton) {
-    // G22 — hidden on Catalyst (the MPVolumeView route-picker popup is
-    // dead there); on iOS forward to the same shared route-picker the
-    // full player's AirPlay button uses
-    #if !targetEnvironment(macCatalyst) // ok
-      playerHandler?.airplayButtonPushed(rootView: self, airplayButton: airplayButton)
-    #endif
+    // G11/G22 — forwards to the same shared "Play To" sheet the full
+    // player's AirPlay button uses (works on Catalyst since Phase 11 —
+    // only the AirPlay row inside is iOS-only)
+    playerHandler?.airplayButtonPushed(rootView: self, airplayButton: airplayButton)
   }
 
   fileprivate lazy var volumeButton: UIButton = {
@@ -506,12 +504,10 @@ class MiniPlayerView: UIView {
       lyricsButton,
       playlistButton,
     ]
-    #if !targetEnvironment(macCatalyst) // ok
-      // G22 — the AirPlay route-picker popup is dead on Catalyst, so
-      // the button is left out of the stack there entirely
-      self.airplayButton.translatesAutoresizingMaskIntoConstraints = false
-      arrangedSubviews.append(airplayButton)
-    #endif
+    // G11/G22 — opens the shared "Play To" sheet which works on
+    // Catalyst too, so the button is in the stack on every platform
+    self.airplayButton.translatesAutoresizingMaskIntoConstraints = false
+    arrangedSubviews.append(airplayButton)
     arrangedSubviews.append(volumeButton)
 
     let stack = UIStackView(arrangedSubviews: arrangedSubviews)
@@ -525,13 +521,9 @@ class MiniPlayerView: UIView {
     guard let playerHandler else { return }
     let isLyricsVisible = playerHandler.isLyricsButtonAllowedToDisplay
     lyricsButton.isHidden = !isLyricsVisible
-    #if targetEnvironment(macCatalyst) // ok
-      // G22 — the AirPlay button is hidden on Catalyst: 3 or 2 visible
-      // buttons at ~35pt each
-      trailingButtonsViewWidthConstraint?.constant = isLyricsVisible ? 105 : 70
-    #else
-      trailingButtonsViewWidthConstraint?.constant = isLyricsVisible ? 140 : 100
-    #endif
+    // 4 or 3 visible buttons at ~35pt each (AirPlay included on
+    // Catalyst since Phase 11 — it opens the "Play To" sheet there)
+    trailingButtonsViewWidthConstraint?.constant = isLyricsVisible ? 140 : 100
   }
 
   func refreshMoreButton() {

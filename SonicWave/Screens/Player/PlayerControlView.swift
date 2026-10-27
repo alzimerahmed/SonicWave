@@ -312,10 +312,9 @@ class PlayerControlView: UIView, UIGestureRecognizerDelegate {
 
   @IBAction
   func airplayButtonPushed(_ sender: UIButton) {
-    // G22 — the button is hidden on Catalyst (dead route-picker popup)
-    #if !targetEnvironment(macCatalyst) // ok
-      playerHandler?.airplayButtonPushed(rootView: self, airplayButton: airplayButton)
-    #endif
+    // G11/G22 — opens our own "Play To" sheet (jukebox + UPnP work on
+    // Catalyst; only the AirPlay route-picker row inside is iOS-only)
+    playerHandler?.airplayButtonPushed(rootView: self, airplayButton: airplayButton)
   }
 
   @IBAction

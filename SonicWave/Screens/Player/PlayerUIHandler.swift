@@ -355,7 +355,14 @@ class PlayerUIHandler: NSObject {
     // G11 — "Play To" picker: AirPlay/Bluetooth (iOS), server jukebox,
     // UPnP renderers. Works on Catalyst too (the old MPVolumeView
     // fake-tap is one row inside the sheet, not the whole popup).
-    guard let presenter = rootView.window?.rootViewController,
+    // present on the topmost controller — the window's root may already
+    // be covered by a modal (e.g. the popup player), which would make
+    // `present` fail silently
+    var presenter = rootView.window?.rootViewController
+    while let presented = presenter?.presentedViewController {
+      presenter = presented
+    }
+    guard let presenter,
           let accountInfo = appDelegate.storage.settings.accounts.active
     else { return }
     let account = appDelegate.storage.main.library.getAccount(info: accountInfo)
