@@ -71,6 +71,21 @@ struct NowPlayingView: View {
     .autoconnect()
 
   var body: some View {
+    // the 1s ticker only runs while playback advances — no reason to
+    // wake the UI every second on a paused or idle watch (battery)
+    Group {
+      if session.nowPlaying.isPlaying {
+        content
+          .onReceive(ticker) { date in
+            now = date
+          }
+      } else {
+        content
+      }
+    }
+  }
+
+  private var content: some View {
     NavigationStack {
       ScrollView {
         VStack(spacing: 8) {
@@ -91,9 +106,6 @@ struct NowPlayingView: View {
       }
       .navigationTitle("SonicWave")
     }
-    .onReceive(ticker) { date in
-      now = date
-    }
   }
 
   // MARK: artwork
@@ -108,18 +120,16 @@ struct NowPlayingView: View {
         .frame(width: 96, height: 96)
         .clipShape(RoundedRectangle(cornerRadius: 5))
         .accessibilityLabel("Album artwork")
-    } else {
-      RoundedRectangle(cornerRadius: 5)
-        .fill(.quaternary)
+    } else if session.nowPlaying.hasNowPlaying {
+      // the phone always sends artwork — real file or themed generated
+      // art — via `transferFile`; while it's in flight an honest
+      // loading indicator, never a gray placeholder rectangle
+      ProgressView()
         .frame(width: 96, height: 96)
-        .overlay {
-          Image(systemName: "music.note")
-            .font(.title)
-            .foregroundStyle(.secondary)
-            .accessibilityHidden(true)
-        }
-        .accessibilityLabel("No artwork")
+        .accessibilityLabel("Loading artwork")
     }
+    // idle (nothing playing): no artwork slot — the metadata block
+    // carries the honest "Nothing playing" state
   }
 
   // MARK: metadata
@@ -264,12 +274,13 @@ struct UpNextView: View {
   let items: [WatchQueueItem]
 
   var body: some View {
-    List(items, id: \.title) { item in
+    // `\.title` collides on duplicate titles — index-keyed instead
+    List(Array(items.enumerated()), id: \.offset) { entry in
       VStack(alignment: .leading, spacing: 1) {
-        Text(item.title)
+        Text(entry.element.title)
           .font(.footnote)
           .lineLimit(2)
-        Text(item.artist)
+        Text(entry.element.artist)
           .font(.caption2)
           .foregroundStyle(.secondary)
           .lineLimit(1)
