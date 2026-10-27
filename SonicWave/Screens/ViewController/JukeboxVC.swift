@@ -40,6 +40,8 @@ class JukeboxVC: UITableViewController {
   private var playlist = JukeboxPlaylist()
   private var loadState: LoadState = .loading
   private var controlsHeader: UIStackView!
+  private var headerLabel: UILabel!
+  private var headerStack: UIStackView!
 
   init(account: Account) {
     self.account = account
@@ -56,7 +58,7 @@ class JukeboxVC: UITableViewController {
 
   override func viewDidLoad() {
     super.viewDidLoad()
-    title = "Jukebox"
+    title = String(localized: "Jukebox", comment: "Server jukebox screen title")
     tableView.register(UITableViewCell.self, forCellReuseIdentifier: "jukeboxCell")
     tableView.backgroundColor = .backgroundColor
     refreshControl = UIRefreshControl()
@@ -68,10 +70,58 @@ class JukeboxVC: UITableViewController {
       target: self,
       action: #selector(enqueueCurrentTrack)
     )
-    navigationItem.rightBarButtonItem?.accessibilityLabel = "Enqueue current track"
+    navigationItem.rightBarButtonItem?.accessibilityLabel = String(
+      localized: "Enqueue current track",
+      comment: "VoiceOver label for the jukebox enqueue button"
+    )
 
     controlsHeader = buildControls()
+    headerLabel = UILabel()
+    headerLabel.font = .preferredFont(forTextStyle: .footnote)
+    // Dynamic Type — the header must re-wrap instead of clipping
+    headerLabel.adjustsFontForContentSizeCategory = true
+    headerLabel.textColor = .secondaryLabel
+    headerLabel.numberOfLines = 0
+    // a stack view ignores arranged-subview layoutMargins — a container
+    // gives the label the same 16pt inset the buttons get
+    let labelContainer = UIView()
+    labelContainer.addSubview(headerLabel)
+    headerLabel.translatesAutoresizingMaskIntoConstraints = false
+    NSLayoutConstraint.activate([
+      headerLabel.leadingAnchor.constraint(equalTo: labelContainer.leadingAnchor, constant: 16),
+      headerLabel.trailingAnchor.constraint(equalTo: labelContainer.trailingAnchor, constant: -16),
+      headerLabel.topAnchor.constraint(equalTo: labelContainer.topAnchor),
+      headerLabel.bottomAnchor.constraint(equalTo: labelContainer.bottomAnchor),
+    ])
+    headerStack = UIStackView(arrangedSubviews: [controlsHeader, labelContainer])
+    headerStack.axis = .vertical
+    headerStack.spacing = 4
+    headerStack.layoutMargins = UIEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
+    headerStack.isLayoutMarginsRelativeArrangement = true
+    tableView.tableHeaderView = headerStack
     updateHeader()
+  }
+
+  override func viewDidLayoutSubviews() {
+    super.viewDidLayoutSubviews()
+    fitHeaderToWidth()
+  }
+
+  /// UITableView never resizes tableHeaderView itself — re-fit on every
+  /// layout pass and reload so rotation and Dynamic Type don't clip the
+  /// copy (the old code hardcoded a 96pt frame that clipped)
+  private func fitHeaderToWidth() {
+    guard let header = tableView.tableHeaderView,
+          tableView.bounds.width > 0 else { return }
+    let size = header.systemLayoutSizeFitting(
+      CGSize(width: tableView.bounds.width, height: UIView.layoutFittingCompressedSize.height),
+      withHorizontalFittingPriority: .required,
+      verticalFittingPriority: .fittingSizeLevel
+    )
+    if header.frame.size != size {
+      header.frame.size = size
+      tableView.tableHeaderView = header
+    }
   }
 
   override func viewWillAppear(_ animated: Bool) {
@@ -91,10 +141,26 @@ class JukeboxVC: UITableViewController {
       return b
     }
     let stack = UIStackView(arrangedSubviews: [
-      button("Play", systemImage: "play.fill", action: #selector(controlPlay)),
-      button("Stop", systemImage: "stop.fill", action: #selector(controlStop)),
-      button("Skip", systemImage: "forward.fill", action: #selector(controlSkip)),
-      button("Clear", systemImage: "trash", action: #selector(controlClear)),
+      button(
+        String(localized: "Play", comment: "Jukebox control"),
+        systemImage: "play.fill",
+        action: #selector(controlPlay)
+      ),
+      button(
+        String(localized: "Stop", comment: "Jukebox control"),
+        systemImage: "stop.fill",
+        action: #selector(controlStop)
+      ),
+      button(
+        String(localized: "Skip", comment: "Jukebox control"),
+        systemImage: "forward.fill",
+        action: #selector(controlSkip)
+      ),
+      button(
+        String(localized: "Clear", comment: "Jukebox control"),
+        systemImage: "trash",
+        action: #selector(controlClear)
+      ),
     ])
     stack.axis = .horizontal
     stack.distribution = .fillEqually
@@ -105,23 +171,22 @@ class JukeboxVC: UITableViewController {
   }
 
   private func updateHeader() {
-    var lines = "Plays on the server's own output — not on this device."
+    var lines = String(
+      localized: "Plays on the server's own output — not on this device.",
+      comment: "Jukebox header explanation"
+    )
     if let gain = playlist.gain {
-      lines += "  Gain \(Int(gain * 100))%"
+      lines += String(
+        format: String(
+          localized: "  Gain %lld%%",
+          comment: "Jukebox header: current playback gain"
+        ),
+        Int(gain * 100)
+      )
     }
-    let label = UILabel()
-    label.text = lines
-    label.font = .preferredFont(forTextStyle: .footnote)
-    label.textColor = .secondaryLabel
-    label.numberOfLines = 0
-    let header = UIStackView(arrangedSubviews: [controlsHeader, label])
-    header.axis = .vertical
-    header.spacing = 4
-    header.layoutMargins = UIEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
-    header.isLayoutMarginsRelativeArrangement = true
-    label.layoutMargins = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
-    header.frame = CGRect(x: 0, y: 0, width: tableView.bounds.width, height: 96)
-    tableView.tableHeaderView = header
+    // the label is persistent — only the text changes per reload
+    headerLabel.text = lines
+    fitHeaderToWidth()
   }
 
   @objc
@@ -174,14 +239,26 @@ class JukeboxVC: UITableViewController {
   }
   @objc private func controlClear() {
     let alert = UIAlertController(
-      title: "Clear Jukebox Playlist?",
-      message: "Removes all tracks from the server-side playlist.",
+      title: String(
+        localized: "Clear Jukebox Playlist?",
+        comment: "Jukebox clear confirmation title"
+      ),
+      message: String(
+        localized: "Removes all tracks from the server-side playlist.",
+        comment: "Jukebox clear confirmation message"
+      ),
       preferredStyle: .alert
     )
-    alert.addAction(UIAlertAction(title: "Clear", style: .destructive) { _ in
+    alert.addAction(UIAlertAction(
+      title: String(localized: "Clear", comment: "Jukebox clear confirmation action"),
+      style: .destructive
+    ) { _ in
       self.control(.clear)
     })
-    alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+    alert.addAction(UIAlertAction(
+      title: String(localized: "Cancel", comment: "Cancel action"),
+      style: .cancel
+    ))
     present(alert, animated: true)
   }
 
@@ -205,21 +282,38 @@ class JukeboxVC: UITableViewController {
     case .failed:
       var config = UIContentUnavailableConfiguration.empty()
       config.image = UIImage(systemName: "exclamationmark.triangle")
-      config.text = "Couldn't Load Jukebox"
-      config.secondaryText = "Check the connection and pull to retry."
+      config.text = String(
+        localized: "Couldn't Load Jukebox",
+        comment: "Jukebox empty state: load failure"
+      )
+      config.secondaryText = String(
+        localized: "Check the connection and pull to retry.",
+        comment: "Jukebox empty state: retry hint"
+      )
       contentUnavailableConfiguration = config
     case .notSupported:
       var config = UIContentUnavailableConfiguration.empty()
       config.image = UIImage(systemName: "hifispeaker.slash")
-      config.text = "No Jukebox on This Server"
-      config.secondaryText =
-        "Subsonic needs the jukebox role enabled for this user; Ampache needs a configured localplay instance."
+      config.text = String(
+        localized: "No Jukebox on This Server",
+        comment: "Jukebox empty state: not supported"
+      )
+      config.secondaryText = String(
+        localized: "Subsonic needs the jukebox role enabled for this user; Ampache needs a configured localplay instance.",
+        comment: "Jukebox empty state: not-supported hint"
+      )
       contentUnavailableConfiguration = config
     case .loaded where playlist.entries.isEmpty:
       var config = UIContentUnavailableConfiguration.empty()
       config.image = UIImage(systemName: "hifispeaker")
-      config.text = "Jukebox Playlist Is Empty"
-      config.secondaryText = "Enqueue the currently playing track with +."
+      config.text = String(
+        localized: "Jukebox Playlist Is Empty",
+        comment: "Jukebox empty state"
+      )
+      config.secondaryText = String(
+        localized: "Enqueue the currently playing track with +.",
+        comment: "Jukebox empty state: how to add a track"
+      )
       contentUnavailableConfiguration = config
     case .loaded:
       contentUnavailableConfiguration = nil
@@ -251,7 +345,8 @@ class JukeboxVC: UITableViewController {
       content.textProperties.color = .tintColor
       if playlist.isPlaying {
         content.secondaryText =
-          (content.secondaryText ?? "") + " · playing"
+          (content.secondaryText ?? "") + " · "
+          + String(localized: "playing", comment: "Jukebox row: currently playing marker")
       }
     }
     cell.contentConfiguration = content

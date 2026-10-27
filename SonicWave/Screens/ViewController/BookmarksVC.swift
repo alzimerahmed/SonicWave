@@ -39,6 +39,9 @@ class BookmarksVC: UITableViewController {
 
   private let account: Account
   private var bookmarks = [ServerBookmark]()
+  /// bookmark media id → local library title — prefetched once per
+  /// reload so cell rendering does zero CoreData fetches
+  private var resolvedTitles = [String: String]()
   private var loadState: LoadState = .loading
 
   init(account: Account) {
@@ -56,7 +59,7 @@ class BookmarksVC: UITableViewController {
 
   override func viewDidLoad() {
     super.viewDidLoad()
-    title = "Bookmarks"
+    title = String(localized: "Bookmarks", comment: "Bookmarks screen title")
     tableView.register(UITableViewCell.self, forCellReuseIdentifier: "bookmarkCell")
     tableView.backgroundColor = .backgroundColor
     navigationItem.rightBarButtonItem = UIBarButtonItem(
@@ -65,7 +68,10 @@ class BookmarksVC: UITableViewController {
       target: self,
       action: #selector(addBookmarkAtCurrentPosition)
     )
-    navigationItem.rightBarButtonItem?.accessibilityLabel = "Bookmark current position"
+    navigationItem.rightBarButtonItem?.accessibilityLabel = String(
+      localized: "Bookmark current position",
+      comment: "VoiceOver label for the add-bookmark button"
+    )
     refreshControl = UIRefreshControl()
     refreshControl?.addTarget(self, action: #selector(reload), for: .valueChanged)
   }
@@ -90,6 +96,17 @@ class BookmarksVC: UITableViewController {
         switch try await backendApi.getBookmarks() {
         case .supported(let fetched):
           bookmarks = fetched.sorted { ($0.changed ?? $0.created ?? .distantPast) > ($1.changed ?? $1.created ?? .distantPast) }
+          // one fetch pass per reload — cells must not hit CoreData
+          // per render
+          let library = appDelegate.storage.main.library
+          var titles = [String: String]()
+          for bookmark in bookmarks {
+            if let title = library.getSong(for: account, id: bookmark.id)?.title
+              ?? library.getPodcastEpisode(for: account, id: bookmark.id)?.title {
+              titles[bookmark.id] = title
+            }
+          }
+          resolvedTitles = titles
           loadState = .loaded
         case .notSupported:
           loadState = .notSupported
@@ -111,20 +128,35 @@ class BookmarksVC: UITableViewController {
     case .failed:
       var config = UIContentUnavailableConfiguration.empty()
       config.image = UIImage(systemName: "exclamationmark.triangle")
-      config.text = "Couldn't Load Bookmarks"
-      config.secondaryText = "Check the connection and pull to retry."
+      config.text = String(
+        localized: "Couldn't Load Bookmarks",
+        comment: "Bookmarks empty state: load failure"
+      )
+      config.secondaryText = String(
+        localized: "Check the connection and pull to retry.",
+        comment: "Bookmarks empty state: retry hint"
+      )
       contentUnavailableConfiguration = config
     case .notSupported:
       var config = UIContentUnavailableConfiguration.empty()
       config.image = UIImage(systemName: "bookmark.slash")
-      config.text = "Bookmarks Not Supported"
-      config.secondaryText = "This server has no bookmark API."
+      config.text = String(
+        localized: "Bookmarks Not Supported",
+        comment: "Bookmarks empty state: server lacks the API"
+      )
+      config.secondaryText = String(
+        localized: "This server has no bookmark API.",
+        comment: "Bookmarks empty state: not-supported hint"
+      )
       contentUnavailableConfiguration = config
     case .loaded where bookmarks.isEmpty:
       var config = UIContentUnavailableConfiguration.empty()
       config.image = UIImage(systemName: "bookmark")
-      config.text = "No Bookmarks"
-      config.secondaryText = "Tap + while a song or podcast episode is playing to save its position."
+      config.text = String(localized: "No Bookmarks", comment: "Bookmarks empty state")
+      config.secondaryText = String(
+        localized: "Tap + while a song or podcast episode is playing to save its position.",
+        comment: "Bookmarks empty state: how to add one"
+      )
       contentUnavailableConfiguration = config
     case .loaded:
       contentUnavailableConfiguration = nil
@@ -199,15 +231,23 @@ class BookmarksVC: UITableViewController {
     let cell = tableView.dequeueReusableCell(withIdentifier: "bookmarkCell", for: indexPath)
     let bookmark = bookmarks[indexPath.row]
     var content = cell.defaultContentConfiguration()
-    let library = appDelegate.storage.main.library
-    let resolved = library.getSong(for: account, id: bookmark.id)?.title
-      ?? library.getPodcastEpisode(for: account, id: bookmark.id)?.title
-      ?? bookmark.entry?.title
-    content.text = resolved ?? bookmark.comment ?? "Bookmark \(bookmark.id)"
+    let resolved = resolvedTitles[bookmark.id] ?? bookmark.entry?.title
+    content.text = resolved ?? bookmark.comment ?? String(
+      format: String(
+        localized: "Bookmark %@",
+        comment: "Fallback title for a bookmark with no resolvable name (media id)"
+      ),
+      bookmark.id
+    )
     var parts = [String]()
     if let artist = bookmark.entry?.artistName { parts.append(artist) }
     if let album = bookmark.entry?.albumName { parts.append(album) }
-    if resolved == nil { parts.append("not in library") }
+    if resolved == nil {
+      parts.append(String(
+        localized: "not in library",
+        comment: "Bookmark row detail: media is not in the local library"
+      ))
+    }
     parts.append(ClockTime(timeInSeconds: bookmark.positionSeconds).asShortString())
     content.secondaryText = parts.joined(separator: " · ")
     content.image = UIImage(systemName: "bookmark.fill")
@@ -226,15 +266,27 @@ class BookmarksVC: UITableViewController {
     trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath
   ) -> UISwipeActionsConfiguration? {
     let bookmark = bookmarks[indexPath.row]
-    let delete = UIContextualAction(style: .destructive, title: "Delete") { _, _, done in
+    let delete = UIContextualAction(
+      style: .destructive,
+      title: String(localized: "Delete", comment: "Swipe action: delete bookmark")
+    ) { _, _, done in
       Task { @MainActor in
         do {
           // Subsonic deletes by media id — the bookmarked entity itself
           // may be gone locally, so the request carries the raw id
           switch try await self.backendApi.deleteBookmark(bookmark) {
           case .supported:
-            self.bookmarks.remove(at: indexPath.row)
-            tableView.deleteRows(at: [indexPath], with: .automatic)
+            // a concurrent reload may have shrunk/reordered the list or
+            // changed the load state during the await — resolve by
+            // identity, never by the captured indexPath
+            if self.loadState == .loaded,
+               let row = self.bookmarks.firstIndex(of: bookmark) {
+              self.bookmarks.remove(at: row)
+              self.resolvedTitles.removeValue(forKey: bookmark.id)
+              tableView.deleteRows(at: [IndexPath(row: row, section: indexPath.section)], with: .automatic)
+            } else {
+              tableView.reloadData()
+            }
             self.updateContentUnavailable()
           case .notSupported:
             self.appDelegate.eventLogger.info(

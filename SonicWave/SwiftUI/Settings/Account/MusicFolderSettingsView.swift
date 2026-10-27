@@ -70,21 +70,27 @@ struct MusicFolderSettingsView: View {
           }
         case .notSupported:
           SettingsSection {
-            SecondaryText("Music folders are not supported by this server.")
+            SecondaryText(
+              String(localized: "Music folders are not supported by this server.", comment: "Music folder picker: not-supported note")
+            )
           }
         case .failed:
           SettingsSection {
-            SecondaryText("Couldn't load music folders. Check the connection and try again.")
+            SecondaryText(
+              String(localized: "Couldn't load music folders. Check the connection and try again.", comment: "Music folder picker: load failure")
+            )
           }
         case .loaded(let folders):
           if folders.count <= 1 {
             SettingsSection {
-              SecondaryText("This server exposes only one music folder — nothing to select.")
+              SecondaryText(
+                String(localized: "This server exposes only one music folder — nothing to select.", comment: "Music folder picker: single folder note")
+              )
             }
           } else {
             SettingsSection(
               content: {
-                ForEach([MusicFolderStub(id: "", name: "All Folders")] + folders) { folder in
+                ForEach([MusicFolderStub(id: "", name: String(localized: "All Folders", comment: "Music folder picker: no filter"))] + folders) { folder in
                   Button {
                     select(folder.id.isEmpty ? nil : folder.id)
                   } label: {
@@ -100,7 +106,10 @@ struct MusicFolderSettingsView: View {
                   .foregroundColor(.primary)
                 }
               },
-              footer: "The library shows only this folder after the next resync — use Resync Library on the Account screen to apply it now. Search and genres stay server-wide; the folder list itself is browsable under Directories."
+              footer: String(
+                localized: "The library shows only this folder after the next resync — use Resync Library on the Account screen to apply it now. Search and genres stay server-wide; the folder list itself is browsable under Directories.",
+                comment: "Music folder picker footer"
+              )
             )
           }
         }
@@ -114,7 +123,14 @@ struct MusicFolderSettingsView: View {
       Task { @MainActor in
         do {
           switch try await backendApi.getMusicFolders() {
-          case .supported(let folders): loadState = .loaded(folders)
+          case .supported(let folders):
+            loadState = .loaded(folders)
+            // a persisted id for a folder the server deleted resolves
+            // to nothing — and with `folders.count <= 1` the picker is
+            // hidden, so the stale value could never be cleared via UI
+            if let selectedId, !folders.contains(where: { $0.id == selectedId }) {
+              select(nil)
+            }
           case .notSupported: loadState = .notSupported
           }
         } catch {
