@@ -64,6 +64,10 @@ public enum WatchKey {
   /// command send instant — `transferUserInfo` payloads replay verbatim
   /// on next launch, so the phone drops commands older than ~60s
   public static let sentAt = "sentAt"
+  /// per-command unique id — a `sendMessage` whose reply was lost is
+  /// re-queued as `transferUserInfo`, so the phone dedupes by nonce
+  /// (an age check alone can't tell delivered-and-executed from stale)
+  public static let nonce = "nonce"
 }
 
 // MARK: - WatchQueueItem

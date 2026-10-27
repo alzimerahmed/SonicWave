@@ -71,18 +71,20 @@ struct NowPlayingView: View {
     .autoconnect()
 
   var body: some View {
-    // the 1s ticker only runs while playback advances — no reason to
-    // wake the UI every second on a paused or idle watch (battery)
-    Group {
-      if session.nowPlaying.isPlaying {
-        content
-          .onReceive(ticker) { date in
-            now = date
+    content
+      // the 1s ticker only runs while playback advances — attached on a
+      // leaf so `NavigationStack` identity survives play/pause flips
+      // (a Group/if around the whole tree would pop pushed views)
+      .background(
+        Group {
+          if session.nowPlaying.isPlaying {
+            Color.clear
+              .onReceive(ticker) { date in
+                now = date
+              }
           }
-      } else {
-        content
-      }
-    }
+        }
+      )
   }
 
   private var content: some View {

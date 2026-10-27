@@ -47,6 +47,11 @@ import SonicWaveKit
     /// "pause" tapped yesterday must not fire today
     static let maxCommandAge: TimeInterval = 60
 
+    /// recently executed command nonces — a `sendMessage` whose reply
+    /// was lost arrives again via `transferUserInfo`; without dedupe a
+    /// `togglePlayPause` would execute twice (net no-op)
+    private var seenCommandNonces = Set<String>()
+
     init(player: PlayerFacade, stateProvider: @escaping () -> WatchNowPlaying) {
       self.player = player
       self.stateProvider = stateProvider
@@ -111,6 +116,19 @@ import SonicWaveKit
             type: .info
           )
           return stateProvider().asDictionary
+        }
+        if let nonce = message[WatchKey.nonce] as? String,
+           !seenCommandNonces.insert(nonce).inserted {
+          os_log(
+            "Dropping duplicated watch command (lost reply retry)",
+            log: log,
+            type: .info
+          )
+          return stateProvider().asDictionary
+        }
+        // bound the dedupe set — nonces are ~36-char UUIDs, one per tap
+        if seenCommandNonces.count > 128 {
+          seenCommandNonces.removeAll(keepingCapacity: true)
         }
         execute(command, message: message)
       }

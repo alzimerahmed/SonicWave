@@ -45,7 +45,8 @@ final class WatchSessionManager: NSObject, ObservableObject {
   /// SonicWave installed on the paired iPhone
   @Published private(set) var isCompanionAppInstalled = true
   /// artwork for `artworkTrackId` — displayed only while it matches the
-  /// current track; `nil` renders the placeholder
+  /// current track; `nil` shows a `ProgressView` while a transfer is
+  /// in flight
   @Published private(set) var artwork: UIImage?
   @Published private(set) var artworkTrackId = ""
   /// crown-bound volume — remote value is mirrored in on state apply;
@@ -81,8 +82,11 @@ final class WatchSessionManager: NSObject, ObservableObject {
       WatchKey.kind: WatchMessageKind.command.rawValue,
       WatchKey.command: command.rawValue,
       // `transferUserInfo` replays verbatim on next launch — the phone
-      // drops commands older than `WatchSessionHandler.maxCommandAge`
+      // drops commands older than `WatchSessionHandler.maxCommandAge`;
+      // the nonce dedupes a `sendMessage` whose reply was lost but the
+      // command already executed
       WatchKey.sentAt: Date(),
+      WatchKey.nonce: UUID().uuidString,
     ]
     if command == .setVolume {
       message[WatchKey.volume] = volume
