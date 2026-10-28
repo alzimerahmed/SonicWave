@@ -192,6 +192,7 @@
 		507DFE522B1E5848002BBB1D /* ID3TagEditor in Frameworks */ = {isa = PBXBuildFile; productRef = 507DFE512B1E5848002BBB1D /* ID3TagEditor */; };
 		507DFE552B1E587B002BBB1D /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = 507DFE542B1E587B002BBB1D /* Alamofire */; };
 		507DFE642B1E5A03002BBB1D /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = 507DFE632B1E5A03002BBB1D /* Alamofire */; };
+		507DFEA70000000000000002 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = 507DFEA60000000000000001 /* Alamofire */; };
 		507DFE6A2B1E62C9002BBB1D /* ID3TagEditor in Frameworks */ = {isa = PBXBuildFile; productRef = 507DFE692B1E62C9002BBB1D /* ID3TagEditor */; };
 		507DFE902B1E7262002BBB1D /* CallbackURLKit in Frameworks */ = {isa = PBXBuildFile; productRef = 507DFE8F2B1E7262002BBB1D /* CallbackURLKit */; };
 		508385E821C5965B00C4BB32 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 508385E721C5965B00C4BB32 /* AppDelegate.swift */; };
@@ -1528,6 +1529,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				507DFEA70000000000000002 /* Alamofire in Frameworks */,
 				502B8A4D2EE0CE40004CA3AD /* AudioStreaming in Frameworks */,
 				50C9D60F284FA847007F18D0 /* SonicWaveKit.framework in Frameworks */,
 			);
@@ -2871,6 +2873,7 @@
 			name = SonicWaveKitTests;
 			packageProductDependencies = (
 				502B8A4C2EE0CE40004CA3AD /* AudioStreaming */,
+				507DFEA60000000000000001 /* Alamofire */,
 			);
 			productName = SonicWaveKitTests;
 			productReference = 50C9D60E284FA847007F18D0 /* SonicWaveKitTests.xctest */;
@@ -4624,6 +4627,11 @@
 			productName = Alamofire;
 		};
 		507DFE632B1E5A03002BBB1D /* Alamofire */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 507DFE532B1E587B002BBB1D /* XCRemoteSwiftPackageReference "Alamofire" */;
+			productName = Alamofire;
+		};
+		507DFEA60000000000000001 /* Alamofire */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 507DFE532B1E587B002BBB1D /* XCRemoteSwiftPackageReference "Alamofire" */;
 			productName = Alamofire;
