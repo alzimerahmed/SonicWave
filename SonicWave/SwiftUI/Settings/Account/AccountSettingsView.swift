@@ -249,9 +249,9 @@ struct AccountSettingsView: View {
                 isOn: $settings.isPlayQueueSyncActive
               )
             },
-            header: "Sync with Server",
             footer:
-            "Saves your play queue to the server and restores newer changes from it. Not supported by all servers."
+            "Saves your play queue to the server and restores newer changes from it. Not supported by all servers.",
+            header: "Sync with Server"
           )
 
           SettingsSection(
