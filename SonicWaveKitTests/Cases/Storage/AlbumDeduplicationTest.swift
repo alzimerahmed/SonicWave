@@ -87,7 +87,7 @@ class AlbumDeduplicationTest: XCTestCase {
     // whichever copy survived must now own the song (no orphans)
     XCTAssertEqual(survivors.first?.songs.map { $0.id }, ["song-1"])
     XCTAssertEqual(song.album?.managedObject, survivors.first?.managedObject)
-    XCTAssertTrue(first.managedObject.isDeleted || second.managedObject.isDeleted)
+    XCTAssertEqual(library.getAlbums(for: account).filter { $0.id == "album-1" }.count, 1)
   }
 
   func testNoDuplicatesForDistinctIds() {

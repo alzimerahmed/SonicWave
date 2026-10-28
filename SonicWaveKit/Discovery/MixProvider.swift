@@ -295,29 +295,20 @@ public class MixProvider {
       basePredicate: NSPredicate
     ) -> [String] {
       let genreKeyPath = "genre.name"
-      let countExpression = NSExpressionDescription()
-      countExpression.name = "count"
-      countExpression.expression = NSExpression(
-        forFunction: "count:",
-        arguments: [NSExpression(forKeyPath: genreKeyPath)]
-      )
-      countExpression.expressionResultType = .integer64AttributeType
-
       let fetchRequest = NSFetchRequest<NSDictionary>(entityName: "Song")
       fetchRequest.resultType = .dictionaryResultType
-      fetchRequest.propertiesToGroupBy = [genreKeyPath]
-      fetchRequest.propertiesToFetch = [genreKeyPath, countExpression]
+      fetchRequest.propertiesToFetch = [genreKeyPath]
       fetchRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
         basePredicate,
         NSPredicate(format: "%K != nil", genreKeyPath),
       ])
       let rows = (try? context.fetch(fetchRequest)) ?? [NSDictionary]()
-      return rows.compactMap { row -> (String, Int)? in
-        guard let name = row[genreKeyPath] as? String, !name.isEmpty,
-              let count = row["count"] as? Int
-        else { return nil }
-        return (name, count)
+      var counts = [String: Int]()
+      for row in rows {
+        guard let name = row[genreKeyPath] as? String, !name.isEmpty else { continue }
+        counts[name, default: 0] += 1
       }
+      return counts.sorted { $0.value > $1.value }
       .sorted { $0.1 > $1.1 }
       .prefix(maxGenreBlendMixes)
       .map { $0.0 }

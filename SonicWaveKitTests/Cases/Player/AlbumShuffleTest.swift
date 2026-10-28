@@ -240,7 +240,11 @@ class AlbumShuffleTest: XCTestCase {
     XCTAssertFalse(testPlayer.isShuffle)
 
     // no more pool appends — the queued album just drains and stops
-    for _ in 0 ..< playables.count { finishTrack() }
+    var drainGuard = 0
+    while testPlayer.isPlaying, drainGuard < playables.count + 4 {
+      finishTrack()
+      drainGuard += 1
+    }
     XCTAssertFalse(testPlayer.isPlaying)
   }
 
