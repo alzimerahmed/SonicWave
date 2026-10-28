@@ -455,9 +455,10 @@ class SettingsHostVC: UIViewController {
       // retire the legacy global hard-stop (user.cacheLimit) — the
       // per-account LRU cap is now the single user-facing cache limit
       self.appDelegate.storage.settings.user.cacheLimit = 0
+      nonisolated(unsafe) let downloadManager = self.appDelegate
+        .getMeta(activeAccountInfo).playableDownloadManager
       Task { @MainActor in
-        await self.appDelegate.getMeta(activeAccountInfo).playableDownloadManager
-          .trimCacheToLimit()
+        await downloadManager.trimCacheToLimit()
       }
     }))
   }

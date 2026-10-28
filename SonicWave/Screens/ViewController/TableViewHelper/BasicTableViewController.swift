@@ -525,11 +525,11 @@ extension UIViewController {
     guard !leftItems.contains(where: { $0 is OfflineModeBarButtonItem }) else { return }
 
     let offlineItem = OfflineModeBarButtonItem(
-      image: .offlineMode,
+      image: AmperfyImage.offlineMode.asUIImage,
       menu: UIMenu(
         title: "Offline Mode is active",
         children: [
-          UIAction(title: "Go Online", image: .onlineMode) { _ in
+          UIAction(title: "Go Online", image: AmperfyImage.onlineMode.asUIImage) { _ in
             appDelegate.switchOnlineOfflineMode(isOfflineMode: false)
           },
         ]

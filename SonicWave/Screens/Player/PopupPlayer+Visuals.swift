@@ -148,15 +148,15 @@ extension PopupPlayerVC {
       let extracted = (try? artwork.dominantColors(max: 4)) ?? []
       await MainActor.run {
         guard let self else { return }
-        artworkTint = ArtworkTintPalette(
+        self.artworkTint = ArtworkTintPalette(
           extractedColors: extracted,
           fallbackTheme: themePreference,
           intensity: tintIntensity,
           isTrueBlack: appDelegate.isTrueBlackActive(in: traitCollection)
         )
-        artworkGradientColors = artworkTint.gradientColors
-        applyGradientBackground(isAnimated: true)
-        applyArtworkTint()
+        self.artworkGradientColors = self.artworkTint.gradientColors
+        self.applyGradientBackground(isAnimated: true)
+        self.applyArtworkTint()
       }
     }
   }
