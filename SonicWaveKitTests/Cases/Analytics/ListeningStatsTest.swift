@@ -162,14 +162,14 @@ class ListeningStatsTest: XCTestCase {
     // add listening time but never chart position
     let stats = ListeningStatsAggregator.aggregate(
       [
-        event(seconds: 500, counted: false, playableId: "a", title: "A"),
-        event(seconds: 200, counted: true, playableId: "a", title: "A"),
-        event(seconds: 100, counted: true, playableId: "b", title: "B"),
-        event(seconds: 100, counted: true, playableId: "b", title: "B"),
+        event(seconds: 500, counted: false, title: "A", playableId: "a"),
+        event(seconds: 200, counted: true, title: "A", playableId: "a"),
+        event(seconds: 100, counted: true, title: "B", playableId: "b"),
+        event(seconds: 100, counted: true, title: "B", playableId: "b"),
       ],
       period: .allTime
     )
-    XCTAssertEqual(stats.topSongs.map(\.name), ["B", "A"])
+    XCTAssertEqual(stats.topSongs.map { $0.name }, ["B", "A"])
     XCTAssertEqual(stats.topSongs.first?.playCount, 2)
     XCTAssertEqual(stats.topSongs.first?.secondsListened, 200)
     // "a" still shows its full 700 seconds
@@ -234,8 +234,8 @@ class ListeningStatsTest: XCTestCase {
     XCTAssertEqual(stats.topSongs.count, 10)
     // equal counts → alphabetical tie-break keeps the order stable
     XCTAssertEqual(
-      stats.topSongs.map(\.name),
-      stats.topSongs.map(\.name).sorted {
+      stats.topSongs.map { $0.name },
+      stats.topSongs.map { $0.name }.sorted {
         $0.localizedStandardCompare($1) == .orderedAscending
       }
     )
@@ -244,8 +244,8 @@ class ListeningStatsTest: XCTestCase {
   func testRecapTextContainsRealNumbers() {
     let stats = ListeningStatsAggregator.aggregate(
       [
-        event(seconds: 3_600, artist: "Solo", album: "One", title: "Hit", playableId: "1"),
-        event(seconds: 3_600, artist: "Solo", album: "One", title: "Hit", playableId: "1"),
+        event(seconds: 3_600, title: "Hit", artist: "Solo", album: "One", playableId: "1"),
+        event(seconds: 3_600, title: "Hit", artist: "Solo", album: "One", playableId: "1"),
       ],
       period: .week
     )
