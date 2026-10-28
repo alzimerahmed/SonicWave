@@ -37,6 +37,7 @@ class SmartPlaylistDetailVC: BasicTableViewController {
     case songs = 1
   }
 
+  let account: Account
   let playlist: Playlist
   private var criteria: SmartPlaylistCriteria?
   private var resolvedPlayables = [AbstractPlayable]()
@@ -48,9 +49,10 @@ class SmartPlaylistDetailVC: BasicTableViewController {
   private var optionsButton: UIBarButtonItem!
 
   init(account: Account, playlist: Playlist) {
+    self.account = account
     self.playlist = playlist
     self.criteria = playlist.smartCriteria
-    super.init(style: .grouped, account: account)
+    super.init(style: .grouped)
   }
 
   required init?(coder: NSCoder) {

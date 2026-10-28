@@ -30,6 +30,7 @@ import UIKit
 /// (`PlayableTableCell`, swipe/context actions, Play/Shuffle header,
 /// offline indicator) minus the CoreData binding.
 class PlayableListVC: BasicTableViewController {
+  let account: Account
   override var sceneTitle: String? { listTitle }
 
   private var playables: [AbstractPlayable]
@@ -45,6 +46,7 @@ class PlayableListVC: BasicTableViewController {
     emptyTitle: String? = nil,
     emptySubtitle: String? = nil
   ) {
+    self.account = account
     self.playables = playables
     self.listTitle = title
     self.emptyTitle = emptyTitle ?? NSLocalizedString(
@@ -55,7 +57,7 @@ class PlayableListVC: BasicTableViewController {
       "Nothing could be resolved here right now.",
       comment: "Empty state subtitle for a resolved song list"
     )
-    super.init(style: .grouped, account: account)
+    super.init(style: .grouped)
   }
 
   required init?(coder: NSCoder) {

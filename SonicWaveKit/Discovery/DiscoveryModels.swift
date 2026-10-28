@@ -205,7 +205,7 @@ public enum ShareableType: String, Sendable, Codable, CaseIterable {
 /// `updateShare`. `url` is the post-override URL — when the account's
 /// `publicUrlOverride` is set the API layer rewrites scheme+host+port so
 /// reverse-proxied servers hand out reachable links.
-public struct ShareDescription: Sendable, Equatable {
+public struct ShareDescription: Sendable, Equatable, Identifiable {
   public var id: String
   public var url: String
   public var description: String?
