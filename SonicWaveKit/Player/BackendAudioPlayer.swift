@@ -1619,12 +1619,13 @@ extension BackendAudioPlayer: AudioStreaming.AudioPlayerDelegate {
     duration: Double
   ) {
     let entryID = entryId.id
+    nonisolated(unsafe) let sourcePlayer = player
     Task { @MainActor in
       // finish callbacks from the draining (spare) engine must not drive
       // the state machine — after a same-URL fade (repeat-single, or the
       // same song queued twice) the outgoing entry's id equals
       // `currentPlayUrl` and would double-advance the queue
-      guard player === self.player else { return }
+      guard sourcePlayer === self.player else { return }
       if self.currentPlayUrl == entryID {
         self.currentPlayUrl = ""
         self.itemFinishedPlaying()
@@ -1636,8 +1637,9 @@ extension BackendAudioPlayer: AudioStreaming.AudioPlayerDelegate {
     player: AudioStreaming.AudioPlayer,
     error: AudioStreaming.AudioPlayerError
   ) {
+    nonisolated(unsafe) let sourcePlayer = player
     Task { @MainActor in
-      if player === self.player || self.player == nil {
+      if sourcePlayer === self.player || self.player == nil {
         self.handleError(error: error)
       } else {
         // a failing spare engine must not tear down active playback —
@@ -1653,10 +1655,11 @@ extension BackendAudioPlayer: AudioStreaming.AudioPlayerDelegate {
     player: AudioStreaming.AudioPlayer,
     queuedItems: [AudioStreaming.AudioEntryId]
   ) {
+    nonisolated(unsafe) let sourcePlayer = player
     Task { @MainActor in
       // only the active engine's queue maps to `currentPlayUrl` — a
       // cancelled spare-engine entry must not clear the playing track
-      guard player === self.player else { return }
+      guard sourcePlayer === self.player else { return }
       self.currentPlayUrl = ""
     }
   }
