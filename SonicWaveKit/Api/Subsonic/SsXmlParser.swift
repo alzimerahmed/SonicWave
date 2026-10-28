@@ -60,7 +60,13 @@ enum SubsonicDateParser {
     formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
     if let date = formatter.date(from: rawValue) { return date }
     formatter.formatOptions = [.withInternetDateTime]
-    return formatter.date(from: rawValue)
+    if let date = formatter.date(from: rawValue) { return date }
+    // servers that omit the timezone entirely — treat as UTC
+    let fallback = DateFormatter()
+    fallback.locale = Locale(identifier: "en_US_POSIX")
+    fallback.timeZone = TimeZone(secondsFromGMT: 0)
+    fallback.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+    return fallback.date(from: rawValue)
   }
 }
 

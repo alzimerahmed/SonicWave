@@ -72,7 +72,6 @@ public struct KeychainHelper: Sendable {
     let query = baseQuery(account: account)
     let updateAttributes: [String: Any] = [
       kSecValueData as String: data,
-      kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
     ]
     let lookupStatus = SecItemCopyMatching(query as CFDictionary, nil)
     switch lookupStatus {
