@@ -39,7 +39,7 @@ import SonicWaveKit
   /// on that same serial queue.
   @MainActor
   final class WatchSessionHandler: NSObject {
-    private let player: PlayerFacade
+    private var player: PlayerFacade
     private let stateProvider: () -> WatchNowPlaying
     private var isStarted = false
 

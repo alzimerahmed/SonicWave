@@ -84,10 +84,10 @@ public struct PlayableStorageUsage: Sendable, Equatable {
 // MARK: - AbstractPlayableInfo
 
 public struct AbstractPlayableInfo: Sendable {
-  let id: String
-  let objectID: NSManagedObjectID
-  let type: DerivedPlayableType
-  let streamId: String? // Can vary for Subsonic: Podcast Episode -> streamId
+  public let id: String
+  public let objectID: NSManagedObjectID
+  public let type: DerivedPlayableType
+  public let streamId: String? // Can vary for Subsonic: Podcast Episode -> streamId
 }
 
 // MARK: - AbstractPlayable

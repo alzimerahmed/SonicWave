@@ -194,8 +194,8 @@ struct LibrarySettingsView: View {
           SettingsRow(title: "Downloads") { SecondaryText(pinnedUsageText) }
           SettingsRow(title: "Cache") { SecondaryText(cacheUsageText) }
           SettingsRow(title: "Total") { SecondaryText(totalUsageText) }
-        }, header: "Storage", footer:
-        "Downloads are kept until you delete them. The cache holds automatically saved songs and podcast episodes and frees space on its own.")
+        }, footer:
+        "Downloads are kept until you delete them. The cache holds automatically saved songs and podcast episodes and frees space on its own.", header: "Storage")
 
         SettingsSection(content: {
           SettingsRow(title: "Cache Limit") {
