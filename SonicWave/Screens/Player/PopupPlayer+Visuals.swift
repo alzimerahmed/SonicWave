@@ -150,9 +150,9 @@ extension PopupPlayerVC {
         guard let self else { return }
         self.artworkTint = ArtworkTintPalette(
           extractedColors: extracted,
-          fallbackTheme: themePreference,
-          intensity: tintIntensity,
-          isTrueBlack: appDelegate.isTrueBlackActive(in: traitCollection)
+          fallbackTheme: self.themePreference,
+          intensity: self.tintIntensity,
+          isTrueBlack: appDelegate.isTrueBlackActive(in: self.traitCollection)
         )
         self.artworkGradientColors = self.artworkTint.gradientColors
         self.applyGradientBackground(isAnimated: true)

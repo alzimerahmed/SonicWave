@@ -530,7 +530,7 @@ extension UIViewController {
         title: "Offline Mode is active",
         children: [
           UIAction(title: "Go Online", image: AmperfyImage.onlineMode.asUIImage) { _ in
-            appDelegate.switchOnlineOfflineMode(isOfflineMode: false)
+            self.appDelegate.switchOnlineOfflineMode(isOfflineMode: false)
           },
         ]
       )
