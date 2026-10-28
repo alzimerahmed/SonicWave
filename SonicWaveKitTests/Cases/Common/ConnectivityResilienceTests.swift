@@ -26,7 +26,7 @@ import XCTest
 // MARK: - StubNetworkMonitor
 
 /// Controllable `NetworkMonitorFacade` for `ServerUnreachableMonitor` tests.
-private final class StubNetworkMonitor: NetworkMonitorFacade {
+private final class StubNetworkMonitor: NetworkMonitorFacade, @unchecked Sendable {
   var connectionTypeChangedCB: ConnectionTypeChangedCallack?
   var isConnectedToNetwork = true
   var isCellular = false

@@ -232,7 +232,7 @@ final class MOCK_DownloadManagerDelegate: DownloadManagerDelegate {
 
 // MARK: - MOCK_BackendApi
 
-final class MOCK_BackendApi: BackendApi {
+final class MOCK_BackendApi: BackendApi, @unchecked Sendable {
   let clientApiVersion: String = ""
   let serverApiVersion: String = ""
   let httpHeaders: [String: String] = [:]
