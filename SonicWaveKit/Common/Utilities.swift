@@ -348,11 +348,12 @@ extension UIColor {
   }
 
   public static var fillColor: UIColor {
-    if #available(iOS 13.0, *) {
+    #if os(tvOS)
+      // no `systemFill` on tvOS — translucent light fill equivalent
+      return UIColor.white.withAlphaComponent(0.16)
+    #else
       return UIColor.systemFill
-    } else {
-      return UIColor(displayP3Red: 217 / 255, green: 214 / 255, blue: 209 / 255, alpha: 1.0)
-    }
+    #endif
   }
 
   public static var secondaryLabelColor: UIColor {
@@ -364,21 +365,19 @@ extension UIColor {
   }
 
   public static var backgroundColor: UIColor {
-    if #available(iOS 13.0, *) {
+    #if os(tvOS)
+      // no `systemBackground` on tvOS — dark surface matches tvOS UI
+      return UIColor.black
+    #else
       return UIColor.systemBackground
-    } else {
-      return UIColor.white
-    }
+    #endif
   }
 }
 
 extension UIActivityIndicatorView {
   public static var defaultStyle: Style {
-    if #available(iOS 13.0, *) {
-      return .medium
-    } else {
-      return .gray
-    }
+    // `.gray` is iOS-12-era — deployment target and tvOS both take `.medium`
+    return .medium
   }
 }
 

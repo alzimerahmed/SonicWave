@@ -22,7 +22,7 @@
 import Foundation
 import os.log
 import UIKit
-#if canImport(UserNotifications)
+#if canImport(UserNotifications) && !os(tvOS)
   import UserNotifications // tvOS has no user-notification surface
 #endif
 
@@ -56,7 +56,7 @@ public class LocalNotificationManager {
   }
 
   nonisolated public func hasAuthorizationNotBeenAskedYet() async -> Bool {
-    #if canImport(UserNotifications)
+    #if canImport(UserNotifications) && !os(tvOS)
       return await Task {
         let settings = await UNUserNotificationCenter.current().notificationSettings()
         switch settings.authorizationStatus {
@@ -73,7 +73,7 @@ public class LocalNotificationManager {
   }
 
   nonisolated public func requestAuthorization() {
-    #if canImport(UserNotifications)
+    #if canImport(UserNotifications) && !os(tvOS)
       Task {
         do {
           let _ = try await UNUserNotificationCenter.current().requestAuthorization(options: [
@@ -88,7 +88,7 @@ public class LocalNotificationManager {
     #endif
   }
 
-  #if canImport(UserNotifications)
+  #if canImport(UserNotifications) && !os(tvOS)
     public func notify(podcastEpisode: PodcastEpisode) {
       userStatistics.localNotificationCreated()
       Task {
@@ -149,7 +149,7 @@ public class LocalNotificationManager {
   }
 
   public func notifyDebugAndWait(title: String, body: String) async {
-    #if canImport(UserNotifications)
+    #if canImport(UserNotifications) && !os(tvOS)
       let content = UNMutableNotificationContent()
       content.title = title
       content.body = body
@@ -167,7 +167,7 @@ public class LocalNotificationManager {
     #endif
   }
 
-  #if canImport(UserNotifications)
+  #if canImport(UserNotifications) && !os(tvOS)
     nonisolated private func notify(request: UNNotificationRequest) async {
       let settings = await UNUserNotificationCenter.current().notificationSettings()
       switch settings.authorizationStatus {

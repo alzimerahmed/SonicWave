@@ -111,8 +111,10 @@ public struct ClientCertificateStore: Sendable {
     let status = SecPKCS12Import(pkcs12Data as CFData, options, &items)
     guard status == errSecSuccess,
           let item = (items as? [[String: Any]])?.first,
-          let identity = item[kSecImportItemIdentity as String] as! SecIdentity
+          item[kSecImportItemIdentity as String] != nil
     else { return nil }
+    // SecPKCS12Import guarantees a SecIdentity value at this key
+    let identity = item[kSecImportItemIdentity as String] as! SecIdentity
     let chain = item[kSecImportItemCertChain as String] as? [SecCertificate] ?? []
     return (identity, chain)
   }
