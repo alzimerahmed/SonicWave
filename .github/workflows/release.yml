@@ -1,13 +1,15 @@
 name: Release
 
 # Tag-triggered release: `git tag -a vX.Y.Z -m "..." && git push origin vX.Y.Z`
-# builds an unsigned device archive, packages it as a sideloadable .ipa, and
-# publishes a GitHub Release with the artifact attached.
+# builds an unsigned iOS SIMULATOR app, packages it as a .zip, and publishes
+# a GitHub Release with the artifact attached. `workflow_dispatch` retries a
+# failed release for an existing tag without re-tagging.
 #
 # Device signing requires an Apple Developer team (the entitled targets
-# cannot be unsigned-provisioned in Xcode 26) — a signed archive remains a
-# manual maintainer step. This workflow ships an unsigned SIMULATOR build
-# (runnable on arm64-Mac iOS Simulators) as the downloadable artifact.
+# cannot be unsigned-provisioned in Xcode 26) — a signed device archive
+# remains a manual maintainer step. This workflow ships an unsigned
+# SIMULATOR build (runnable on arm64-Mac iOS Simulators) as the
+# downloadable artifact.
 
 permissions:
   contents: write
@@ -15,12 +17,19 @@ permissions:
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag (vX.Y.Z)
+        required: true
+        type: string
 
 env:
   XCODE_PROJECT: SonicWave.xcodeproj
   XCODE_SCHEME: SonicWave
   DERIVED_DATA: DerivedData
   SPM_PACKAGES_DIR: .spm-source-packages
+  RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
 
 jobs:
   build-release:
@@ -28,8 +37,22 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 60
     steps:
+      - name: Validate release tag
+        run: |
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] \
+            || { echo "::error::Invalid tag: '$RELEASE_TAG' (expected vX.Y.Z)"; exit 1; }
+
       - name: Checkout
         uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: Verify checkout matches tag
+        run: |
+          TAG_COMMIT=$(git rev-list -n1 "$RELEASE_TAG" 2>/dev/null || true)
+          [ -n "$TAG_COMMIT" ] || { echo "::error::Tag $RELEASE_TAG not found locally"; exit 1; }
+          test "$TAG_COMMIT" = "$(git rev-parse HEAD)" \
+            || { echo "::error::$RELEASE_TAG -> $TAG_COMMIT, HEAD=$(git rev-parse HEAD)"; exit 1; }
 
       - name: Select Xcode
         run: |
@@ -51,15 +74,15 @@ jobs:
           -project "$XCODE_PROJECT" -scheme "$XCODE_SCHEME"
           -clonedSourcePackagesDirPath "$SPM_PACKAGES_DIR"
 
-      # Device archive (iOS + embedded watchOS/widgets targets), unsigned.
       # Release configuration — minify/optimizations are exercised here that
-      # Debug CI never sees.
-      # Release device build (unsigned). `archive` demands a development
-      # team for the embedded widget/watch targets — `build` doesn't.
+      # Debug CI never sees. `archive` demands a development team for the
+      # embedded widget/watch targets — `build` doesn't. Plain `build` (not
+      # `build-for-testing`) skips the test targets, whose @testable imports
+      # cannot compile without ENABLE_TESTING in Release configuration.
       - name: Build (unsigned, Release)
         run: |
           set -o pipefail
-          xcodebuild build-for-testing \
+          xcodebuild build \
             -project "$XCODE_PROJECT" -scheme "$XCODE_SCHEME" \
             -configuration Release \
             -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest' \
@@ -67,16 +90,16 @@ jobs:
             -clonedSourcePackagesDirPath "$SPM_PACKAGES_DIR" \
             CODE_SIGNING_ALLOWED=NO \
             2>&1 | tee xcodebuild-release.log
-          ! grep -qE '\*\* (ARCHIVE|BUILD) FAILED \*\*' xcodebuild-release.log
+          ! grep -qE '\*\* (ARCHIVE|BUILD|TEST BUILD) FAILED \*\*' xcodebuild-release.log
 
-      - name: Package unsigned IPA
+      - name: Package simulator app
         run: |
-          echo "== archive contents =="
+          echo "== build products =="
           find "$DERIVED_DATA/Build/Products" -name "*.app" | sort
           APP=$(find "$DERIVED_DATA/Build/Products" -name "*.app" -type d -path "*iphonesimulator*" | head -1)
           echo "app bundle: $APP"
           test -d "$APP"
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${RELEASE_TAG#v}"
           mkdir -p dist
           (cd "$(dirname "$APP")" && zip -qry "$OLDPWD/dist/SonicWave-${VERSION}-simulator-app.zip" "$(basename "$APP")")
           ls -lh dist/
@@ -84,7 +107,8 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: SonicWave ${{ github.ref_name }}
+          tag_name: ${{ inputs.tag || github.ref_name }}
+          name: SonicWave ${{ inputs.tag || github.ref_name }}
           generate_release_notes: true
           body: |
             Unsigned **simulator** build — runs on iOS Simulator (arm64 Mac).
