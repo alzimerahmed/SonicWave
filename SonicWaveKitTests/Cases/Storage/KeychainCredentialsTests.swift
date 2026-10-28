@@ -66,6 +66,7 @@ private final class StubSecretsStore: CredentialSecretsStoring {
 
 // MARK: - KeychainCredentialsTests
 
+@MainActor
 final class KeychainCredentialsTests: XCTestCase {
   private var cdHelper: CoreDataHelper!
   private var storage: PersistentStorage!

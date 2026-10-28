@@ -35,6 +35,7 @@ private final class StubNetworkMonitor: NetworkMonitorFacade, @unchecked Sendabl
 
 // MARK: - ConnectivityResilienceTests
 
+@MainActor
 final class ConnectivityResilienceTests: XCTestCase {
   private var cdHelper: CoreDataHelper!
   private var eventLogger: EventLogger!

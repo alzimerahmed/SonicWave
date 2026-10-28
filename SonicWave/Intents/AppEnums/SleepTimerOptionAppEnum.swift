@@ -39,39 +39,39 @@ enum SleepTimerOptionAppEnum: Int, AppEnum {
   /// Shortcuts picker and the spoken dialogs can't drift
   static let caseDisplayRepresentations: [Self: DisplayRepresentation] = [
     .off: DisplayRepresentation(
-      title: .init(stringLiteral: SleepTimerOptionAppEnum.off.displayName),
+      title: "Off",
       image: .init(systemName: "moon.zzz")
     ),
     .endOfTrack: DisplayRepresentation(
-      title: .init(stringLiteral: SleepTimerOptionAppEnum.endOfTrack.displayName),
+      title: "End of Track",
       image: .init(systemName: "music.note"),
       synonyms: ["end of song", "end of episode", "after this track"]
     ),
     .minutes5: DisplayRepresentation(
-      title: .init(stringLiteral: SleepTimerOptionAppEnum.minutes5.displayName)
+      title: "5 Minutes"
     ),
     .minutes10: DisplayRepresentation(
-      title: .init(stringLiteral: SleepTimerOptionAppEnum.minutes10.displayName)
+      title: "10 Minutes"
     ),
     .minutes15: DisplayRepresentation(
-      title: .init(stringLiteral: SleepTimerOptionAppEnum.minutes15.displayName)
+      title: "15 Minutes"
     ),
     .minutes30: DisplayRepresentation(
-      title: .init(stringLiteral: SleepTimerOptionAppEnum.minutes30.displayName)
+      title: "30 Minutes"
     ),
     .minutes45: DisplayRepresentation(
-      title: .init(stringLiteral: SleepTimerOptionAppEnum.minutes45.displayName)
+      title: "45 Minutes"
     ),
     .minutes60: DisplayRepresentation(
-      title: .init(stringLiteral: SleepTimerOptionAppEnum.minutes60.displayName),
+      title: "1 Hour",
       synonyms: ["60 minutes", "one hour"]
     ),
     .minutes120: DisplayRepresentation(
-      title: .init(stringLiteral: SleepTimerOptionAppEnum.minutes120.displayName),
+      title: "2 Hours",
       synonyms: ["120 minutes", "two hours"]
     ),
     .minutes240: DisplayRepresentation(
-      title: .init(stringLiteral: SleepTimerOptionAppEnum.minutes240.displayName),
+      title: "4 Hours",
       synonyms: ["240 minutes", "four hours"]
     ),
   ]
