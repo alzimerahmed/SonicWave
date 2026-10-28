@@ -117,21 +117,7 @@ public class MetaManager {
 
   /// G4: multi-source synced-lyrics provider for this account
   /// (server lyrics -> embedded/sidecar -> LRCLIB, disk-cached).
-  public lazy var syncedLyricsManager: SyncedLyricsManager = {
-    SyncedLyricsManager(
-      account: account,
-      networkMonitor: networkMonitor,
-      storage: storage,
-      librarySyncer: librarySyncer,
-      eventLogger: eventLogger,
-      lyricsPersistedCB: { [spotlightIndexer] accountIdent, playableId in
-        Task { await spotlightIndexer?.reindexPlayable(
-          accountIdent: accountIdent,
-          playableId: playableId
-        ) }
-      }
-    )
-  }()
+  public private(set) var syncedLyricsManager: SyncedLyricsManager
 
   public lazy var duplicateEntitiesResolver: DuplicateEntitiesResolver = {
     DuplicateEntitiesResolver(account: account, storage: storage)
@@ -165,6 +151,19 @@ public class MetaManager {
     self.notificationHandler = notificationHandler
     self.localNotificationManager = localNotificationManager
     self.spotlightIndexer = spotlightIndexer
+    self.syncedLyricsManager = SyncedLyricsManager(
+      account: account,
+      networkMonitor: networkMonitor,
+      storage: storage,
+      librarySyncer: librarySyncer,
+      eventLogger: eventLogger,
+      lyricsPersistedCB: { [spotlightIndexer] accountIdent, playableId in
+        Task { await spotlightIndexer?.reindexPlayable(
+          accountIdent: accountIdent,
+          playableId: playableId
+        ) }
+      }
+    )
   }
 
   private var playQueueSyncer: PlayQueueSyncer?
