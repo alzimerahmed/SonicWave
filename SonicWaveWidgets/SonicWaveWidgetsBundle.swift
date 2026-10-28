@@ -30,7 +30,7 @@ struct SonicWaveWidgetsBundle: WidgetBundle {
     NowPlayingWidget()
     RecentlyPlayedWidget()
     NowPlayingLockScreenWidget()
-    #if canImport(ActivityKit)
+    #if canImport(ActivityKit) && !targetEnvironment(macCatalyst)
       PlaybackLiveActivityWidget()
     #endif
   }

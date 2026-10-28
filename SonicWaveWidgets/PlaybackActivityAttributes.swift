@@ -21,7 +21,7 @@
 
 import Foundation
 
-#if canImport(ActivityKit)
+#if canImport(ActivityKit) && !targetEnvironment(macCatalyst)
   import ActivityKit
 
   // MARK: - PlaybackActivityAttributes

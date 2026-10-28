@@ -53,7 +53,7 @@ struct StartAlbumShuffleIntent: AppIntent {
     // shared recipe with the Home-Screen quick action
     // (`QuickActionsHandler`) — the handler also no-ops a live session
     // instead of wiping the queue
-    switch AlbumShuffleHandler.start(
+    switch AlbumShuffleLauncher.start(
       storage: appDelegate.storage,
       player: appDelegate.player,
       accountInfo: accountCoreData.info

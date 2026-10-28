@@ -134,7 +134,7 @@ public final class ServerCertificatePinStore: @unchecked Sendable {
     subsystem: "com.alzimerahmed.SonicWave",
     category: "ServerCertificatePinStore"
   )
-  private let keychain = KeychainHelper(service: Self.service)
+  private let keychain = KeychainHelper(service: ServerCertificatePinStore.service)
   private let lock = NSLock()
 
   public init() {}
@@ -471,7 +471,7 @@ final class AccountSessionDelegate: SessionDelegate, @unchecked Sendable {
     super.init()
   }
 
-  override func urlSession(
+  nonisolated func urlSession(
     _ session: URLSession,
     didReceive challenge: URLAuthenticationChallenge,
     completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void

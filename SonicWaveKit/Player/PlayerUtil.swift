@@ -49,9 +49,9 @@ extension MusicPlayable {
 }
 
 extension MusicPlayable {
-  func didShuffleChange() {}
-  func didRepeatChange() {}
-  func didPlaybackRateChange() {}
+  public func didShuffleChange() {}
+  public func didRepeatChange() {}
+  public func didPlaybackRateChange() {}
   func errorOccurred(error: Error) {}
 }
 

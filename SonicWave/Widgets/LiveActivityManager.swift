@@ -22,7 +22,7 @@
 import Foundation
 import os.log
 import SonicWaveKit
-#if canImport(ActivityKit)
+#if canImport(ActivityKit) && !targetEnvironment(macCatalyst)
   import ActivityKit
 #endif
 
@@ -49,14 +49,14 @@ final class LiveActivityManager: MusicPlayable {
 
   private static let refreshDebounceNanos: UInt64 = 200_000_000
 
-  #if canImport(ActivityKit)
+  #if canImport(ActivityKit) && !targetEnvironment(macCatalyst)
     private var activity: Activity<PlaybackActivityAttributes>?
   #endif
 
   /// whether the settings UI should offer the toggle — Live Activities
   /// require device/user authorization, not just the capability flag
   static var isSupported: Bool {
-    #if canImport(ActivityKit)
+    #if canImport(ActivityKit) && !targetEnvironment(macCatalyst)
       return ActivityAuthorizationInfo().areActivitiesEnabled
     #else
       return false
@@ -100,7 +100,7 @@ final class LiveActivityManager: MusicPlayable {
   /// called once at bridge start: adopts an already-live activity
   /// (relaunch mid-session), ends stale leftovers, refreshes state
   func syncOnStart() {
-    #if canImport(ActivityKit)
+    #if canImport(ActivityKit) && !targetEnvironment(macCatalyst)
       if activity == nil {
         activity = Activity<PlaybackActivityAttributes>.activities.first
         for stale in Activity<PlaybackActivityAttributes>.activities
@@ -126,7 +126,7 @@ final class LiveActivityManager: MusicPlayable {
   }
 
   private func refresh() {
-    #if canImport(ActivityKit)
+    #if canImport(ActivityKit) && !targetEnvironment(macCatalyst)
       guard storage.settings.user.isLiveActivityEnabled,
             ActivityAuthorizationInfo().areActivitiesEnabled,
             let playable = player.currentlyPlaying else {
@@ -172,7 +172,7 @@ final class LiveActivityManager: MusicPlayable {
   }
 
   private func endActivity() {
-    #if canImport(ActivityKit)
+    #if canImport(ActivityKit) && !targetEnvironment(macCatalyst)
       guard let activity else { return }
       let finalContent = ActivityContent(
         state: activity.content.state,
@@ -200,7 +200,7 @@ final class LiveActivityManager: MusicPlayable {
     }
   }
 
-  #if canImport(ActivityKit)
+  #if canImport(ActivityKit) && !targetEnvironment(macCatalyst)
     private func makeContentState(
       for playable: AbstractPlayable
     ) -> PlaybackActivityAttributes.ContentState {

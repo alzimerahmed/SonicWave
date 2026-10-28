@@ -259,7 +259,4 @@ extension MusicHapticsService: MusicPlayable {
 
   public func didPlaylistChange() {}
   public func didArtworkChange() {}
-  public func didShuffleChange() {}
-  public func didRepeatChange() {}
-  public func didPlaybackRateChange() {}
 }

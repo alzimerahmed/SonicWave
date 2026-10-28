@@ -117,7 +117,7 @@ public class MetaManager {
 
   /// G4: multi-source synced-lyrics provider for this account
   /// (server lyrics -> embedded/sidecar -> LRCLIB, disk-cached).
-  public lazy var syncedLyricsManager: SyncedLyricsManager = {
+  public lazy var syncedLyricsManager: SyncedLyricsManager = { @MainActor in
     SyncedLyricsManager(
       account: account,
       networkMonitor: networkMonitor,

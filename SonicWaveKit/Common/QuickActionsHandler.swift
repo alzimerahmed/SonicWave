@@ -195,7 +195,7 @@ public class QuickActionsHandler {
 
 // MARK: - AlbumShuffleStartResult
 
-/// Outcome of `AlbumShuffleHandler.start` — lets `StartAlbumShuffleIntent`
+/// Outcome of `AlbumShuffleLauncher.start` — lets `StartAlbumShuffleIntent`
 /// answer precisely while the quick action can ignore it.
 public enum AlbumShuffleStartResult {
   case started
@@ -212,7 +212,7 @@ public enum AlbumShuffleStartResult {
 /// action, the entity-preview "Shuffle Albums" action and
 /// `StartAlbumShuffleIntent` all route here so the
 /// enable-mode-then-`playShuffled` recipe can't drift.
-public enum AlbumShuffleHandler {
+public enum AlbumShuffleLauncher {
   @MainActor
   public static func start(
     storage: PersistentStorage,
