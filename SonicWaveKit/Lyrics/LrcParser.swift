@@ -56,7 +56,7 @@ enum LrcParser {
         } else {
           applyMetadataTag(tagContent, to: &lyrics)
         }
-        rest = rest[rest.index(after: closing) ...]
+        rest = rest[rest.index(after: closing)...]
       }
 
       let (plainText, words) = parseWordSegments(rest)

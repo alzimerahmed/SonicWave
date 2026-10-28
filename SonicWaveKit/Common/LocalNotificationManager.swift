@@ -167,7 +167,7 @@ public class LocalNotificationManager {
     #endif
   }
 
-  #if canImport(UserNotifications)  #if canImport(UserNotifications)
+  #if canImport(UserNotifications)
     nonisolated private func notify(request: UNNotificationRequest) async {
       let settings = await UNUserNotificationCenter.current().notificationSettings()
       switch settings.authorizationStatus {
