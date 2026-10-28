@@ -275,9 +275,9 @@ struct EqualizerSettingsView: View {
                 .disabled(currentRouteKey == nil)
               }
             },
-            header: String(localized: "Per-Output EQ"),
             footer:
-            String(localized: "Applies a different EQ profile to this audio output. The choice is remembered per device.")
+            String(localized: "Applies a different EQ profile to this audio output. The choice is remembered per device."),
+            header: String(localized: "Per-Output EQ")
           )
         }
 
