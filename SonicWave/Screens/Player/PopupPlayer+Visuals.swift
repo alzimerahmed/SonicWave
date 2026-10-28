@@ -152,7 +152,7 @@ extension PopupPlayerVC {
           extractedColors: extracted,
           fallbackTheme: themePreference,
           intensity: tintIntensity,
-          isTrueBlack: appDelegate.isTrueBlackActive(in: self.traitCollection)
+          isTrueBlack: self.appDelegate.isTrueBlackActive(in: self.traitCollection)
         )
         self.artworkGradientColors = self.artworkTint.gradientColors
         self.applyGradientBackground(isAnimated: true)
