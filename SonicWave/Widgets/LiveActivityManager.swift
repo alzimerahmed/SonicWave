@@ -105,8 +105,9 @@ final class LiveActivityManager: MusicPlayable {
         activity = Activity<PlaybackActivityAttributes>.activities.first
         for stale in Activity<PlaybackActivityAttributes>.activities
           .dropFirst() {
+          nonisolated(unsafe) let staleActivity = stale
           enqueueActivityWork {
-            await stale.end(nil, dismissalPolicy: .immediate)
+            await staleActivity.end(nil, dismissalPolicy: .immediate)
           }
         }
       }
@@ -138,15 +139,17 @@ final class LiveActivityManager: MusicPlayable {
         staleDate: nil
       )
       if let activity {
+        nonisolated(unsafe) let liveActivity = activity
         enqueueActivityWork {
-          await activity.update(content)
+          await liveActivity.update(content)
         }
         return
       }
       if let existing = Activity<PlaybackActivityAttributes>.activities.first {
         activity = existing
+        nonisolated(unsafe) let existingActivity = existing
         enqueueActivityWork {
-          await existing.update(content)
+          await existingActivity.update(content)
         }
         return
       }
@@ -181,8 +184,9 @@ final class LiveActivityManager: MusicPlayable {
       // self.activity stays bound until `end` actually executes inside the
       // work chain — nil'ing early let refresh() re-adopt the dying
       // activity via `activities.first` and update it after its own end
+      nonisolated(unsafe) let endingActivity = activity
       enqueueActivityWork { [weak self] in
-        await activity.end(finalContent, dismissalPolicy: .immediate)
+        await endingActivity.end(finalContent, dismissalPolicy: .immediate)
         await MainActor.run { self?.activity = nil }
       }
     #endif

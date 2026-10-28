@@ -197,8 +197,10 @@ import SonicWaveKit
       didReceiveMessage message: [String: Any],
       replyHandler: @escaping ([String: Any]) -> Void
     ) {
+      nonisolated(unsafe) let reply = replyHandler
+      nonisolated(unsafe) let msg = message
       Task { @MainActor in
-        replyHandler(self.handle(message: message))
+        reply(self.handle(message: msg))
       }
     }
 
@@ -208,8 +210,9 @@ import SonicWaveKit
       _ session: WCSession,
       didReceiveUserInfo userInfo: [String: Any] = [:]
     ) {
+      nonisolated(unsafe) let info = userInfo
       Task { @MainActor in
-        _ = self.handle(message: userInfo)
+        _ = self.handle(message: info)
       }
     }
 
