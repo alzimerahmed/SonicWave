@@ -1727,7 +1727,6 @@ public class LibraryStorage: PlayableFileCachable {
     let fetchRequest = SongMO.identifierSortedFetchRequest
     fetchRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
       getFetchPredicate(forAccount: account),
-      SongMO.excludeServerDeleteUncachedSongsFetchPredicate,
       NSPredicate(format: "%K == TRUE", #keyPath(SongMO.isDisliked)),
     ])
     let foundSongs = try? context.fetch(fetchRequest)

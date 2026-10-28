@@ -35,17 +35,24 @@ class CoreDataHelper {
 
   init() {
     self.seeder = CoreDataSeeder()
+    _ = createInMemoryManagedObjectContext()
   }
 
   func createInMemoryManagedObjectContext() -> NSManagedObjectContext {
+    guard persistentContainer.persistentStores.isEmpty else {
+      return persistentContainer.viewContext
+    }
+    // SQLite store backed by /dev/null — unlike NSInMemoryStoreType this
+    // supports GROUP BY and NSBatchDeleteRequest while persisting nothing.
     let description = NSPersistentStoreDescription()
-    description.type = NSInMemoryStoreType
+    description.type = NSSQLiteStoreType
+    description.url = URL(fileURLWithPath: "/dev/null")
     description.shouldAddStoreAsynchronously = false // Make it simpler in test env
 
     persistentContainer.persistentStoreDescriptions = [description]
     persistentContainer.loadPersistentStores { description, error in
       // Check if the data store is in memory
-      precondition(description.type == NSInMemoryStoreType)
+      precondition(description.type == NSSQLiteStoreType)
 
       // Check if creating container wrong
       if let error = error {

@@ -40,13 +40,15 @@ class OfflineFirstSchemaV50Test: XCTestCase {
   // MARK: Migration chain
 
   func testMigrationVersionChainReachesV50() {
-    XCTAssertEqual(CoreDataMigrationVersion.current, .v50)
+    XCTAssertEqual(CoreDataMigrationVersion.current, .v52)
     XCTAssertEqual(CoreDataMigrationVersion.v49.nextVersion(), .v50)
-    XCTAssertNil(CoreDataMigrationVersion.v50.nextVersion())
+    XCTAssertEqual(CoreDataMigrationVersion.v50.nextVersion(), .v51)
+    XCTAssertEqual(CoreDataMigrationVersion.v51.nextVersion(), .v52)
+    XCTAssertNil(CoreDataMigrationVersion.v52.nextVersion())
   }
 
   func testLibrarySyncVersionIsV22() {
-    XCTAssertEqual(LibrarySyncVersion.newestVersion, .v22)
+    XCTAssertEqual(LibrarySyncVersion.newestVersion, .v24)
     XCTAssertEqual(LibrarySyncVersion.v22.rawValue, 16)
     XCTAssertTrue(LibrarySyncVersion.v21 < LibrarySyncVersion.v22)
   }

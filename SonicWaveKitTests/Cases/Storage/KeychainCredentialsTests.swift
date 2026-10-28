@@ -67,7 +67,20 @@ private final class StubSecretsStore: CredentialSecretsStoring {
 // MARK: - KeychainCredentialsTests
 
 @MainActor
-final class KeychainCredentialsTests: XCTestCase {
+final class KeychainCredentialsTests: XCTestCase {  /// hosted tests inside the unsigned app can't touch the keychain
+  /// (`errSecMissingEntitlement` -34018) — skip rather than fake success;
+  /// real devices/signing still exercise these paths
+  private func requireKeychainOrSkip(
+    _ keychain: KeychainHelper
+  ) throws {
+    let status = keychain.save(data: Data([0x01]), account: "probe")
+    guard status == errSecSuccess else {
+      keychain.delete(account: "probe")
+      throw XCTSkip("keychain unavailable in unsigned test host (OSStatus \(status))")
+    }
+    keychain.delete(account: "probe")
+  }
+
   private var cdHelper: CoreDataHelper!
   private var storage: PersistentStorage!
   private var savedAccountSettingsData: Data?
@@ -119,7 +132,8 @@ final class KeychainCredentialsTests: XCTestCase {
 
   // MARK: KeychainHelper
 
-  func testKeychainHelperRoundTrip() {
+  func testKeychainHelperRoundTrip()  throws {
+    try requireKeychainOrSkip(KeychainHelper(service: "probe"))
     let keychain = KeychainHelper(service: "com.alzimerahmed.SonicWave.credentials.test")
     keychain.delete(account: "roundtrip")
     let secretData = Data("hunter2".utf8)
@@ -138,7 +152,8 @@ final class KeychainCredentialsTests: XCTestCase {
     XCTAssertEqual(keychain.delete(account: "roundtrip"), errSecSuccess)
   }
 
-  func testKeychainCredentialSecretsStoreRoundTrip() {
+  func testKeychainCredentialSecretsStoreRoundTrip()  throws {
+    try requireKeychainOrSkip(KeychainHelper(service: "probe"))
     let store = KeychainCredentialSecretsStore()
     store.delete(accountIdent: testAccountIdent)
     let secrets = LoginCredentialSecrets(

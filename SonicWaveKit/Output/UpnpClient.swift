@@ -86,8 +86,8 @@ public enum SsdpMessages {
     var server: String?
     for line in text.components(separatedBy: "\r\n") {
       guard let colon = line.firstIndex(of: ":") else { continue }
-      let name = line[..<colon].trimmingCharacters(in: .whitespaces).lowercased()
-      let value = line[line.index(after: colon)...].trimmingCharacters(in: .whitespaces)
+      let name = line[..<colon].trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+      let value = line[line.index(after: colon)...].trimmingCharacters(in: .whitespacesAndNewlines)
       switch name {
       case "location": location = value
         // ST on responses can carry the uuid suffix `::urn:…`/`::upnp:rootdevice`

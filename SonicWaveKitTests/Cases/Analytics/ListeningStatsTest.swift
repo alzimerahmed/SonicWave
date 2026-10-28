@@ -205,7 +205,7 @@ class ListeningStatsTest: XCTestCase {
     XCTAssertEqual(stats.topArtists.count, 2)
     XCTAssertEqual(stats.topArtists.first?.name, "Solo")
     XCTAssertEqual(stats.topArtists.first?.playCount, 2)
-    XCTAssertEqual(stats.topAlbums.count, 2)
+    XCTAssertEqual(stats.topAlbums.count, 3)
     XCTAssertEqual(stats.topGenres.count, 2)
     XCTAssertEqual(stats.topGenres.first?.name, "Rock")
     XCTAssertEqual(stats.topGenres.first?.playCount, 2)

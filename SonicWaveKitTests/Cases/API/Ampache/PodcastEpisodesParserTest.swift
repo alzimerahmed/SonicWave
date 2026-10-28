@@ -101,7 +101,7 @@ class PodcastEpisodesParserTest: AbstractAmpacheTest {
     XCTAssertEqual(episode.contentType, "audio/mpeg")
     XCTAssertEqual(
       episode.url,
-      "https://music.com.au/play/index.php?ssid=cfj3f237d563f479f5223k23189dbb34&type=podcast_episode&oid=44&uid=4&format=raw&player=api&name=60-Second%20Science%20-%20COVID-%20Quickly-%20Episode%203-%20Vaccine%20Inequality-plus%20Your%20Body%20the%20Variant%20Fighter.mp3"
+      "https://music.com.au/play/index.php?type=podcast_episode&oid=44&format=raw&player=api&name=60-Second%20Science%20-%20COVID-%20Quickly-%20Episode%203-%20Vaccine%20Inequality-plus%20Your%20Body%20the%20Variant%20Fighter.mp3"
     )
     XCTAssertEqual(episode.size, 5460000)
     XCTAssertEqual(episode.artwork?.account?.serverHash, TestAccountInfo.test1ServerHash)
@@ -133,7 +133,7 @@ class PodcastEpisodesParserTest: AbstractAmpacheTest {
     XCTAssertEqual(episode.contentType, "")
     XCTAssertEqual(
       episode.url,
-      "https://music.com.au/play/index.php?ssid=cfj3f237d563f479f5223k23189dbb34&type=podcast_episode&oid=46&uid=4&format=raw&player=api&name=60-Second%20Science%20-%20Smartphones%20Can%20Hear%20the%20Shape%20of%20Your%20Door%20Keys."
+      "https://music.com.au/play/index.php?type=podcast_episode&oid=46&format=raw&player=api&name=60-Second%20Science%20-%20Smartphones%20Can%20Hear%20the%20Shape%20of%20Your%20Door%20Keys."
     )
     XCTAssertEqual(episode.size, 0)
     XCTAssertEqual(episode.artwork?.account?.serverHash, TestAccountInfo.test1ServerHash)
@@ -168,7 +168,7 @@ class PodcastEpisodesParserTest: AbstractAmpacheTest {
     XCTAssertEqual(episode.contentType, "")
     XCTAssertEqual(
       episode.url,
-      "https://music.com.au/play/index.php?ssid=cfj3f237d563f479f5223k23189dbb34&type=podcast_episode&oid=47&uid=4&format=raw&player=api&name=60-Second%20Science%20-%20Chimpanzees%20Show%20Altruism%20while%20Gathering%20around%20the%20Juice%20Fountain."
+      "https://music.com.au/play/index.php?type=podcast_episode&oid=47&format=raw&player=api&name=60-Second%20Science%20-%20Chimpanzees%20Show%20Altruism%20while%20Gathering%20around%20the%20Juice%20Fountain."
     )
     XCTAssertEqual(episode.size, 0)
     XCTAssertEqual(episode.artwork?.account?.serverHash, TestAccountInfo.test1ServerHash)

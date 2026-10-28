@@ -168,7 +168,7 @@ class PlaylistSongsParserTest: AbstractAmpacheTest {
     XCTAssertEqual(song.contentType, "audio/mpeg")
     XCTAssertEqual(
       song.url,
-      "https://music.com.au/play/index.php?ssid=cfj3f237d563f479f5223k23189dbb34&type=song&oid=56&uid=4&player=api&name=Synthetic%20-%20Black-BlueSmoke.mp3"
+      "https://music.com.au/play/index.php?type=song&oid=56&player=api&name=Synthetic%20-%20Black-BlueSmoke.mp3"
     )
     XCTAssertEqual(song.size, 4010069)
     XCTAssertEqual(song.artwork?.account?.serverHash, TestAccountInfo.test1ServerHash)
@@ -203,7 +203,7 @@ class PlaylistSongsParserTest: AbstractAmpacheTest {
     XCTAssertEqual(song.contentType, "audio/mp4")
     XCTAssertEqual(
       song.url,
-      "https://music.com.au/play/index.php?ssid=cfj3f237d563f479f5223k23189dbb34&type=song&oid=107&uid=4&player=api&name=R-B%20-%20Arrest%20Me.m4a"
+      "https://music.com.au/play/index.php?type=song&oid=107&player=api&name=R-B%20-%20Arrest%20Me.m4a"
     )
     XCTAssertEqual(song.size, 3091727)
     XCTAssertEqual(song.artwork?.account?.serverHash, TestAccountInfo.test1ServerHash)
@@ -235,7 +235,7 @@ class PlaylistSongsParserTest: AbstractAmpacheTest {
     XCTAssertEqual(song.contentType, "audio/x-ms-wma")
     XCTAssertEqual(
       song.url,
-      "https://music.com.au/play/index.php?ssid=cfj3f237d563f479f5223k23189dbb34&type=song&oid=115&uid=4&player=api&name=Chi.Otic%20-%20Are%20we%20going%20Crazy.wma"
+      "https://music.com.au/play/index.php?type=song&oid=115&player=api&name=Chi.Otic%20-%20Are%20we%20going%20Crazy.wma"
     )
     XCTAssertEqual(song.size, 1776580)
     XCTAssertEqual(song.artwork?.account?.serverHash, TestAccountInfo.test1ServerHash)
@@ -266,7 +266,7 @@ class PlaylistSongsParserTest: AbstractAmpacheTest {
     XCTAssertEqual(song.contentType, "audio/mpeg")
     XCTAssertEqual(
       song.url,
-      "https://music.com.au/play/index.php?ssid=cfj3f237d563f479f5223k23189dbb34&type=song&oid=85&uid=4&player=api&name=Nofi-found.%20-%20Beq%20Ultra%20Fat.mp3"
+      "https://music.com.au/play/index.php?type=song&oid=85&player=api&name=Nofi-found.%20-%20Beq%20Ultra%20Fat.mp3"
     )
     XCTAssertEqual(song.size, 9935896)
     XCTAssertEqual(song.artwork?.account?.serverHash, TestAccountInfo.test1ServerHash)

@@ -40,13 +40,14 @@ class SmartPlaylistSchemaV51Test: XCTestCase {
   // MARK: Migration chain
 
   func testMigrationVersionChainReachesV51() {
-    XCTAssertEqual(CoreDataMigrationVersion.current, .v51)
+    XCTAssertEqual(CoreDataMigrationVersion.current, .v52)
     XCTAssertEqual(CoreDataMigrationVersion.v50.nextVersion(), .v51)
-    XCTAssertNil(CoreDataMigrationVersion.v51.nextVersion())
+    XCTAssertEqual(CoreDataMigrationVersion.v51.nextVersion(), .v52)
+    XCTAssertNil(CoreDataMigrationVersion.v52.nextVersion())
   }
 
   func testLibrarySyncVersionIsV23() {
-    XCTAssertEqual(LibrarySyncVersion.newestVersion, .v23)
+    XCTAssertEqual(LibrarySyncVersion.newestVersion, .v24)
     XCTAssertEqual(LibrarySyncVersion.v23.rawValue, 17)
     XCTAssertTrue(LibrarySyncVersion.v22 < LibrarySyncVersion.v23)
   }

@@ -36,7 +36,20 @@ private final class StubChallengeSender: NSObject, URLAuthenticationChallengeSen
 
 // MARK: - AccountSessionSecurityTests
 
-final class AccountSessionSecurityTests: XCTestCase {
+final class AccountSessionSecurityTests: XCTestCase {  /// hosted tests inside the unsigned app can't touch the keychain
+  /// (`errSecMissingEntitlement` -34018) — skip rather than fake success;
+  /// real devices/signing still exercise these paths
+  private func requireKeychainOrSkip(
+    _ keychain: KeychainHelper
+  ) throws {
+    let status = keychain.save(data: Data([0x01]), account: "probe")
+    guard status == errSecSuccess else {
+      keychain.delete(account: "probe")
+      throw XCTSkip("keychain unavailable in unsigned test host (OSStatus \(status))")
+    }
+    keychain.delete(account: "probe")
+  }
+
   private let pinStore = ServerCertificatePinStore()
   private let clientCertificateStore = ClientCertificateStore()
   private let accountIdent = TestAccountInfo.create1().ident
@@ -49,7 +62,8 @@ final class AccountSessionSecurityTests: XCTestCase {
 
   // MARK: ServerCertificatePinStore
 
-  func testPinStoreRoundTrip() {
+  func testPinStoreRoundTrip()  throws {
+    try requireKeychainOrSkip(KeychainHelper(service: "probe"))
     pinStore.deleteAll(accountIdent: accountIdent)
     XCTAssertNil(pinStore.pinnedHash(accountIdent: accountIdent, host: "SelfSigned.Example"))
 
@@ -65,7 +79,8 @@ final class AccountSessionSecurityTests: XCTestCase {
     XCTAssertNil(pinStore.pinnedHash(accountIdent: accountIdent, host: "other.example"))
   }
 
-  func testPinStoreMismatchDetection() {
+  func testPinStoreMismatchDetection()  throws {
+    try requireKeychainOrSkip(KeychainHelper(service: "probe"))
     pinStore.deleteAll(accountIdent: accountIdent)
     pinStore.setPinnedHash(accountIdent: accountIdent, host: "s.example", hash: "pin-a")
     // a rotated/attacked certificate presents a different hash -> mismatch
