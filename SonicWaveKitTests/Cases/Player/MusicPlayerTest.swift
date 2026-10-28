@@ -1777,7 +1777,8 @@ class MusicPlayerTest: XCTestCase {
     backendPlayer
       .didStartPlaying(
         url: library.getFileURL(forPlayable: testPlayer.currentlyPlaying!)!
-          .absoluteString
+          .absoluteString,
+        sampleRate: 44100
       )
     let elapsedTime = testPlayer.elapsedTime
     XCTAssertEqual(elapsedTime, 3.0)
@@ -1809,7 +1810,8 @@ class MusicPlayerTest: XCTestCase {
     backendPlayer
       .didStartPlaying(
         url: library.getFileURL(forPlayable: testPlayer.currentlyPlaying!)!
-          .absoluteString
+          .absoluteString,
+        sampleRate: 44100
       )
 
     testPlayer.playPreviousOrReplay()

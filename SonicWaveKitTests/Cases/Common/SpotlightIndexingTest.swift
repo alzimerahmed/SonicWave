@@ -60,13 +60,15 @@ class SpotlightIndexingTest: XCTestCase {
 
   override func setUp() {
     super.setUp()
-    cdHelper = CoreDataHelper()
-    library = cdHelper.createSeededStorage()
-    mockIndex = MOCK_SearchableIndex()
-    settings = AmperfySettings()
-    settings.user.isSpotlightIndexingEnabled = true
-    settings.app.isLibrarySynced = true
-    settings.accounts.switchActiveAccount(TestAccountInfo.create1())
+    MainActor.assumeIsolated {
+      cdHelper = CoreDataHelper()
+      library = cdHelper.createSeededStorage()
+      mockIndex = MOCK_SearchableIndex()
+      settings = AmperfySettings()
+      settings.user.isSpotlightIndexingEnabled = true
+      settings.app.isLibrarySynced = true
+      settings.accounts.switchActiveAccount(TestAccountInfo.create1())
+    }
   }
 
   private func makeIndexer() -> SpotlightIndexer {

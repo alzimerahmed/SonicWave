@@ -658,7 +658,7 @@
 		7E51A0010000000000000002 /* SpotlightIndexing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E51A0010000000000000001 /* SpotlightIndexing.swift */; };
 		7E51A0010000000000000004 /* SpotlightIndexer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E51A0010000000000000003 /* SpotlightIndexer.swift */; };
 		7E51A0010000000000000007 /* SpotlightIndexingTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E51A0010000000000000006 /* SpotlightIndexingTest.swift */; };
-		E12A00000000000000000012 /* SonicWaveWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = E12A00000000000000000008 /* SonicWaveWatch.app */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		E12A00000000000000000012 /* SonicWaveWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = E12A00000000000000000008 /* SonicWaveWatch.app */; platformFilter = ios; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		E12A00000000000000000013 /* SonicWaveWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12A00000000000000000022 /* SonicWaveWatchApp.swift */; };
 		E12A00000000000000000014 /* WatchSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12A00000000000000000023 /* WatchSessionManager.swift */; };
 		E12A00000000000000000015 /* NowPlayingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12A00000000000000000024 /* NowPlayingView.swift */; };
