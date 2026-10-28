@@ -275,14 +275,15 @@ public actor UpnpDiscovery {
     )
     let group: NWMulticastGroup
     do {
-      group = try NWMulticastGroup(with: endpoint)
+      group = try NWMulticastGroup(for: [endpoint])
     } catch {
       // group creation is rejected without the multicast entitlement —
       // a capability failure, not "no renderers found"
       throw DiscoveryError.multicastUnavailable
     }
     let box = LocationBox()
-    group.setReceiveHandler { _, content, error in
+    let conn = NWConnectionGroup(with: group, using: .udp)
+    conn.setReceiveHandler { _, content, error in
       // a missing multicast entitlement can also surface here (EPERM)
       // instead of at creation — record it so the timeout path throws
       // instead of reporting a falsely empty LAN
@@ -295,8 +296,8 @@ public actor UpnpDiscovery {
       guard let raw = parsed.location, let url = URL(string: raw) else { return }
       box.append(url, usn: parsed.usn)
     }
-    group.join(queue: .global(qos: .utility))
-    defer { group.leave() }
+    conn.start(queue: .global(qos: .utility))
+    defer { conn.cancel() }
 
     // send M-SEARCH on the group address — one datagram is enough;
     // responders are given MX seconds to answer

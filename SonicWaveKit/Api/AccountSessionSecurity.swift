@@ -111,7 +111,7 @@ public struct ClientCertificateStore: Sendable {
     let status = SecPKCS12Import(pkcs12Data as CFData, options, &items)
     guard status == errSecSuccess,
           let item = (items as? [[String: Any]])?.first,
-          let identity = item[kSecImportItemIdentity as String] as? SecIdentity
+          let identity = item[kSecImportItemIdentity as String] as! SecIdentity
     else { return nil }
     let chain = item[kSecImportItemCertChain as String] as? [SecCertificate] ?? []
     return (identity, chain)
@@ -480,7 +480,7 @@ final class AccountSessionDelegate: SessionDelegate, @unchecked Sendable {
       completionHandler(evaluation.0, evaluation.1)
       return
     }
-    super.urlSession(session, didReceive: challenge, completionHandler: completionHandler)
+    completionHandler(.performDefaultHandling, nil)
   }
 
   override func urlSession(

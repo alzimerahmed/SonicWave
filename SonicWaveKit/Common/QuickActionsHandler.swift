@@ -185,7 +185,7 @@ public class QuickActionsHandler {
   /// `StartAlbumShuffleIntent`)
   private func startAlbumShuffle() {
     guard let accountInfo = storage.settings.accounts.active else { return }
-    _ = AlbumShuffleHandler.start(
+    _ = AlbumShuffleLauncher.start(
       storage: storage,
       player: player,
       accountInfo: accountInfo
