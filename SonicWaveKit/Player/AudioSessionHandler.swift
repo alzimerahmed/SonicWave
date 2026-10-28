@@ -147,16 +147,14 @@ public class AudioSessionHandler {
   func configureBackgroundPlayback() {
     do {
       let session = AVAudioSession.sharedInstance()
-      try session.setCategory(AVAudioSession.Category.playback)
-      // G22 — `.longFormAudio` is the correct sharing policy for a
-      // music app and the mode AirPlay 2 expects on iOS; it also avoids
-      // quirks of the default policy on macOS Catalyst. A refusal
-      // (route already shared elsewhere) is non-fatal.
-      do {
-        try session.setRouteSharingPolicy(.longFormAudio)
-      } catch {
-        eventLogger?.report(topic: "Audio Session", error: error)
-      }
+      // G22 — `.longFormAudio` is the correct route-sharing policy for
+      // a music app and the mode AirPlay 2 expects; it also avoids
+      // quirks of the default policy on macOS Catalyst.
+      try session.setCategory(
+        AVAudioSession.Category.playback,
+        mode: .default,
+        policy: .longFormAudio
+      )
       try session.setActive(true)
     } catch {
       eventLogger?.report(topic: "Audio Session", error: error)
