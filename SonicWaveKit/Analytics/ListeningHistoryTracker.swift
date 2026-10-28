@@ -67,7 +67,7 @@ struct ListeningSession {
   /// idempotent — the FromBeginning→StartedPlaying callback pair and
   /// pause→resume both land here without double-opening the clock
   mutating func markAudible(at date: Date) {
-    audibleSince ??= date
+    if audibleSince == nil { audibleSince = date }
   }
 
   mutating func pause(at date: Date) {

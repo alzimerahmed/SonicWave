@@ -283,14 +283,15 @@ public actor UpnpDiscovery {
     }
     let box = LocationBox()
     let conn = NWConnectionGroup(with: group, using: .udp)
-    conn.setReceiveHandler { _, content, error in
-      // a missing multicast entitlement can also surface here (EPERM)
-      // instead of at creation — record it so the timeout path throws
-      // instead of reporting a falsely empty LAN
-      if let error {
+    // a missing multicast entitlement can also surface as a failed
+    // state (EPERM) instead of at creation — record it so the timeout
+    // path throws instead of reporting a falsely empty LAN
+    conn.stateUpdateHandler = { state in
+      if case .failed(let error) = state {
         box.record(error: Self.discoveryError(for: error))
-        return
       }
+    }
+    conn.setReceiveHandler { _, content, _ in
       guard let content, let text = String(data: content, encoding: .utf8) else { return }
       let parsed = SsdpMessages.parseResponse(text)
       guard let raw = parsed.location, let url = URL(string: raw) else { return }
