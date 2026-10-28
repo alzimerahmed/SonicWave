@@ -87,11 +87,11 @@ public final class AudioAnalyzer: ObservableObject, AudioAnalyzerProtocol {
   /// RMS publishes at ~20 Hz in the skip-silence-only path — 256-frame
   /// buffers land at ~170 Hz (44.1 kHz), so every 8th buffer publishes;
   /// the 0.4 s silence gate needs nothing faster
-  private static let rmsPublishEveryNthBuffer = 8
+  private nonisolated static let rmsPublishEveryNthBuffer = 8
   /// Magnitudes/FFT publishes at ~57 Hz — every 3rd buffer at the
   /// ~170 Hz buffer rate; FFT compute + SwiftUI invalidation are skipped
   /// on the other two
-  private static let fftPublishEveryNthBuffer = 3
+  private nonisolated static let fftPublishEveryNthBuffer = 3
 
   public init(fftSize: Int = 256, windowType: WindowType = .hannWindow) {
     self.fftSize = fftSize

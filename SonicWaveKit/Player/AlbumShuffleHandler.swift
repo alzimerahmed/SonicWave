@@ -118,6 +118,10 @@ class AlbumShuffleHandler {
   private(set) var activeGroup: AlbumShuffleGroup?
   private var pendingGroups = [AlbumShuffleGroup]()
 
+  /// `AudioPlayer` constructs this from a nonisolated property
+  /// initializer — fresh state needs no actor hop
+  nonisolated init() {}
+
   /// true while a session is running — even when the pool is already
   /// drained (the last album is playing)
   var isSessionActive: Bool { activeGroup != nil }

@@ -59,7 +59,7 @@ final class LrclibApi: Sendable {
   private let log = OSLog(subsystem: "com.alzimerahmed.SonicWave", category: "Lrclib")
   /// boxed — `URLSession` predates the Sendable audit (same pattern the
   /// per-account Alamofire sessions use)
-  private let session = Atomic<URLSession>(wrappedValue: Self.createSession())
+  private let session = Atomic<URLSession>(wrappedValue: LrclibApi.createSession())
 
   private static func createSession() -> URLSession {
     let configuration = URLSessionConfiguration.ephemeral

@@ -196,7 +196,7 @@ public class MixProvider {
   /// minimum songs in a decade bucket before it gets its own mix card
   private static let minSongsPerDecadeMix = 10
   /// how many genre-blend cards the hub offers at most
-  private static let maxGenreBlendMixes = 3
+  private nonisolated static let maxGenreBlendMixes = 3
 
   /// aggregate mirror stats behind `availableMixes()` — collected via
   /// `count(for:)` and dictionary group-by fetches, never by fetching

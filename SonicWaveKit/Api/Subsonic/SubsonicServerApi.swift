@@ -397,8 +397,10 @@ final class SubsonicServerApi: URLCleanser, Sendable {
     let version = try await determineApiVersionToUse()
     var urlComp = try createAuthApiUrlComponent(version: version, forAction: "stream", id: apiId)
 
-    let isTranscodeOffsetSupported = timeOffset != nil &&
-      await isOpenSubsonicExtensionSupported(extension: .transcodeOffset)
+    let transcodeOffsetExtensionSupported = await isOpenSubsonicExtensionSupported(
+      extension: .transcodeOffset
+    )
+    let isTranscodeOffsetSupported = timeOffset != nil && transcodeOffsetExtensionSupported
     Self.appendStreamQueryItems(
       to: &urlComp,
       maxBitrate: maxBitrate,

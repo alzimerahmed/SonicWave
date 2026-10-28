@@ -1648,6 +1648,7 @@ class SubsonicLibrarySyncer: CommonLibrarySyncer, LibrarySyncer {
       }
     }
     guard !criteriaByPlaylistId.isEmpty else { return }
+    let criteriaSnapshot = criteriaByPlaylistId
 
     try? await storage.async.perform { asyncCompanion in
       let accountAsync = asyncCompanion.library.getAccount(
@@ -1657,7 +1658,7 @@ class SubsonicLibrarySyncer: CommonLibrarySyncer, LibrarySyncer {
       where readonlyPlaylistIds.contains(playlist.id) {
         // failed/absent fetches keep prior criteria — a nil-assign would wipe
         // good rules (and via the setter also clear isSmartPlaylist)
-        if let criteria = criteriaByPlaylistId[playlist.id] {
+        if let criteria = criteriaSnapshot[playlist.id] {
           playlist.smartCriteria = criteria
         }
       }
