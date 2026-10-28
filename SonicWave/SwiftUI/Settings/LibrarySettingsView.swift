@@ -252,8 +252,8 @@ struct LibrarySettingsView: View {
               )
             }
           }
-        }, header: "Cache", footer:
-        "When the cache exceeds the limit, the least recently played items are removed automatically. Downloads are never removed.")
+        }, footer:
+        "When the cache exceeds the limit, the least recently played items are removed automatically. Downloads are never removed.", header: "Cache")
 
         if settings.activeAccountInfo != nil {
           SettingsSection(content: {

@@ -237,9 +237,9 @@ struct AccountSettingsView: View {
                 isOn: $settings.isAutoDownloadFavorites
               )
             },
-            header: "Auto Download",
             footer:
-            "Favorites are kept downloaded permanently. To keep a playlist downloaded, open its ⋯ menu and enable “Download New Songs”."
+            "Favorites are kept downloaded permanently. To keep a playlist downloaded, open its ⋯ menu and enable “Download New Songs”.",
+            header: "Auto Download"
           )
 
           SettingsSection(
