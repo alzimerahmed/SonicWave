@@ -261,6 +261,35 @@ final class MOCK_BackendApi: BackendApi, @unchecked Sendable {
     isTranscodeOffsetSeekSupportedResult
   }
 
+  func getBookmarks() async throws -> BackendFeatureResult<[ServerBookmark]> {
+    .notSupported
+  }
+
+  func createBookmark(
+    playableInfo: AbstractPlayableInfo,
+    positionSeconds: Int
+  ) async throws -> BackendFeatureResult<Bool> {
+    .notSupported
+  }
+
+  func deleteBookmark(
+    _ bookmark: ServerBookmark
+  ) async throws -> BackendFeatureResult<Bool> {
+    .notSupported
+  }
+
+  func getJukeboxPlaylist() async throws -> BackendFeatureResult<JukeboxPlaylist> {
+    .notSupported
+  }
+
+  func jukeboxControl(_ action: JukeboxAction) async throws -> BackendFeatureResult<Bool> {
+    .notSupported
+  }
+
+  func getMusicFolders() async throws -> BackendFeatureResult<[MusicFolderStub]> {
+    .notSupported
+  }
+
   func generateUrl(forArtwork artwork: Artwork) async throws -> URL { Helper.testURL }
   func checkForErrorResponse(response: APIDataResponse) -> ResponseError? { nil }
   func createLibrarySyncer(

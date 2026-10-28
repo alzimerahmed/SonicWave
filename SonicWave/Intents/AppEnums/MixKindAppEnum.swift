@@ -38,23 +38,23 @@ enum MixKindAppEnum: Int, AppEnum {
   /// Shortcuts picker and the spoken dialogs can't drift
   static let caseDisplayRepresentations: [Self: DisplayRepresentation] = [
     .favoritesRadio: DisplayRepresentation(
-      title: "\(MixKindAppEnum.favoritesRadio.displayName)",
+      title: .init(stringLiteral: MixKindAppEnum.favoritesRadio.displayName),
       image: .init(systemName: "heart.fill")
     ),
     .decadeMix: DisplayRepresentation(
-      title: "\(MixKindAppEnum.decadeMix.displayName)",
+      title: .init(stringLiteral: MixKindAppEnum.decadeMix.displayName),
       image: .init(systemName: "calendar")
     ),
     .genreBlend: DisplayRepresentation(
-      title: "\(MixKindAppEnum.genreBlend.displayName)",
+      title: .init(stringLiteral: MixKindAppEnum.genreBlend.displayName),
       image: .init(systemName: "guitars.fill")
     ),
     .deepCuts: DisplayRepresentation(
-      title: "\(MixKindAppEnum.deepCuts.displayName)",
+      title: .init(stringLiteral: MixKindAppEnum.deepCuts.displayName),
       image: .init(systemName: "sparkles")
     ),
     .timeOfDay: DisplayRepresentation(
-      title: "\(MixKindAppEnum.timeOfDay.displayName)",
+      title: .init(stringLiteral: MixKindAppEnum.timeOfDay.displayName),
       image: .init(systemName: "clock")
     ),
   ]

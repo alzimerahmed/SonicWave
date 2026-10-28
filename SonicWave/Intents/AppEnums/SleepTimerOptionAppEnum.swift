@@ -39,39 +39,39 @@ enum SleepTimerOptionAppEnum: Int, AppEnum {
   /// Shortcuts picker and the spoken dialogs can't drift
   static let caseDisplayRepresentations: [Self: DisplayRepresentation] = [
     .off: DisplayRepresentation(
-      title: "\(SleepTimerOptionAppEnum.off.displayName)",
+      title: .init(stringLiteral: SleepTimerOptionAppEnum.off.displayName),
       image: .init(systemName: "moon.zzz")
     ),
     .endOfTrack: DisplayRepresentation(
-      title: "\(SleepTimerOptionAppEnum.endOfTrack.displayName)",
+      title: .init(stringLiteral: SleepTimerOptionAppEnum.endOfTrack.displayName),
       image: .init(systemName: "music.note"),
       synonyms: ["end of song", "end of episode", "after this track"]
     ),
     .minutes5: DisplayRepresentation(
-      title: "\(SleepTimerOptionAppEnum.minutes5.displayName)"
+      title: .init(stringLiteral: SleepTimerOptionAppEnum.minutes5.displayName)
     ),
     .minutes10: DisplayRepresentation(
-      title: "\(SleepTimerOptionAppEnum.minutes10.displayName)"
+      title: .init(stringLiteral: SleepTimerOptionAppEnum.minutes10.displayName)
     ),
     .minutes15: DisplayRepresentation(
-      title: "\(SleepTimerOptionAppEnum.minutes15.displayName)"
+      title: .init(stringLiteral: SleepTimerOptionAppEnum.minutes15.displayName)
     ),
     .minutes30: DisplayRepresentation(
-      title: "\(SleepTimerOptionAppEnum.minutes30.displayName)"
+      title: .init(stringLiteral: SleepTimerOptionAppEnum.minutes30.displayName)
     ),
     .minutes45: DisplayRepresentation(
-      title: "\(SleepTimerOptionAppEnum.minutes45.displayName)"
+      title: .init(stringLiteral: SleepTimerOptionAppEnum.minutes45.displayName)
     ),
     .minutes60: DisplayRepresentation(
-      title: "\(SleepTimerOptionAppEnum.minutes60.displayName)",
+      title: .init(stringLiteral: SleepTimerOptionAppEnum.minutes60.displayName),
       synonyms: ["60 minutes", "one hour"]
     ),
     .minutes120: DisplayRepresentation(
-      title: "\(SleepTimerOptionAppEnum.minutes120.displayName)",
+      title: .init(stringLiteral: SleepTimerOptionAppEnum.minutes120.displayName),
       synonyms: ["120 minutes", "two hours"]
     ),
     .minutes240: DisplayRepresentation(
-      title: "\(SleepTimerOptionAppEnum.minutes240.displayName)",
+      title: .init(stringLiteral: SleepTimerOptionAppEnum.minutes240.displayName),
       synonyms: ["240 minutes", "four hours"]
     ),
   ]
