@@ -316,9 +316,9 @@ struct AccountSettingsView: View {
                 Text("Manage Shares")
               }
             },
-            header: "Sharing",
             footer:
-            "For servers behind a reverse proxy — links are generated from this base URL."
+            "For servers behind a reverse proxy — links are generated from this base URL.",
+            header: "Sharing"
           )
 
           SettingsSection {
