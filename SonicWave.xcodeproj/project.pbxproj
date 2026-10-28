@@ -2355,9 +2355,7 @@
 				5086F87322384A4300546F5A /* Api */,
 				A752B0010000000000000001 /* Analytics */,
 				11F1E5A00000000000002002 /* Lidarr */,
-				11F1E5A00000000000000007 /* LidarrApiClient.swift */,
 				11F1E5A00000000000002001 /* Output */,
-				11F1E5A00000000000000006 /* UpnpClient.swift */,
 				8D15C801000000000000000029 /* Discovery */,
 				50BA931F21DA4CEF00E5901D /* Assets */,
 				5041B7FE220D4DF600603F02 /* Common */,
@@ -2712,6 +2710,7 @@
 		11F1E5A00000000000002001 /* Output */ = {
 			isa = PBXGroup;
 			children = (
+				11F1E5A00000000000000006 /* UpnpClient.swift */,
 			);
 			path = Output;
 			sourceTree = "<group>";
@@ -2719,6 +2718,7 @@
 		11F1E5A00000000000002002 /* Lidarr */ = {
 			isa = PBXGroup;
 			children = (
+				11F1E5A00000000000000007 /* LidarrApiClient.swift */,
 			);
 			path = Lidarr;
 			sourceTree = "<group>";
