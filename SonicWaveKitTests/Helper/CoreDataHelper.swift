@@ -39,7 +39,7 @@ class CoreDataHelper {
   }
 
   func createInMemoryManagedObjectContext() -> NSManagedObjectContext {
-    guard persistentContainer.persistentStores.isEmpty else {
+    guard persistentContainer.persistentStoreCoordinator.persistentStores.isEmpty else {
       return persistentContainer.viewContext
     }
     // SQLite store backed by /dev/null — unlike NSInMemoryStoreType this
